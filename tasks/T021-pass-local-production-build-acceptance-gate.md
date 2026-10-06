@@ -16,12 +16,12 @@ Complete this task without expanding scope into later tasks.
 ## Acceptance criteria
 
 - [x] All explicit Gate E checklist items demonstrably pass (evidence in `SEO_RELEASE_AUDIT.md`).
-- [ ] PROJECT_STATE.json permits AWS phase.
+- [x] `PROJECT_STATE.json` permits AWS phase after owner sign-off on `SEO_RELEASE_AUDIT.md`.
 
 ## Required close-out
 
 - [x] Run relevant automated checks and local production-preview smoke tests.
-- [x] Update `WORKLOG.md` with blocked state and gate evidence.
-- [x] Update `WORKLOG.json` status to BLOCKED.
-- [x] Update `PROJECT_STATE.json`; keep AWS permission disabled pending signed review.
+- [x] Update `WORKLOG.md` with gate evidence and owner sign-off.
+- [x] Update `WORKLOG.json` status to DONE.
+- [x] Update `PROJECT_STATE.json` to permit the explicitly authorized AWS phase after signed review.
 - [x] No architecture change required.

@@ -1,0 +1,251 @@
+name: Deploy Fitwise static site
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: Confirm deployment to the production S3/CloudFront stack
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+  actions: read
+
+concurrency:
+  group: fitwise-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy-static-site:
+    if: ${{ inputs.confirm_deploy == true && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    env:
+      GSC_SITE_PROPERTY: ${{ vars.GSC_SITE_PROPERTY }}
+    steps:
+      - name: Check out the approved main branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify and build the site
+        run: npm run verify
+
+      - name: Restore previous published URL manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .seo
+          previous_run="$(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow deploy-production.yml \
+            --branch main \
+            --status success \
+            --limit 1 \
+            --json databaseId \
+            --jq '.[0].databaseId // ""')"
+          if [[ -n "$previous_run" ]]; then
+            gh run download "$previous_run" \
+              --repo "$GITHUB_REPOSITORY" \
+              --name fitwise-seo-manifest \
+              --dir .seo || echo 'No previous manifest artifact; first deployment will notify all indexable URLs.'
+          else
+            echo 'No prior successful production workflow; first deployment will notify all indexable URLs.'
+          fi
+
+      - name: Calculate published URL changes
+        run: node scripts/seo-diff.mjs > "$RUNNER_TEMP/fitwise-seo-diff.json"
+
+      - name: Check required AWS deployment variables
+        shell: bash
+        env:
+          AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          ACM_CERTIFICATE_ARN: ${{ vars.ACM_CERTIFICATE_ARN }}
+        run: |
+          set -euo pipefail
+          [[ -n "$AWS_ROLE_ARN" ]] || { echo 'Set repository variable AWS_ROLE_ARN first.'; exit 1; }
+          [[ -n "$AWS_REGION" ]] || { echo 'Set repository variable AWS_REGION first.'; exit 1; }
+          [[ -n "$ACM_CERTIFICATE_ARN" ]] || { echo 'Set ACM_CERTIFICATE_ARN after DNS validation/issuance.'; exit 1; }
+
+      - name: Configure AWS credentials through GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: FitwiseProductionDeploy
+
+      - name: Require issued apex certificate
+        shell: bash
+        env:
+          ACM_CERTIFICATE_ARN: ${{ vars.ACM_CERTIFICATE_ARN }}
+        run: |
+          set -euo pipefail
+          status="$(aws acm describe-certificate --region us-east-1 --certificate-arn "$ACM_CERTIFICATE_ARN" --query Certificate.Status --output text)"
+          [[ "$status" == "ISSUED" ]] || { echo "ACM certificate status is $status, expected ISSUED."; exit 1; }
+
+      - name: Deploy private S3 and CloudFront stack
+        shell: bash
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          ACM_CERTIFICATE_ARN: ${{ vars.ACM_CERTIFICATE_ARN }}
+        run: |
+          set -euo pipefail
+          aws cloudformation deploy \
+            --template-file infra/fitwise-static-site.template.json \
+            --stack-name fitwise-static-site \
+            --region "$AWS_REGION" \
+            --parameter-overrides ApexDomainName=fitwise.stream "AcmCertificateArn=$ACM_CERTIFICATE_ARN" \
+            --tags project=fitwise
+
+      - name: Read stack outputs
+        id: outputs
+        shell: bash
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+        run: |
+          set -euo pipefail
+          outputs="$(aws cloudformation describe-stacks --stack-name fitwise-static-site --region "$AWS_REGION" --query 'Stacks[0].Outputs' --output json)"
+          bucket="$(jq -r '.[] | select(.OutputKey == "SiteBucketName") | .OutputValue' <<< "$outputs")"
+          distribution="$(jq -r '.[] | select(.OutputKey == "DistributionId") | .OutputValue' <<< "$outputs")"
+          domain="$(jq -r '.[] | select(.OutputKey == "DistributionDomainName") | .OutputValue' <<< "$outputs")"
+          [[ -n "$bucket" && "$bucket" != "null" && -n "$distribution" && "$distribution" != "null" ]] || { echo 'Required stack output missing.'; exit 1; }
+          echo "bucket=$bucket" >> "$GITHUB_OUTPUT"
+          echo "distribution=$distribution" >> "$GITHUB_OUTPUT"
+          echo "domain=$domain" >> "$GITHUB_OUTPUT"
+
+      - name: Generate local upload/cache/invalidation plan
+        run: node scripts/release-prep.mjs deployment-plan > "$RUNNER_TEMP/fitwise-deployment-plan.json"
+
+      - name: Sync HTML routes with short browser and CDN TTLs
+        shell: bash
+        env:
+          SITE_BUCKET: ${{ steps.outputs.outputs.bucket }}
+          INDEXNOW_KEY_FILE: public/40256e983b29eef42f0a6d265551140c.txt
+        run: |
+          set -euo pipefail
+          aws s3 sync dist/ "s3://$SITE_BUCKET/" \
+            --delete --exclude "*" --include "*.html" --exclude "dev/*" \
+            --cache-control 'public, max-age=0, s-maxage=300, must-revalidate'
+
+      - name: Sync fingerprinted Astro assets
+        shell: bash
+        env:
+          SITE_BUCKET: ${{ steps.outputs.outputs.bucket }}
+        run: |
+          set -euo pipefail
+          aws s3 sync dist/_astro/ "s3://$SITE_BUCKET/_astro/" \
+            --cache-control 'public, max-age=31536000, immutable'
+
+      - name: Sync mutable images
+        shell: bash
+        env:
+          SITE_BUCKET: ${{ steps.outputs.outputs.bucket }}
+        run: |
+          set -euo pipefail
+          aws s3 sync dist/assets/images/ "s3://$SITE_BUCKET/assets/images/" \
+            --cache-control 'public, max-age=86400'
+
+      - name: Sync crawl-control and remaining static files
+        shell: bash
+        env:
+          SITE_BUCKET: ${{ steps.outputs.outputs.bucket }}
+        run: |
+          set -euo pipefail
+          aws s3 cp dist/robots.txt "s3://$SITE_BUCKET/robots.txt" --cache-control 'public, max-age=0, s-maxage=300, must-revalidate' --content-type 'text/plain; charset=utf-8'
+          aws s3 cp dist/sitemap.xml "s3://$SITE_BUCKET/sitemap.xml" --cache-control 'public, max-age=0, s-maxage=300, must-revalidate' --content-type 'application/xml'
+          aws s3 cp dist/favicon.ico "s3://$SITE_BUCKET/favicon.ico" --cache-control 'public, max-age=3600' --content-type 'image/vnd.microsoft.icon'
+          aws s3 cp dist/40256e983b29eef42f0a6d265551140c.txt "s3://$SITE_BUCKET/40256e983b29eef42f0a6d265551140c.txt" --cache-control 'public, max-age=300' --content-type 'text/plain; charset=utf-8'
+
+      - name: Invalidate mutable published objects only
+        shell: bash
+        env:
+          DISTRIBUTION_ID: ${{ steps.outputs.outputs.distribution }}
+          DEPLOYMENT_PLAN: ${{ runner.temp }}/fitwise-deployment-plan.json
+        run: |
+          set -euo pipefail
+          mapfile -t paths < <(node --input-type=module -e 'import fs from "node:fs"; console.log(JSON.parse(fs.readFileSync(process.argv[1], "utf8")).invalidationPaths.join("\n"))' "$DEPLOYMENT_PLAN")
+          if (( ${#paths[@]} > 0 )); then
+            aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "${paths[@]}"
+          fi
+          {
+            echo "### Fitwise production deployment"
+            echo "Bucket: \\`${{ steps.outputs.outputs.bucket }}\\`"
+            echo "CloudFront distribution: \\`${DISTRIBUTION_ID}\\`"
+            echo "CloudFront DNS target: \\`${{ steps.outputs.outputs.domain }}\\`"
+            echo 'Set the Cloudflare apex CNAME to the DNS target above (DNS only initially).'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify IndexNow about changed published URLs
+        continue-on-error: true
+        env:
+          INDEXNOW_CONFIRM_SUBMISSION: fitwise.stream
+        run: node scripts/indexnow-submit.mjs submit --diff "$RUNNER_TEMP/fitwise-seo-diff.json" --key-file public/40256e983b29eef42f0a6d265551140c.txt
+
+      - name: Check optional Search Console API configuration
+        id: gsc-config
+        env:
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+        shell: bash
+        run: |
+          if [[ -n "$GSC_SERVICE_ACCOUNT_JSON" && -n "$GSC_SITE_PROPERTY" ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Authenticate to Google Search Console (optional)
+        id: gsc-auth
+        if: ${{ steps.gsc-config.outputs.enabled == 'true' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          token_format: access_token
+          scope: https://www.googleapis.com/auth/webmasters
+
+      - name: Submit updated sitemap to Search Console (optional)
+        if: ${{ steps.gsc-auth.outcome == 'success' }}
+        env:
+          ACCESS_TOKEN: ${{ steps.gsc-auth.outputs.access_token }}
+          GSC_SITE_PROPERTY: ${{ vars.GSC_SITE_PROPERTY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          site="$(node -e 'console.log(encodeURIComponent(process.argv[1]))' "$GSC_SITE_PROPERTY")"
+          sitemap="$(node -e 'console.log(encodeURIComponent(process.argv[1]))' 'https://fitwise.stream/sitemap.xml')"
+          curl --fail-with-body --silent --show-error --request PUT \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://www.googleapis.com/webmasters/v3/sites/$site/sitemaps/$sitemap"
+
+      - name: Record published URL baseline for the next deployment
+        run: node scripts/seo-diff.mjs --record
+
+      - name: Upload SEO manifest baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: fitwise-seo-manifest
+          path: .seo/manifest.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Note manual Search Console setup if not configured
+        if: ${{ steps.gsc-config.outputs.enabled != 'true' }}
+        run: echo 'GSC_SERVICE_ACCOUNT_JSON/GSC_SITE_PROPERTY not configured; sitemap remains published via robots.txt and must be submitted once in Search Console.' >> "$GITHUB_STEP_SUMMARY"
+
+# This workflow is manual, requires an explicit confirmation input, and assumes
+# the production GitHub environment through OIDC. It never uses long-lived AWS
+# keys. ACM validation DNS and Cloudflare apex DNS are owner-operated steps.

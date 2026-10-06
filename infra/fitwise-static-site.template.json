@@ -18,7 +18,12 @@
   "Resources": {
     "StaticSiteBucket": {
       "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
       "Properties": {
+        "BucketName": {
+          "Fn::Sub": "fitwise-static-site-${AWS::AccountId}-${AWS::Region}"
+        },
         "PublicAccessBlockConfiguration": {
           "BlockPublicAcls": true,
           "BlockPublicPolicy": true,
@@ -55,7 +60,7 @@
           ]
         },
         "Tags": [
-          { "Key": "Project", "Value": "Fitwise" },
+          { "Key": "project", "Value": "fitwise" },
           { "Key": "Purpose", "Value": "StaticSiteOrigin" },
           { "Key": "ProvisioningStatus", "Value": "DraftNotDeployed" }
         ]
@@ -63,6 +68,8 @@
     },
     "SiteOriginAccessControl": {
       "Type": "AWS::CloudFront::OriginAccessControl",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
       "Properties": {
         "OriginAccessControlConfig": {
           "Name": { "Fn::Sub": "${AWS::StackName}-site-oac" },
@@ -75,6 +82,8 @@
     },
     "HtmlCachePolicy": {
       "Type": "AWS::CloudFront::CachePolicy",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
       "Properties": {
         "CachePolicyConfig": {
           "Name": { "Fn::Sub": "${AWS::StackName}-html-short-ttl" },
@@ -94,6 +103,8 @@
     },
     "HashedAssetsCachePolicy": {
       "Type": "AWS::CloudFront::CachePolicy",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
       "Properties": {
         "CachePolicyConfig": {
           "Name": { "Fn::Sub": "${AWS::StackName}-hashed-assets-immutable" },
@@ -113,6 +124,8 @@
     },
     "ImagesCachePolicy": {
       "Type": "AWS::CloudFront::CachePolicy",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
       "Properties": {
         "CachePolicyConfig": {
           "Name": { "Fn::Sub": "${AWS::StackName}-images-one-day" },
@@ -132,6 +145,8 @@
     },
     "SiteSecurityHeadersPolicy": {
       "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
       "Properties": {
         "ResponseHeadersPolicyConfig": {
           "Name": { "Fn::Sub": "${AWS::StackName}-security-headers" },
@@ -168,6 +183,8 @@
     },
     "DirectoryIndexFunction": {
       "Type": "AWS::CloudFront::Function",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
       "Properties": {
         "Name": { "Fn::Sub": "${AWS::StackName}-directory-index" },
         "AutoPublish": true,
@@ -175,7 +192,8 @@
           "Comment": "Map static route paths to S3 index.html objects without Lambda.",
           "Runtime": "cloudfront-js-2.0"
         },
-        "FunctionCode": "function handler(event) {\n  var request = event.request;\n  var uri = request.uri;\n  if (uri.charAt(uri.length - 1) === '/') {\n    request.uri = uri + 'index.html';\n  } else if (uri.split('/').pop().indexOf('.') === -1) {\n    request.uri = uri + '/index.html';\n  }\n  return request;\n}"
+        "FunctionCode": "function handler(event) {\n  var request = event.request;\n  var uri = request.uri;\n  if (uri.charAt(uri.length - 1) === '/') {\n    request.uri = uri + 'index.html';\n  } else if (uri.split('/').pop().indexOf('.') === -1) {\n    request.uri = uri + '/index.html';\n  }\n  return request;\n}",
+        "Tags": [{ "Key": "project", "Value": "fitwise" }]
       }
     },
     "SiteDistribution": {
@@ -267,7 +285,7 @@
           }
         },
         "Tags": [
-          { "Key": "Project", "Value": "Fitwise" },
+          { "Key": "project", "Value": "fitwise" },
           { "Key": "ProvisioningStatus", "Value": "DraftNotDeployed" }
         ]
       }

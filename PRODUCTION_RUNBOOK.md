@@ -1,6 +1,6 @@
 # Production Runbook Draft (Not Deployed)
 
-**Status:** Offline preparation only. No AWS resources, DNS records, certificates, or search-engine properties have been created. T021 is blocked pending the human signature on `SEO_RELEASE_AUDIT.md`; keep `cloudDeploymentAllowed` false.
+**Status:** T021 is signed off. The account's shared GitHub OIDC provider was pre-existing and left unchanged. The `fitwise-github-oidc` role stack is bootstrapped in `eu-north-1`, tagged `project=fitwise`; trust is restricted to `nikatsam/Website_fitwise`'s production environment on `main`. GitHub OIDC role/region variables and the `production` environment are configured. No Fitwise S3 bucket, CloudFront distribution, ACM certificate, Cloudflare DNS record, GA4 tag, or webmaster property is live yet.
 
 ## Current Hosting Draft
 
@@ -9,43 +9,29 @@
 - Delivery: CloudFront OAC with SigV4, least-privilege `s3:GetObject` scoped to the distribution ARN, TLS 1.2 or later, security response headers, and a CloudFront Function that maps directory/extensionless paths to `index.html`. S3 REST origins may return 403 for nonexistent private objects; the draft maps origin 403/404 to the real `/404.html` body with HTTP 404 without granting `s3:ListBucket`.
 - Production packaging excludes local-only `/dev/` preview routes. The local QA build still includes them; `npm run deploy:plan` identifies but omits those files. Any cleanup of dev keys in an existing bucket must be inventoried and approved separately.
 - Cache policy draft: HTML browser revalidation with a bounded shared-cache TTL; fingerprinted `/_astro/` assets immutable for one year; images one day; crawl-control and other static files short-lived. Verify emitted object metadata and CloudFront cache behavior before any apply.
-- Certificate: the template requires an already-issued ACM certificate ARN in `us-east-1`, covering `fitwise.stream`. The template does not create or validate certificates and only aliases the apex domain. `www` is not configured.
+- Certificate: the template requires an issued ACM certificate ARN in `us-east-1`, covering `fitwise.stream`. `.github/workflows/request-acm-certificate.yml` requests/reuses and tags the certificate, then prints the DNS validation record; it does not change Cloudflare. The site template aliases the apex only; `www` is not configured.
 - Region/price assumptions: S3 stack region is selected by the owner at deploy time. CloudFront uses `PriceClass_100` in this draft; revisit geographic coverage/cost before approval.
+- Tagging: taggable Fitwise resources and stacks use the exact AWS tag `project=fitwise`. CloudFront subresources whose CloudFormation schemas do not support tags use `fitwise-static-site` name prefixes; the shared account-wide OIDC provider is not retagged.
 
 ## Local Rehearsal (Safe)
 
 1. Run `npm ci` and `npm run verify`.
-2. Run `npm run infra:validate` and `sam validate --template-file infra/fitwise-static-site.template.json --lint`. These are local checks; do not run `aws cloudformation deploy`, `sam deploy`, or any AWS API command as part of this rehearsal.
+2. Run `npm run infra:validate` and local `sam validate --template-file infra/fitwise-static-site.template.json --lint` plus `sam validate --template-file infra/github-oidc-deploy-role.template.json --lint`.
 3. Run `npm run deploy:plan`. It reads `dist/`, reports object hashes/content types/cache-control groups and invalidation paths, and prints illustrative AWS CLI commands containing `--dryrun`. It makes no network calls and does not run the printed commands.
 4. Inspect every planned deletion, cache header and CloudFront invalidation path. Fingerprinted `/_astro/` assets are not invalidated; mutable HTML/images and crawl-control objects are.
 5. After a later explicit deployment authorization, run `aws s3 sync ... --dryrun` with the actual `SiteBucketName` stack output and review the output before a separate owner-authorized real sync. Do not copy the placeholder destination from the local plan into a real command.
 
-The checked-in GitHub Actions workflow `.github/workflows/validate-and-package.yml` runs `npm ci`, `npm run verify`, and uploads the static artifact without local-only `/dev/` previews. It has read-only repository permissions and no AWS credentials, deploy step, sync, or invalidation.
+The production workflow `.github/workflows/deploy-production.yml` deploys only from `main`, requires manual confirmation, and assumes the OIDC role through the production environment. It uses no long-lived AWS keys. After a successful deployment, it notifies IndexNow only for changed canonical URLs and can resubmit the sitemap to Search Console if the owner configures the optional Google service-account/property values.
 
 ## Authorized Deployment Sequence (Future; Not Executed)
 
-1. Obtain and record the signed T021 local SEO release audit. Confirm `cloudDeploymentAllowed` was explicitly enabled after that approval.
-2. Review ADR-011, CloudFormation resource changes, account/region, budget, bucket lifecycle, `PriceClass_100`, and certificate/domain coverage. Confirm required AWS identity and change-management approvals outside the repository.
-3. Obtain/validate the ACM certificate in `us-east-1` for `fitwise.stream`; preserve its ARN in the approved deployment system, not in source control.
-4. Review and deploy the CloudFormation stack through the approved AWS identity. The future command shape is:
-
-   ```sh
-   aws cloudformation deploy \
-     --template-file infra/fitwise-static-site.template.json \
-     --stack-name fitwise-static-site \
-     --region <owner-selected-stack-region> \
-     --parameter-overrides \
-       ApexDomainName=fitwise.stream \
-       AcmCertificateArn=<issued-us-east-1-certificate-arn>
-   ```
-
-   This command was not executed. Record stack ID, region, bucket name, distribution ID, and domain output in the release record without credentials.
-
-5. Check the generated distribution configuration and private bucket policy. Do not enable S3 website hosting or public bucket access.
-6. Run the `npm run deploy:plan` review. Execute the sync only after a separate human approval of the actual S3 destination and `--delete` effects. Keep versioning/lifecycle protection and preserve old fingerprinted objects until their cache-retention window expires.
-7. Invalidate only changed mutable object keys shown in the approved plan. Do not invalidate immutable fingerprinted assets; do not execute invalidation from the offline planning script.
-8. Configure DNS with the CloudFront distribution output after verifying apex alias support at the DNS provider. Configure `www` only after adding an alias and a certificate SAN intentionally.
-9. Run the production smoke matrix below and save output in a signed `SEO_RELEASE_AUDIT.md` record. Update worklog/project status only from observed live results.
+1. Confirm `PROJECT_STATE.json` still has `cloudDeploymentAllowed: true`; review ADR-011, account `754246170171`, stack region `eu-north-1`, bucket lifecycle, `PriceClass_100`, and the apex-only certificate scope.
+2. Commit/push the reviewed deployment workflows to `main`. In GitHub Actions, manually run **Request Fitwise ACM certificate** in the `production` environment. It requests/reuses a `fitwise.stream` ACM certificate in `us-east-1`, tagged `project=fitwise`, and prints the DNS validation CNAME.
+3. In Cloudflare, open the `fitwise.stream` zone → **DNS** → **Records** → **Add record**. Add the exact ACM validation record: Type `CNAME`, Name from ACM (remove the `.fitwise.stream` suffix only if Cloudflare appends the zone automatically), Target the exact ACM `ResourceRecord.Value`, Proxy status **DNS only** (grey cloud), TTL **Auto**. Wait until ACM reports `ISSUED`, then set GitHub repository variable `ACM_CERTIFICATE_ARN` to its ARN. Do not store certificate credentials in source control.
+4. From `main`, manually run **Deploy Fitwise static site**, set `confirm_deploy=true`, and select the `production` environment. GitHub Actions uses the repository-scoped OIDC role to apply CloudFormation, sync cache groups, and invalidate only mutable paths from the plan.
+5. Review the workflow's stack outputs: bucket, CloudFront distribution ID, and distribution DNS target. Check that taggable resources show `project=fitwise`.
+6. In Cloudflare DNS, add CNAME Name `@`, Target the exact CloudFront distribution domain, Proxy status **DNS only** initially, TTL **Auto**. Cloudflare flattens the apex CNAME. Do not add `www` unless its alias and certificate SAN are intentionally added to IaC. If orange-cloud proxying is considered later, configure SSL/TLS **Full (strict)** and test both TLS layers.
+7. Run the production smoke matrix below and record actual live results in a signed `SEO_RELEASE_AUDIT.md` entry.
 
 ## Production Smoke Matrix (Future)
 
@@ -54,7 +40,11 @@ The checked-in GitHub Actions workflow `.github/workflows/validate-and-package.y
 - Check `/category/page/` serves the matching `index.html` through the CloudFront Function, and a nonexistent path returns the 404 body with actual HTTP 404 (not a rewritten homepage/200). Confirm the narrow 403-to-404 mapping does not hide other origin-policy failures in logs/alarms.
 - Verify S3 direct public access is blocked, CloudFront access succeeds through OAC, no blanket `noindex` or `Disallow: /` is present, and cache/security headers match the approved policy.
 - Verify sitemap canonicals, stable `lastmod`, published-only routes, robots reachability, and redirects against the signed local SEO audit.
-- Search Console, Bing Webmaster, and Yandex property/sitemap status are owner operations. Record each as completed or **operationally pending**; never include credentials or verification tokens in git.
+- Google Search Console: add a Domain property `sc-domain:fitwise.stream`, create its TXT verification record in Cloudflare, verify ownership, and submit `https://fitwise.stream/sitemap.xml`. The deploy workflow re-submits via the Search Console API only when `GSC_SERVICE_ACCOUNT_JSON` and `GSC_SITE_PROPERTY` are configured; the service account must be granted owner access to the property.
+- Bing Webmaster: import the verified Search Console property or perform Bing's own DNS verification, then submit the sitemap. IndexNow notifications cover changed sitemap URLs for Bing and Yandex; IndexNow sends URL changes, not sitemap files, and Google does not consume IndexNow.
+- Yandex Webmaster: add `https://fitwise.stream/`, verify ownership with its supplied DNS TXT or HTML meta value, and submit the sitemap. Then confirm a key file and changed-URL notifications in Yandex's IndexNow tooling.
+- GA4: create a web data stream and provide its `G-...` Measurement ID. Analytics is not loaded until the measurement ID and the site's consent/privacy behavior are explicitly approved; do not collect analytics before the applicable consent decision.
+- Record each console/property as completed or **operationally pending**; never commit credentials, service-account JSON, or verification secrets.
 
 ## Rollback Draft (Future)
 
@@ -66,6 +56,8 @@ The checked-in GitHub Actions workflow `.github/workflows/validate-and-package.y
 
 ## Operational Guardrails
 
-- This draft is not an AWS authorization, deployment approval, credential store, or claim that the domain is live.
-- No AWS account, DNS provider, certificate, CloudFront distribution, or search-engine console has been accessed.
-- Public cloud work remains prohibited while the T021 reviewer signature is outstanding and `cloudDeploymentAllowed` is false.
+- This runbook is not a credential store or claim that the domain is live. The T021 release audit has been signed off and `cloudDeploymentAllowed` is true.
+- The one-time `fitwise-github-oidc` IAM role stack has been bootstrapped using the authorized administrator context. The shared account OIDC provider was pre-existing and was not modified. Site bucket/distribution, ACM certificate, Cloudflare DNS, GA4, and webmaster properties are still pending.
+- Use the GitHub production workflows for subsequent ACM/site deployment; do not run a local S3 sync or direct site-stack deployment with the administrator profile.
+- The deploy workflow sends IndexNow URL changes, not sitemap files. IndexNow key material is public by design and the site hosts its matching root key file. Google does not consume IndexNow; Google sitemap API submission is optional and remains disabled until the owner configures GSC service-account JSON/property variables.
+- GA4 remains disabled until a measurement ID and consent/privacy requirements are supplied. Cloudflare DNS records, Search Console verification, Bing/Yandex property ownership, and Google service-account authority are owner-account operations; no credentials or verification tokens are committed.

@@ -7,10 +7,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   createDeploymentPlan,
   validateInfrastructureTemplate,
+  validateOidcDeployRoleTemplate,
 } from '../../scripts/release-prep.mjs';
 
 const root = process.cwd();
 const templatePath = path.join(root, 'infra', 'fitwise-static-site.template.json');
+const oidcTemplatePath = path.join(root, 'infra', 'github-oidc-deploy-role.template.json');
 const temporaryDirectories = [];
 
 async function makeDist() {
@@ -40,6 +42,18 @@ describe('offline cloud release preparation', () => {
   it('accepts the least-privilege private S3 and CloudFront template', async () => {
     const template = JSON.parse(await readFile(templatePath, 'utf8'));
     expect(validateInfrastructureTemplate(template)).toEqual([]);
+  });
+
+  it('restricts OIDC deploy trust to the production GitHub environment and resource scope', async () => {
+    const template = JSON.parse(await readFile(oidcTemplatePath, 'utf8'));
+    expect(validateOidcDeployRoleTemplate(template)).toEqual([]);
+
+    const widened = JSON.parse(JSON.stringify(template));
+    widened.Resources.FitwiseGitHubDeployRole.Properties.AssumeRolePolicyDocument.Statement[0].Condition.StringEquals[
+      'token.actions.githubusercontent.com:sub'
+    ] = '*';
+    const errors = validateOidcDeployRoleTemplate(widened);
+    expect(errors.some((error) => error.includes('production environment'))).toBe(true);
   });
 
   it('rejects public bucket access and a non-HTTPS cache behavior', async () => {

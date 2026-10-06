@@ -1,0 +1,251 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Bootstrap one-time Fitwise GitHub Actions OIDC deployment role. Trust is restricted to nikatsam/Website_fitwise's production environment.",
+  "Resources": {
+    "FitwiseGitHubDeployRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "FitwiseGithubDeployRole",
+        "Path": "/github-actions/",
+        "MaxSessionDuration": 3600,
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "TrustOnlyFitwiseProductionEnvironment",
+              "Effect": "Allow",
+              "Principal": {
+                "Federated": {
+                  "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+                }
+              },
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {
+                "StringEquals": {
+                  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+                  "token.actions.githubusercontent.com:sub": "repo:nikatsam/Website_fitwise:environment:production"
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "fitwise-static-site-deploy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "ManageOnlyFitwiseStaticSiteStack",
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:CreateChangeSet",
+                    "cloudformation:CreateStack",
+                    "cloudformation:DescribeStackEvents",
+                    "cloudformation:DescribeStackResources",
+                    "cloudformation:DescribeStacks",
+                    "cloudformation:GetTemplate",
+                    "cloudformation:GetTemplateSummary",
+                    "cloudformation:ListStackResources",
+                    "cloudformation:UpdateStack"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/fitwise-static-site/*"
+                  }
+                },
+                {
+                  "Sid": "ManageOnlyFitwiseStaticSiteChangeSets",
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:DeleteChangeSet",
+                    "cloudformation:DescribeChangeSet",
+                    "cloudformation:ExecuteChangeSet"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/fitwise-static-site/*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:changeSet/fitwise-static-site/*"
+                    }
+                  ]
+                },
+                {
+                  "Sid": "ValidateCloudFormationTemplates",
+                  "Effect": "Allow",
+                  "Action": "cloudformation:ValidateTemplate",
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "ManageOnlyDeterministicFitwiseBucket",
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:CreateBucket",
+                    "s3:GetBucketLocation",
+                    "s3:GetBucketPolicy",
+                    "s3:GetBucketPolicyStatus",
+                    "s3:GetBucketPublicAccessBlock",
+                    "s3:GetBucketTagging",
+                    "s3:GetBucketVersioning",
+                    "s3:ListBucket",
+                    "s3:DeleteBucketPolicy",
+                    "s3:PutBucketOwnershipControls",
+                    "s3:PutBucketPolicy",
+                    "s3:PutBucketPublicAccessBlock",
+                    "s3:PutBucketTagging",
+                    "s3:PutBucketVersioning",
+                    "s3:PutEncryptionConfiguration",
+                    "s3:PutLifecycleConfiguration"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::fitwise-static-site-${AWS::AccountId}-${AWS::Region}"
+                  }
+                },
+                {
+                  "Sid": "SyncObjectsOnlyToFitwiseBucket",
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:AbortMultipartUpload",
+                    "s3:DeleteObject",
+                    "s3:GetObject",
+                    "s3:PutObject"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::fitwise-static-site-${AWS::AccountId}-${AWS::Region}/*"
+                  }
+                },
+                {
+                  "Sid": "CreateOnlyTaggedFitwiseDistribution",
+                  "Effect": "Allow",
+                  "Action": "cloudfront:CreateDistribution",
+                  "Resource": "*",
+                  "Condition": {
+                    "StringEquals": { "aws:RequestTag/project": "fitwise" }
+                  }
+                },
+                {
+                  "Sid": "ManageAndInvalidateTaggedFitwiseDistributions",
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudfront:CreateInvalidation",
+                    "cloudfront:DeleteDistribution",
+                    "cloudfront:GetDistribution",
+                    "cloudfront:GetDistributionConfig",
+                    "cloudfront:GetInvalidation",
+                    "cloudfront:TagResource",
+                    "cloudfront:UntagResource",
+                    "cloudfront:UpdateDistribution"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/*"
+                  },
+                  "Condition": {
+                    "StringEquals": { "aws:ResourceTag/project": "fitwise" }
+                  }
+                },
+                {
+                  "Sid": "ManageFitwiseOriginAccessControls",
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudfront:CreateOriginAccessControl",
+                    "cloudfront:GetOriginAccessControl",
+                    "cloudfront:UpdateOriginAccessControl"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:origin-access-control/*"
+                  }
+                },
+                {
+                  "Sid": "ManageCloudFrontCacheAndResponsePolicies",
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudfront:CreateCachePolicy",
+                    "cloudfront:GetCachePolicy",
+                    "cloudfront:UpdateCachePolicy",
+                    "cloudfront:CreateResponseHeadersPolicy",
+                    "cloudfront:GetResponseHeadersPolicy",
+                    "cloudfront:UpdateResponseHeadersPolicy"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "ManageFitwiseDirectoryFunctions",
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudfront:CreateFunction",
+                    "cloudfront:DescribeFunction",
+                    "cloudfront:GetFunction",
+                    "cloudfront:PublishFunction",
+                    "cloudfront:UpdateFunction"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:function/fitwise-static-site-*"
+                  }
+                },
+                {
+                  "Sid": "ListCloudFrontDeploymentResources",
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudfront:ListCachePolicies",
+                    "cloudfront:ListDistributions",
+                    "cloudfront:ListFunctions",
+                    "cloudfront:ListOriginAccessControls",
+                    "cloudfront:ListResponseHeadersPolicies"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "RequestOnlyTaggedFitwiseApexCertificate",
+                  "Effect": "Allow",
+                  "Action": "acm:RequestCertificate",
+                  "Resource": "*",
+                  "Condition": {
+                    "StringEquals": {
+                      "aws:RequestTag/project": "fitwise",
+                      "acm:DomainNames": "fitwise.stream"
+                    }
+                  }
+                },
+                {
+                  "Sid": "ReadAndTagFitwiseCertificates",
+                  "Effect": "Allow",
+                  "Action": [
+                    "acm:AddTagsToCertificate",
+                    "acm:DescribeCertificate",
+                    "acm:ListTagsForCertificate"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:acm:us-east-1:${AWS::AccountId}:certificate/*"
+                  }
+                },
+                {
+                  "Sid": "FindCertificatesByDomain",
+                  "Effect": "Allow",
+                  "Action": "acm:ListCertificates",
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "VerifyDeploymentIdentity",
+                  "Effect": "Allow",
+                  "Action": "sts:GetCallerIdentity",
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [{ "Key": "project", "Value": "fitwise" }]
+      }
+    }
+  },
+  "Outputs": {
+    "GitHubDeployRoleArn": {
+      "Description": "Set as GitHub repository variable AWS_ROLE_ARN. Its trust is restricted to the production environment.",
+      "Value": { "Fn::GetAtt": ["FitwiseGitHubDeployRole", "Arn"] }
+    },
+    "RoleTrustSubject": {
+      "Description": "Exact GitHub Actions OIDC subject allowed to assume this role.",
+      "Value": "repo:nikatsam/Website_fitwise:environment:production"
+    }
+  }
+}

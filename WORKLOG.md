@@ -22,8 +22,8 @@
 - Specification/development-pack progress: **100%**
 - Implementation progress: **92%**
 - Deployment progress: **0%**
-- Current active task: **T021 — Pass local production build acceptance gate (BLOCKED: pending signed SEO release audit)**
-- Next task: **T021 — Pass local production build acceptance gate**
+- Current active task: **T022 — Provision private S3/CloudFront/OAC/TLS infrastructure**
+- Next task: **T022 — Provision private S3/CloudFront/OAC/TLS infrastructure**
 
 ## Task tracker
 
@@ -49,8 +49,8 @@
 | T018 | 🟩 DONE        |     2% | 2026-10-06 | Build sitemap/robots, offline SEO/link validators, redirect registry and deterministic local URL diff; 123 tests |
 | T019 | 🟩 DONE        |     4% | 2026-10-06 | Clean `npm ci`, 130 tests, 20-page build, SEO/link and route smoke checks pass; numeric boundaries hardened      |
 | T020 | 🟩 DONE        |     3% | 2026-10-06 | Lighthouse: a11y/performance 100; keyboard, mobile/desktop visual QA passed; fixed SVG and accessibility issues  |
-| T021 | 🟨 BLOCKED     |     2% | —          | All explicit Gate E checks pass; signed `SEO_RELEASE_AUDIT.md` review is pending before AWS permission           |
-| T022 | ⬜ NOT STARTED |     3% | —          | AWS gate: do not start early                                                                                     |
+| T021 | 🟩 DONE        |     2% | 2026-10-06 | Gate E passed; owner sign-off recorded; local release candidate approved                                         |
+| T022 | 🟦 IN PROGRESS |     3% | —          | Provision private S3/CloudFront/OAC/TLS resources through approved OIDC deployment path                          |
 | T023 | ⬜ NOT STARTED |     2% | —          | AWS gate                                                                                                         |
 | T024 | ⬜ NOT STARTED |     1% | —          | AWS gate                                                                                                         |
 
@@ -313,6 +313,19 @@ Paused mid-task at the user's request to document progress. Current state is saf
 - Added unit tests for family calculations, market labels, evidence/deferral cases, and CloudFront directory rewrite/root/assets/query/403-404 behavior. `npm run verify` passes with 149 tests, 38 built pages, 0 data errors/warnings, 4 sitemap URLs, and route/link/content/infra validators passing.
 - `SEO_RELEASE_AUDIT.md` was refreshed with this route set and remains unsigned. Obtain the required human signature before AWS permission; `cloudDeploymentAllowed` remains false. No AWS actions performed.
 - Final `npm run verify` passes: 149/149 tests, type/lint/format, 38-page build, zero dataset errors/warnings, SEO/link/content/infra checks, and route smoke showing 29 generated/6 deferred/6 draft PageIntents. Sitemap remains four indexable URLs.
+
+### 2026-10-06 — T021 owner sign-off and Gate E release
+
+- Project-owner review/signature was confirmed via authenticated user interaction at 17:32 UTC and recorded in `SEO_RELEASE_AUDIT.md`; no personal display name was supplied or invented.
+- All local Gate E evidence is recorded, including current generated/deferred/draft route coverage and the refreshed page-family smoke/a11y data. Production-only checks remain post-deployment.
+- T021 is DONE. `cloudDeploymentAllowed` is true for the user's AWS request; this authorizes, but does not claim, infrastructure is deployed. T022 is now active.
+
+### 2026-10-06 — T022 GitHub OIDC bootstrap (IN PROGRESS)
+
+- Confirmed AWS account `754246170171`, default stack region `eu-north-1`, GitHub repository `nikatsam/Website_fitwise`, and existing account-wide GitHub OIDC provider. No existing Fitwise ACM certificate or production Cloudflare/GSC/GA4 credentials were present.
+- Bootstrapped the tagged (`project=fitwise`) `fitwise-github-oidc` CloudFormation role stack. Trust is restricted to the GitHub `production` environment on `main`; repository variables `AWS_ROLE_ARN` and `AWS_REGION` are set and the environment branch policy permits `main` only.
+- No Fitwise S3 bucket, CloudFront distribution, certificate, Cloudflare DNS record, GA4 tag, or webmaster property has been created. OIDC deploy workflows and ACM request workflow are prepared but must be committed/pushed before running them.
+- Next: publish the reviewed OIDC workflows, run the certificate workflow, and provide its DNS-only CNAME to the owner for Cloudflare validation. Do not deploy CloudFront until the certificate is `ISSUED`.
 - Lighthouse mobile on representative workspace/bedroom family answers and desktop workspace scores 100 Accessibility/Performance/Best Practices; SEO 66 reflects intentional noindex. Mobile fact rows visually checked after switching to stacked definition lists. Preview smoke confirms generated answers 200 and deferred P008 route 404.
 
 ### 2026-10-06 — T020 accessibility, performance and manual QA (DONE)

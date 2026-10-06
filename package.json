@@ -24,6 +24,7 @@
     "validate:content": "vitest run tests/unit/production-content.test.ts",
     "infra:validate": "node scripts/release-prep.mjs validate-infra",
     "deploy:plan": "node scripts/release-prep.mjs deployment-plan",
+    "indexnow:plan": "node scripts/indexnow-submit.mjs plan",
     "seo:diff": "node scripts/seo-diff.mjs",
     "qa:keyboard": "node scripts/keyboard-qa.mjs",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build && npm run validate:seo && npm run validate:links && npm run validate:routes && npm run validate:content && npm run infra:validate"

@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const console = new Console(process.stdout, process.stderr);
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const templatePath = path.join(projectRoot, 'infra', 'fitwise-static-site.template.json');
+const oidcTemplatePath = path.join(projectRoot, 'infra', 'github-oidc-deploy-role.template.json');
 
 export function validateInfrastructureTemplate(template) {
   const errors = [];
@@ -203,6 +204,93 @@ export function validateInfrastructureTemplate(template) {
   return errors;
 }
 
+export function validateOidcDeployRoleTemplate(template) {
+  const errors = [];
+  const role = template.Resources?.FitwiseGitHubDeployRole;
+  if (role?.Type !== 'AWS::IAM::Role') {
+    errors.push('FitwiseGitHubDeployRole must be an IAM role.');
+    return errors;
+  }
+  const properties = role.Properties ?? {};
+  const trust = properties.AssumeRolePolicyDocument?.Statement?.[0];
+  const trustConditions = trust?.Condition?.StringEquals ?? {};
+  if (
+    trust?.Action !== 'sts:AssumeRoleWithWebIdentity' ||
+    !trust?.Principal?.Federated?.['Fn::Sub']?.includes('token.actions.githubusercontent.com') ||
+    trustConditions['token.actions.githubusercontent.com:aud'] !== 'sts.amazonaws.com' ||
+    trustConditions['token.actions.githubusercontent.com:sub'] !==
+      'repo:nikatsam/Website_fitwise:environment:production'
+  ) {
+    errors.push('OIDC trust must be restricted to the Fitwise repository production environment.');
+  }
+  if (properties.MaxSessionDuration > 3600 || properties.MaxSessionDuration < 900) {
+    errors.push('OIDC sessions must be limited to 15-60 minutes.');
+  }
+  if (!properties.Tags?.some((tag) => tag.Key === 'project' && tag.Value === 'fitwise')) {
+    errors.push('OIDC deploy role must be tagged project=fitwise.');
+  }
+
+  const statements =
+    properties.Policies?.flatMap((policy) => policy.PolicyDocument?.Statement ?? []) ?? [];
+  if (
+    statements.some(
+      (statement) =>
+        statement.Action === '*' ||
+        statement.Action === 'iam:*' ||
+        statement.Action === 's3:*' ||
+        statement.Action === 'cloudfront:*',
+    )
+  ) {
+    errors.push('OIDC role must not contain administrator/service-wide action wildcards.');
+  }
+  const stackArn = statements.find(
+    (statement) => statement.Sid === 'ManageOnlyFitwiseStaticSiteStack',
+  )?.Resource?.['Fn::Sub'];
+  if (typeof stackArn !== 'string' || !stackArn.includes('stack/fitwise-static-site/')) {
+    errors.push('CloudFormation permissions must be scoped to the fitwise-static-site stack.');
+  }
+  const bucketArn = statements.find(
+    (statement) => statement.Sid === 'SyncObjectsOnlyToFitwiseBucket',
+  )?.Resource?.['Fn::Sub'];
+  if (
+    typeof bucketArn !== 'string' ||
+    !bucketArn.includes('s3:::fitwise-static-site-${AWS::AccountId}-${AWS::Region}/*')
+  ) {
+    errors.push('S3 sync permissions must be scoped to Fitwise bucket objects.');
+  }
+  if (
+    !statements.some(
+      (statement) =>
+        statement.Sid === 'CreateOnlyTaggedFitwiseDistribution' &&
+        statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise',
+    )
+  ) {
+    errors.push('CloudFront distribution creation must require project=fitwise.');
+  }
+  if (
+    !statements.some(
+      (statement) =>
+        statement.Sid === 'RequestOnlyTaggedFitwiseApexCertificate' &&
+        statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise' &&
+        statement.Condition?.StringEquals?.['acm:DomainNames'] === 'fitwise.stream',
+    )
+  ) {
+    errors.push('ACM request permission must be limited to the tagged fitwise.stream certificate.');
+  }
+  if (
+    statements.some(
+      (statement) =>
+        typeof statement.Action === 'string' &&
+        ['iam:CreateUser', 'iam:CreateAccessKey', 'iam:CreateLoginProfile'].includes(
+          statement.Action,
+        ),
+    )
+  ) {
+    errors.push('OIDC role must not create long-lived IAM users or credentials.');
+  }
+  return errors;
+}
+
 const contentTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
   ['.html', 'text/html; charset=utf-8'],
@@ -334,15 +422,19 @@ async function main() {
   const mode = process.argv[2];
   if (mode === 'validate-infra') {
     let template;
+    let oidcTemplate;
     try {
       template = JSON.parse(await readFile(templatePath, 'utf8'));
+      oidcTemplate = JSON.parse(await readFile(oidcTemplatePath, 'utf8'));
     } catch (error) {
-      throw new Error(
-        `Cannot parse ${path.relative(projectRoot, templatePath)}: ${error.message}`,
-        { cause: error },
-      );
+      throw new Error(`Cannot parse offline infrastructure JSON: ${error.message}`, {
+        cause: error,
+      });
     }
-    const errors = validateInfrastructureTemplate(template);
+    const errors = [
+      ...validateInfrastructureTemplate(template),
+      ...validateOidcDeployRoleTemplate(oidcTemplate),
+    ];
     if (errors.length) {
       console.error(`Offline infrastructure validation failed (${errors.length} issue(s)):`);
       errors.forEach((error) => console.error(`- ${error}`));
@@ -350,7 +442,7 @@ async function main() {
       return;
     }
     console.log(
-      'Offline infrastructure checks passed: private S3, distribution-scoped OAC policy, TLS/header/cache policy, static 404, and no Lambda. No AWS APIs called.',
+      'Offline checks passed: private S3/OAC/TLS, security/cache/404 policies, and repository/environment-scoped GitHub OIDC role. No AWS APIs called.',
     );
     return;
   }
