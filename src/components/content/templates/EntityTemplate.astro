@@ -1,0 +1,63 @@
+---
+import PageFamilyLayout from '../PageFamilyLayout.astro';
+import UnitValue from '../../fit/UnitValue.astro';
+import type { BreadcrumbItem } from '../../../lib/content';
+
+interface MeasurementRow {
+  label: string;
+  valueMm: number;
+  note?: string;
+}
+
+interface Props {
+  breadcrumb: BreadcrumbItem[];
+  h1: string;
+  intro: string;
+  measurements: MeasurementRow[];
+}
+
+const { breadcrumb, h1, intro, measurements } = Astro.props;
+---
+
+<PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
+  <p>{intro}</p>
+  <table class="entity-measurements">
+    <caption class="visually-hidden">{`${h1} measurements`}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Measurement</th>
+        <th scope="col">Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      {measurements.map((row) => (
+        <tr>
+          <th scope="row">{row.label}</th>
+          <td>
+            <UnitValue mm={row.valueMm} />
+            {row.note && <span class="entity-measurements__note"> — {row.note}</span>}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</PageFamilyLayout>
+
+<style>
+  .entity-measurements {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-sm);
+  }
+
+  .entity-measurements th,
+  .entity-measurements td {
+    text-align: left;
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .entity-measurements__note {
+    color: var(--color-text-secondary);
+  }
+</style>

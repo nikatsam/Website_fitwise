@@ -1,0 +1,73 @@
+---
+// Internal-only QA page for the T010 result/assumptions components. Not
+// linked from navigation, marked noindex, and safe to keep for future
+// component QA (specs/TECHNICAL_SEO_PLAYBOOK.md §2: drafts/non-published
+// pages must never be indexable or appear in the sitemap).
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FitSummary from '../../components/fit/FitSummary.astro';
+import DimensionTable from '../../components/fit/DimensionTable.astro';
+import AssumptionList from '../../components/fit/AssumptionList.astro';
+import UnitToggle from '../../components/fit/UnitToggle.astro';
+import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import { buildWorkspaceWidthCheck } from '../../lib/geometry';
+
+const assumptions = ['Monitor stands included in overall width', 'Gap between monitors: 20 mm'];
+
+const scenarios = [
+  {
+    title: 'Fits',
+    deskWidthMm: 1400,
+  },
+  {
+    title: 'Tight',
+    deskWidthMm: 1300,
+  },
+  {
+    title: 'Does not fit',
+    deskWidthMm: 1200,
+  },
+].map((scenario) => {
+  const check = buildWorkspaceWidthCheck({
+    configurationWidthMm: 1246,
+    sideMarginRecommendedMm: 38,
+    deskWidthMm: scenario.deskWidthMm,
+  });
+  const result = evaluateFit([check], assumptions);
+  const rows = toDimensionDisplayRows([check], result);
+  return { ...scenario, result, rows };
+});
+---
+
+<BaseLayout
+  title="Fit components preview — Fitwise.stream"
+  description="Internal QA preview of the result summary and assumptions components."
+  noindex
+>
+  <section class="wrapper preview">
+    <h1>Fit components preview</h1>
+    <p>Internal QA page for T010. Not linked from navigation.</p>
+
+    <UnitToggle />
+
+    {scenarios.map((scenario) => (
+      <article class="preview__scenario">
+        <h2>{scenario.title}</h2>
+        <FitSummary state={scenario.result.state} primary={scenario.rows[0]!} />
+        <DimensionTable rows={scenario.rows} caption={`${scenario.title} dimension breakdown`} />
+        <AssumptionList assumptions={scenario.result.assumptions} headingLevel={3} />
+      </article>
+    ))}
+  </section>
+</BaseLayout>
+
+<style>
+  .preview {
+    padding-block: var(--space-6);
+  }
+
+  .preview__scenario {
+    margin-block: var(--space-6);
+    display: grid;
+    gap: var(--space-4);
+  }
+</style>

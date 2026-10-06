@@ -1,0 +1,133 @@
+---
+// Generic route for PageIntent-driven hub, entity, and evidence-backed
+// calculation pages. Only intents explicitly marked generated/family in the
+// route-disposition manifest become dynamic paths; draft and deferred intents
+// remain absent from the build. New calculation-family SEO envelopes default
+// to noindex pending a separate editorial release review.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import EntityTemplate from '../components/content/templates/EntityTemplate.astro';
+import FamilyFactsTemplate from '../components/content/templates/FamilyFactsTemplate.astro';
+import HubTemplate from '../components/content/templates/HubTemplate.astro';
+import { dataset } from '../data';
+import { getPublishedRoutes, titleCaseFromSlug } from '../lib/content';
+import { buildFamilyAnswer } from '../lib/content/build-family-answer';
+import { buildPublicationBreadcrumbs, publicationStructuredData } from '../lib/seo/metadata';
+import type { PageIntent } from '../types';
+
+export async function getStaticPaths() {
+  const generatedFamilyIds = new Set(
+    dataset.routeDispositions
+      .filter(
+        (disposition) =>
+          disposition.disposition === 'generated' && disposition.renderer === 'family',
+      )
+      .map((disposition) => disposition.pageIntentId),
+  );
+  return getPublishedRoutes(dataset)
+    .filter((route) => generatedFamilyIds.has(route.pageIntent.id))
+    .map((route) => ({
+      params: { slug: route.slug },
+      props: { pageIntent: route.pageIntent },
+    }));
+}
+
+interface Props {
+  pageIntent: PageIntent;
+}
+
+const { pageIntent } = Astro.props;
+const publication = dataset.seoPublications.find((record) => record.pageIntentId === pageIntent.id);
+if (!publication) throw new Error(`Missing SEO publication record for '${pageIntent.id}'.`);
+const breadcrumb = buildPublicationBreadcrumbs(
+  pageIntent,
+  publication,
+  dataset.pageIntents,
+  dataset.seoPublications,
+);
+const h1 = publication.h1;
+const structuredData = publication.indexable
+  ? publicationStructuredData(publication, breadcrumb)
+  : [];
+
+const hubLinks = dataset.pageIntents
+  .filter(
+    (intent) =>
+      intent.status === 'published' &&
+      dataset.routeDispositions.some(
+        (record) => record.pageIntentId === intent.id && record.disposition === 'generated',
+      ) &&
+      intent.cluster === pageIntent.cluster &&
+      intent.route !== pageIntent.route,
+  )
+  .map((intent) => ({
+    href: intent.route,
+    label: titleCaseFromSlug(intent.route.split('/').filter(Boolean).at(-1) ?? intent.route),
+    description: intent.primaryQuery,
+  }));
+
+const familyAnswer =
+  pageIntent.family === 'hub' || pageIntent.family === 'entity'
+    ? undefined
+    : buildFamilyAnswer(pageIntent, dataset);
+
+const measurements = dataset.entities
+  .filter((entity) => pageIntent.entityIds.includes(entity.id))
+  .flatMap((entity) => {
+    const rows: { label: string; valueMm: number; note?: string }[] = [];
+    const add = (label: string, measurement: { valueMm: number; note?: string } | undefined) => {
+      if (measurement) rows.push({ label: `${entity.name}: ${label}`, ...measurement });
+    };
+
+    if (entity.category === 'display') {
+      add('screen width', entity.screenWidthMm);
+      add('screen height', entity.screenHeightMm);
+      add('active panel width (excludes bezel)', entity.activeWidthMm);
+      add('overall width', entity.overallWidthMm);
+      add('overall height', entity.overallHeightMm);
+      add('stand width', entity.standWidthMm);
+      add('stand depth', entity.standDepthMm);
+    } else if (entity.category === 'desk') {
+      add('width', entity.widthMm);
+      add('depth', entity.depthMm);
+      add('height', entity.heightMm);
+    } else if (entity.category === 'bed') {
+      add('mattress width', entity.mattressWidthMm);
+      add('mattress length', entity.mattressLengthMm);
+    } else if (entity.category === 'room') {
+      add('width', entity.widthMm);
+      add('length', entity.lengthMm);
+      add('ceiling height', entity.ceilingHeightMm);
+    }
+    return rows;
+  });
+---
+
+<BaseLayout
+  title={publication.title}
+  description={publication.description}
+  noindex={!publication.indexable}
+  canonicalPath={publication.indexable ? publication.canonicalPath : undefined}
+  language={publication.language}
+  structuredData={structuredData}
+>
+  {pageIntent.family === 'hub' && (
+    <HubTemplate breadcrumb={breadcrumb} h1={h1} intro={publication.description} links={hubLinks} />
+  )}
+  {pageIntent.family === 'entity' && (
+    <EntityTemplate
+      breadcrumb={breadcrumb}
+      h1={h1}
+      intro={publication.description}
+      measurements={measurements}
+    />
+  )}
+  {familyAnswer && (
+    <FamilyFactsTemplate
+      breadcrumb={breadcrumb}
+      h1={h1}
+      intro={publication.description}
+      sections={familyAnswer.sections}
+      sources={familyAnswer.sources}
+    />
+  )}
+</BaseLayout>

@@ -1,0 +1,101 @@
+/*
+  Design tokens. Light is the default token set; dark overrides apply when
+  `[data-theme="dark"]` is set on <html> (see src/scripts/theme.ts). The
+  initial value of data-theme is decided by an inline head script before
+  first paint, so there is no flash of the wrong theme.
+*/
+
+:root {
+  /* Brand accent gradient: vibrant but used sparingly (hero, CTAs, state glow) */
+  --color-accent-1: #7c3aed;
+  --color-accent-2: #06b6d4;
+  --gradient-brand: linear-gradient(135deg, var(--color-accent-1), var(--color-accent-2));
+
+  /* Surfaces & text — light theme */
+  --color-bg: #f7f7fb;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-border: #e2e2ec;
+  --color-text-primary: #15141f;
+  --color-text-secondary: #4a4a5c;
+  --color-focus-ring: #7c3aed;
+
+  /* Fit-state colors — never the only signal; always paired with icon/text */
+  --color-state-fit-bg: #e8f8ee;
+  --color-state-fit-fg: #116133;
+  --color-state-tight-bg: #fff4e0;
+  --color-state-tight-fg: #8a5300;
+  --color-state-no-fit-bg: #fde8ea;
+  --color-state-no-fit-fg: #9c1530;
+
+  --shadow-sm: 0 1px 2px rgba(20, 20, 40, 0.06);
+  --shadow-md: 0 8px 24px rgba(20, 20, 40, 0.08);
+  --shadow-glow: 0 0 0 1px rgba(124, 58, 237, 0.15), 0 8px 30px rgba(124, 58, 237, 0.18);
+
+  /* Typography */
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-body);
+  --font-mono: ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, monospace;
+
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.5rem;
+  --fs-xl: 2rem;
+  --fs-2xl: 2.75rem;
+  --fs-3xl: 3.5rem;
+  --lh-tight: 1.15;
+  --lh-base: 1.55;
+
+  /* Spacing scale (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --content-max-width: 72rem;
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-base: 260ms;
+  --duration-slow: 420ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #0f0e17;
+  --color-surface: #181726;
+  --color-surface-raised: #211f33;
+  --color-border: #322f4a;
+  --color-text-primary: #f3f2fb;
+  --color-text-secondary: #b7b4cc;
+  --color-focus-ring: #a78bfa;
+
+  --color-state-fit-bg: #103523;
+  --color-state-fit-fg: #6fe3a3;
+  --color-state-tight-bg: #3a2a0c;
+  --color-state-tight-fg: #f4c15b;
+  --color-state-no-fit-bg: #3a1520;
+  --color-state-no-fit-fg: #f68ba0;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 0 0 1px rgba(167, 139, 250, 0.3), 0 8px 30px rgba(167, 139, 250, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+}

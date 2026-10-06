@@ -1,0 +1,42 @@
+name: Validate and package static site
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-static-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify and build static output
+        run: npm run verify
+
+      - name: Upload local release candidate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fitwise-static-site
+          path: |
+            dist/
+            !dist/dev/**
+          if-no-files-found: error
+          retention-days: 14
+
+# This workflow packages dist/ only. It has no AWS credentials, S3 sync,
+# CloudFront invalidation, or deployment action; those require separately
+# approved T023 implementation after the T021 release signature.

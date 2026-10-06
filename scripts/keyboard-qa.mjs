@@ -1,0 +1,303 @@
+import { spawn } from 'node:child_process';
+import { access, mkdtemp, rm } from 'node:fs/promises';
+import { Console } from 'node:console';
+import { createServer } from 'node:net';
+import { setTimeout as delay } from 'node:timers/promises';
+import os from 'node:os';
+import path from 'node:path';
+import process from 'node:process';
+import { URL } from 'node:url';
+
+const console = new Console(process.stdout, process.stderr);
+const baseUrl = process.argv[2] ?? 'http://127.0.0.1:4322';
+const chromePath =
+  process.env.CHROME_PATH ?? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const profile = await mkdtemp(path.join(os.tmpdir(), 'fitwise-keyboard-qa-'));
+let chrome;
+let websocket;
+const pending = new Map();
+let nextId = 0;
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+async function reservePort() {
+  const server = createServer();
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const port = server.address().port;
+  await new Promise((resolve) => server.close(resolve));
+  return port;
+}
+
+async function waitForDebugger(port) {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    if (chrome.exitCode !== null) throw new Error(`Chrome exited with code ${chrome.exitCode}.`);
+    try {
+      const response = await globalThis.fetch(`http://127.0.0.1:${port}/json/list`);
+      if (response.ok) {
+        const targets = await response.json();
+        const page = targets.find(
+          (target) => target.type === 'page' && target.webSocketDebuggerUrl,
+        );
+        if (page) return page.webSocketDebuggerUrl;
+      }
+    } catch {
+      // Chrome has not opened its debugging endpoint yet.
+    }
+    await delay(100);
+  }
+  throw new Error('Chrome DevTools endpoint did not start within 30 seconds.');
+}
+
+async function connect(url) {
+  websocket = new globalThis.WebSocket(url);
+  await new Promise((resolve, reject) => {
+    websocket.addEventListener('open', resolve, { once: true });
+    websocket.addEventListener('error', reject, { once: true });
+  });
+  websocket.addEventListener('message', ({ data }) => {
+    const message = JSON.parse(data);
+    if (!message.id) return;
+    const result = pending.get(message.id);
+    if (!result) return;
+    pending.delete(message.id);
+    if (message.error) result.reject(new Error(message.error.message));
+    else result.resolve(message.result);
+  });
+}
+
+function cdp(method, params = {}) {
+  const id = ++nextId;
+  return new Promise((resolve, reject) => {
+    pending.set(id, { resolve, reject });
+    websocket.send(JSON.stringify({ id, method, params }));
+  });
+}
+
+async function evaluate(expression) {
+  const response = await cdp('Runtime.evaluate', { expression, returnByValue: true });
+  if (response.exceptionDetails) {
+    throw new Error(response.exceptionDetails.exception?.description ?? 'Page evaluation failed.');
+  }
+  return response.result.value;
+}
+
+async function press(key, code, virtualKeyCode) {
+  await cdp('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key,
+    code,
+    windowsVirtualKeyCode: virtualKeyCode,
+    nativeVirtualKeyCode: virtualKeyCode,
+  });
+  await cdp('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key,
+    code,
+    windowsVirtualKeyCode: virtualKeyCode,
+    nativeVirtualKeyCode: virtualKeyCode,
+  });
+}
+
+async function selectAll() {
+  await cdp('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: 'Control',
+    code: 'ControlLeft',
+    windowsVirtualKeyCode: 17,
+    nativeVirtualKeyCode: 17,
+  });
+  await cdp('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: 'a',
+    code: 'KeyA',
+    modifiers: 2,
+    windowsVirtualKeyCode: 65,
+    nativeVirtualKeyCode: 65,
+    text: 'a',
+    unmodifiedText: 'a',
+  });
+  await cdp('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: 'a',
+    code: 'KeyA',
+    modifiers: 2,
+    windowsVirtualKeyCode: 65,
+    nativeVirtualKeyCode: 65,
+  });
+  await cdp('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: 'Control',
+    code: 'ControlLeft',
+    windowsVirtualKeyCode: 17,
+    nativeVirtualKeyCode: 17,
+  });
+}
+
+async function typeDigits(value) {
+  for (const digit of value) {
+    const keyCode = digit.charCodeAt(0);
+    await cdp('Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      key: digit,
+      code: `Digit${digit}`,
+      windowsVirtualKeyCode: keyCode,
+      nativeVirtualKeyCode: keyCode,
+      text: digit,
+      unmodifiedText: digit,
+    });
+    await cdp('Input.dispatchKeyEvent', {
+      type: 'keyUp',
+      key: digit,
+      code: `Digit${digit}`,
+      windowsVirtualKeyCode: keyCode,
+      nativeVirtualKeyCode: keyCode,
+    });
+  }
+}
+
+async function tabUntil(selector, maxTabs = 24) {
+  for (let i = 0; i < maxTabs; i += 1) {
+    if (await evaluate(`document.activeElement.matches(${JSON.stringify(selector)})`)) return;
+    await press('Tab', 'Tab', 9);
+  }
+  throw new Error(`Keyboard tab order did not reach '${selector}' within ${maxTabs} tabs.`);
+}
+
+async function smokePage(pathname, scope) {
+  const url = new URL(pathname, baseUrl).href;
+  await cdp('Page.navigate', { url });
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline) {
+    if ((await evaluate('document.readyState')) === 'complete') break;
+    await delay(50);
+  }
+  assert(
+    (await evaluate('document.readyState')) === 'complete',
+    `${pathname} did not finish loading.`,
+  );
+
+  await press('Tab', 'Tab', 9);
+  assert(
+    await evaluate('document.activeElement.matches(".skip-link")'),
+    `${pathname}: the first Tab should focus the skip link.`,
+  );
+  await press('Enter', 'Enter', 13);
+  assert(
+    (await evaluate('location.hash')) === '#main-content',
+    `${pathname}: Enter did not activate the skip link.`,
+  );
+
+  await tabUntil('[data-theme-toggle]');
+  const themeBefore = await evaluate(
+    'document.querySelector("[data-theme-toggle]").getAttribute("aria-pressed")',
+  );
+  await press(' ', 'Space', 32);
+  const themeAfter = await evaluate(
+    'document.querySelector("[data-theme-toggle]").getAttribute("aria-pressed")',
+  );
+  assert(themeBefore !== themeAfter, `${pathname}: Space did not toggle the theme button.`);
+
+  const selector = `.${scope}__advanced > summary`;
+  await tabUntil(selector);
+  await press(' ', 'Space', 32);
+  assert(
+    await evaluate(`document.querySelector(${JSON.stringify(selector)}).parentElement.open`),
+    `${pathname}: Space did not expand the assumptions disclosure.`,
+  );
+  await press(' ', 'Space', 32);
+  assert(
+    !(await evaluate(`document.querySelector(${JSON.stringify(selector)}).parentElement.open`)),
+    `${pathname}: Space did not collapse the assumptions disclosure.`,
+  );
+
+  await tabUntil('[data-unit-toggle]');
+  const unitsBefore = await evaluate(
+    'document.querySelector("[data-unit-toggle]").getAttribute("aria-pressed")',
+  );
+  await press(' ', 'Space', 32);
+  const unitsAfter = await evaluate(
+    'document.querySelector("[data-unit-toggle]").getAttribute("aria-pressed")',
+  );
+  const unitFocus = await evaluate(
+    '({ tag: document.activeElement.tagName, id: document.activeElement.id, pressed: document.activeElement.getAttribute("aria-pressed") })',
+  );
+  assert(
+    unitsBefore !== unitsAfter,
+    `${pathname}: Space did not toggle units (${unitsBefore} -> ${unitsAfter}; active=${JSON.stringify(unitFocus)}).`,
+  );
+  const dimensionField = pathname === '/workspace/' ? '#desk-width' : '#room-width';
+  await tabUntil(dimensionField);
+  await selectAll();
+  await typeDigits('0');
+  await press('Tab', 'Tab', 9);
+  const errorState = await evaluate(
+    `({ invalid: document.querySelector(${JSON.stringify(dimensionField)}).getAttribute("aria-invalid"), messageId: document.querySelector(${JSON.stringify(dimensionField)}).getAttribute("aria-describedby") })`,
+  );
+  assert(
+    errorState.invalid === 'true',
+    `${pathname}: invalid keyboard-entered value was not marked aria-invalid.`,
+  );
+  assert(
+    Boolean(errorState.messageId),
+    `${pathname}: invalid field is not associated with its error text.`,
+  );
+  if (pathname === '/workspace/') {
+    assert(
+      (await evaluate(
+        'document.querySelector("#workspace-fitcheck-summary [data-field=detail]").getAttribute("aria-live")',
+      )) === 'polite',
+      `${pathname}: fit result detail is not announced politely.`,
+    );
+  }
+  console.log(
+    `Keyboard smoke passed: ${pathname} (skip link, tab order, toggles, disclosure, input validation).`,
+  );
+}
+
+try {
+  await access(chromePath);
+  const port = await reservePort();
+  chrome = spawn(
+    chromePath,
+    [
+      '--headless=new',
+      '--no-sandbox',
+      '--disable-gpu',
+      '--no-first-run',
+      '--disable-background-networking',
+      '--remote-allow-origins=*',
+      `--remote-debugging-port=${port}`,
+      `--user-data-dir=${profile}`,
+      'about:blank',
+    ],
+    { stdio: 'ignore', windowsHide: true },
+  );
+  chrome.on('error', (error) => pending.forEach(({ reject }) => reject(error)));
+  await connect(await waitForDebugger(port));
+  await cdp('Page.enable');
+  await cdp('Runtime.enable');
+  await smokePage('/workspace/', 'workspace-fitcheck');
+  await smokePage('/bedroom/', 'bedroom-fitcheck');
+  console.log('Keyboard QA passed in headless Chrome using real Tab, Enter, and Space key events.');
+} catch (error) {
+  console.error(`Keyboard QA failed: ${error.message}`);
+  process.exitCode = 1;
+} finally {
+  websocket?.close();
+  if (chrome?.pid) {
+    await new Promise((resolve) => {
+      const cleanup = spawn('taskkill', ['/PID', String(chrome.pid), '/T', '/F'], {
+        stdio: 'ignore',
+      });
+      cleanup.on('error', resolve);
+      cleanup.on('exit', resolve);
+    });
+  }
+  await rm(profile, { recursive: true, force: true });
+}

@@ -1,0 +1,60 @@
+---
+---
+
+<ul class="diagram-legend">
+  <li>
+    <span class="diagram-legend__swatch diagram-legend__swatch--space" aria-hidden="true"></span>{' '}
+    Available space (dashed outline)
+  </li>
+  <li>
+    <span class="diagram-legend__swatch diagram-legend__swatch--object" aria-hidden="true"></span>{' '}
+    Object footprint (solid fill)
+  </li>
+  <li>
+    <span
+      class="diagram-legend__swatch diagram-legend__swatch--clearance"
+      aria-hidden="true"
+    ></span>{' '}
+    Recommended clearance (dotted outline)
+  </li>
+</ul>
+
+<style>
+  .diagram-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    list-style: none;
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    font-size: var(--fs-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .diagram-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .diagram-legend__swatch {
+    display: inline-block;
+    width: 1.25rem;
+    height: 0.9rem;
+    border-radius: 3px;
+  }
+
+  .diagram-legend__swatch--space {
+    border: 2px dashed var(--color-text-secondary);
+  }
+
+  .diagram-legend__swatch--object {
+    background: var(--color-accent-1);
+    opacity: 0.4;
+    border: 2px solid var(--color-accent-1);
+  }
+
+  .diagram-legend__swatch--clearance {
+    border: 1.5px dashed var(--color-text-secondary);
+  }
+</style>

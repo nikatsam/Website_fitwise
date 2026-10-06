@@ -1,0 +1,50 @@
+---
+interface Props {
+  assumptions: string[];
+  heading?: string;
+  headingLevel?: 2 | 3;
+  /** Stable id on the wrapping element, so a client script can update the list in place. */
+  id?: string;
+}
+
+const { assumptions, heading = 'Assumptions', headingLevel = 2, id } = Astro.props;
+---
+
+{assumptions.length > 0 && (
+  <div class="assumption-list" id={id}>
+    {headingLevel === 2 ? (
+      <h2 class="assumption-list__heading">{heading}</h2>
+    ) : (
+      <h3 class="assumption-list__heading">{heading}</h3>
+    )}
+    <ul data-field="items">
+      {assumptions.map((assumption) => (
+        <li>{assumption}</li>
+      ))}
+    </ul>
+  </div>
+)}
+
+<style>
+  .assumption-list {
+    font-size: var(--fs-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .assumption-list__heading {
+    font-size: var(--fs-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-2);
+  }
+
+  .assumption-list ul {
+    margin: 0;
+    padding-left: var(--space-5);
+  }
+
+  .assumption-list li {
+    margin-bottom: var(--space-1);
+  }
+</style>

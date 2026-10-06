@@ -1,0 +1,126 @@
+---
+import type { DimensionDisplayRow } from '../../lib/fit';
+import UnitValue from './UnitValue.astro';
+
+interface Props {
+  rows: DimensionDisplayRow[];
+  caption: string;
+  /** Stable table id; rows/cells derive deterministic ids from it + row.dimension for client scripts. */
+  id?: string;
+}
+
+const { rows, caption, id } = Astro.props;
+---
+
+<table class="dimension-table" id={id}>
+  <caption class="visually-hidden">{caption}</caption>
+  <thead>
+    <tr>
+      <th scope="col">Dimension</th>
+      <th scope="col">Required</th>
+      <th scope="col">Recommended</th>
+      <th scope="col">Available</th>
+      <th scope="col">Margin</th>
+    </tr>
+  </thead>
+  <tbody>
+    {rows.map((row) => (
+      <tr
+        data-hard-fit={row.hardFit}
+        data-recommended-fit={row.recommendedFit}
+        data-dimension={row.dimension}
+      >
+        <th scope="row" data-label="Dimension">
+          {row.label}
+        </th>
+        <td data-label="Required">
+          <UnitValue mm={row.requiredMm} id={id && `${id}-${row.dimension}-required`} />
+        </td>
+        <td data-label="Recommended">
+          <UnitValue mm={row.recommendedMm} id={id && `${id}-${row.dimension}-recommended`} />
+        </td>
+        <td data-label="Available">
+          <UnitValue mm={row.availableMm} id={id && `${id}-${row.dimension}-available`} />
+        </td>
+        <td data-label="Margin">
+          <span data-field="margin-sign">{row.marginMm < 0 ? '−' : ''}</span>
+          <UnitValue mm={Math.abs(row.marginMm)} id={id && `${id}-${row.dimension}-margin`} />
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<style>
+  .dimension-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-sm);
+  }
+
+  .dimension-table th,
+  .dimension-table td {
+    text-align: left;
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .dimension-table thead th {
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .dimension-table tbody th {
+    font-weight: 600;
+  }
+
+  .dimension-table tr[data-hard-fit='false'] td,
+  .dimension-table tr[data-hard-fit='false'] th {
+    color: var(--color-state-no-fit-fg);
+  }
+
+  /* Mobile: stack each row as a labeled card instead of a horizontal table (specs/UX_UI.md §7). */
+  @media (max-width: 40rem) {
+    .dimension-table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    .dimension-table,
+    .dimension-table tbody,
+    .dimension-table tr,
+    .dimension-table td,
+    .dimension-table th {
+      display: block;
+      width: 100%;
+    }
+
+    .dimension-table tr {
+      margin-bottom: var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-3);
+    }
+
+    .dimension-table td,
+    .dimension-table th {
+      border-bottom: none;
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding: var(--space-1) 0;
+    }
+
+    .dimension-table td::before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+    }
+  }
+</style>

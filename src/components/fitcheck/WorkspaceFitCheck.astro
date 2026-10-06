@@ -1,0 +1,258 @@
+---
+import FitSummary from '../fit/FitSummary.astro';
+import DimensionTable from '../fit/DimensionTable.astro';
+import AssumptionList from '../fit/AssumptionList.astro';
+import UnitToggle from '../fit/UnitToggle.astro';
+import ScaleDiagram from '../diagram/ScaleDiagram.astro';
+import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import { buildWorkspaceWidthCheck, deriveScreenDimensions } from '../../lib/geometry';
+import { renderWorkspaceDiagramMarkup } from '../../lib/diagram';
+
+// Default, SSR-rendered scenario: this is the complete static answer a
+// visitor gets with JavaScript disabled (tasks/T012 acceptance criterion 1).
+// A fixed monitor-depth assumption stands in for stand/arm footprint, since
+// that is not yet a user-editable field in v1 (specs/ARCHITECTURE.md §4
+// notes stand footprint as an assumption, not a required input).
+const DEFAULTS = {
+  deskWidthMm: 1400,
+  deskDepthMm: 700,
+  monitorCount: 2 as 1 | 2,
+  monitorDiagonalIn: 27,
+  monitorDepthMm: 200,
+  gapMm: 20,
+  sideMarginMm: 38,
+};
+
+const DIAGRAM_ID = 'workspace-diagram';
+const VIEWPORT_WIDTH_PX = 640;
+const VIEWPORT_HEIGHT_PX = 360;
+const DIAGRAM_PADDING_PX = 60;
+
+const derivedScreen = deriveScreenDimensions(DEFAULTS.monitorDiagonalIn, { width: 16, height: 9 });
+const monitorWidthMm = Math.round(derivedScreen.screenWidthMm.valueMm);
+
+const configurationWidthMm =
+  monitorWidthMm * DEFAULTS.monitorCount + DEFAULTS.gapMm * (DEFAULTS.monitorCount - 1);
+
+const check = buildWorkspaceWidthCheck({
+  configurationWidthMm,
+  sideMarginRecommendedMm: DEFAULTS.sideMarginMm,
+  deskWidthMm: DEFAULTS.deskWidthMm,
+});
+
+const assumptions = [
+  `Monitor width: approximate screen-only width derived from a ${DEFAULTS.monitorDiagonalIn}" 16:9 diagonal; actual device is typically wider due to bezel. Enter an exact width below to override.`,
+  `Monitor depth (incl. stand) assumed at ${DEFAULTS.monitorDepthMm} mm.`,
+  `Gap between monitors: ${DEFAULTS.gapMm} mm.`,
+];
+
+const result = evaluateFit([check], assumptions);
+const rows = toDimensionDisplayRows([check], result);
+
+const diagramMarkup = renderWorkspaceDiagramMarkup({
+  diagramId: DIAGRAM_ID,
+  viewportWidthPx: VIEWPORT_WIDTH_PX,
+  viewportHeightPx: VIEWPORT_HEIGHT_PX,
+  paddingPx: DIAGRAM_PADDING_PX,
+  deskWidthMm: DEFAULTS.deskWidthMm,
+  deskDepthMm: DEFAULTS.deskDepthMm,
+  monitorWidthMm,
+  monitorDepthMm: DEFAULTS.monitorDepthMm,
+  monitorCount: DEFAULTS.monitorCount,
+  gapMm: DEFAULTS.gapMm,
+  sideMarginMm: DEFAULTS.sideMarginMm,
+});
+
+const diagramSummary = `${DEFAULTS.deskWidthMm} mm wide desk with ${DEFAULTS.monitorCount} monitors (${monitorWidthMm} mm each), ${DEFAULTS.gapMm} mm gap, ${DEFAULTS.sideMarginMm} mm recommended clearance on each side.`;
+---
+
+<div class="workspace-fitcheck" data-workspace-fitcheck data-diagram-id={DIAGRAM_ID}>
+  <form class="workspace-fitcheck__form" data-workspace-fitcheck-form novalidate>
+    <div class="field">
+      <label for="desk-width">Desk width (mm)</label>
+      <input
+        type="number"
+        id="desk-width"
+        name="deskWidthMm"
+        min="1"
+        step="1"
+        value={DEFAULTS.deskWidthMm}
+        aria-describedby="desk-width-error"
+      />
+      <span class="field__error" id="desk-width-error" role="alert"></span>
+    </div>
+
+    <div class="field">
+      <label for="monitor-count">Number of monitors</label>
+      <select id="monitor-count" name="monitorCount">
+        <option value="1">1</option>
+        <option value="2" selected>
+          2
+        </option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="monitor-diagonal">Monitor size</label>
+      <select id="monitor-diagonal" name="monitorDiagonalIn">
+        <option value="24">24"</option>
+        <option value="27" selected>
+          27"
+        </option>
+        <option value="32">32"</option>
+      </select>
+    </div>
+
+    <details class="workspace-fitcheck__advanced">
+      <summary>More assumptions</summary>
+
+      <div class="field">
+        <label for="desk-depth">Desk depth (mm)</label>
+        <input
+          type="number"
+          id="desk-depth"
+          name="deskDepthMm"
+          min="1"
+          step="1"
+          value={DEFAULTS.deskDepthMm}
+        />
+      </div>
+
+      <div class="field">
+        <label for="monitor-width-override">Exact monitor width override (mm, optional)</label>
+        <input
+          type="number"
+          id="monitor-width-override"
+          name="monitorWidthOverrideMm"
+          min="1"
+          step="1"
+          placeholder="auto from size"
+          aria-describedby="monitor-width-override-error"
+        />
+        <span class="field__error" id="monitor-width-override-error" role="alert"></span>
+      </div>
+
+      <div class="field">
+        <label for="monitor-gap">Gap between monitors (mm)</label>
+        <input
+          type="number"
+          id="monitor-gap"
+          name="gapMm"
+          min="0"
+          step="1"
+          value={DEFAULTS.gapMm}
+          aria-describedby="monitor-gap-error"
+        />
+        <span class="field__error" id="monitor-gap-error" role="alert"></span>
+      </div>
+
+      <div class="field">
+        <label for="side-margin">Recommended side clearance target (mm)</label>
+        <input
+          type="number"
+          id="side-margin"
+          name="sideMarginMm"
+          min="0"
+          step="1"
+          value={DEFAULTS.sideMarginMm}
+          aria-describedby="side-margin-error"
+        />
+        <span class="field__error" id="side-margin-error" role="alert"></span>
+      </div>
+    </details>
+
+    <UnitToggle />
+  </form>
+
+  <div class="workspace-fitcheck__result">
+    <FitSummary id="workspace-fitcheck-summary" state={result.state} primary={rows[0]!} />
+
+    <ScaleDiagram
+      id={DIAGRAM_ID}
+      widthPx={VIEWPORT_WIDTH_PX}
+      heightPx={VIEWPORT_HEIGHT_PX}
+      summary={diagramSummary}
+    >
+      <Fragment set:html={diagramMarkup} />
+    </ScaleDiagram>
+
+    <DimensionTable
+      id="workspace-fitcheck-table"
+      rows={rows}
+      caption="Desk width breakdown: required, recommended, available and margin"
+    />
+
+    <AssumptionList id="workspace-fitcheck-assumptions" assumptions={result.assumptions} />
+  </div>
+</div>
+
+<script>
+  import '../../scripts/workspace-fitcheck';
+</script>
+
+<style>
+  .workspace-fitcheck {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 60rem) {
+    .workspace-fitcheck {
+      grid-template-columns: 18rem 1fr;
+      align-items: start;
+    }
+  }
+
+  .workspace-fitcheck__form {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .field label {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .field input,
+  .field select {
+    padding: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: var(--fs-base);
+  }
+
+  .field__error {
+    font-size: var(--fs-sm);
+    color: var(--color-state-no-fit-fg);
+    min-height: 1.2em;
+  }
+
+  .workspace-fitcheck__advanced {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .workspace-fitcheck__advanced summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    color: var(--color-text-primary);
+  }
+
+  .workspace-fitcheck__result {
+    display: grid;
+    gap: var(--space-5);
+  }
+</style>

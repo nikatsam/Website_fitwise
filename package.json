@@ -1,5 +1,5 @@
 {
-  "name": "deeply-doppler",
+  "name": "fitwise-stream",
   "type": "module",
   "version": "0.0.1",
   "engines": {
@@ -9,12 +9,40 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "typecheck": "astro check",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "validate:data": "vitest run tests/unit/validate-dataset.test.ts",
+    "validate:seo": "node scripts/validate-seo.mjs",
+    "validate:links": "node scripts/validate-links.mjs",
+    "validate:routes": "node scripts/validate-routes.mjs",
+    "validate:content": "vitest run tests/unit/production-content.test.ts",
+    "infra:validate": "node scripts/release-prep.mjs validate-infra",
+    "deploy:plan": "node scripts/release-prep.mjs deployment-plan",
+    "seo:diff": "node scripts/seo-diff.mjs",
+    "qa:keyboard": "node scripts/keyboard-qa.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build && npm run validate:seo && npm run validate:links && npm run validate:routes && npm run validate:content && npm run infra:validate"
   },
   "dependencies": {
     "astro": "^7.3.5"
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "eslint-plugin-astro": "^3.2.1",
+    "prettier": "^3.9.9",
+    "prettier-plugin-astro": "^1.1.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
   }
 }

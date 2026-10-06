@@ -1,0 +1,34 @@
+---
+// Representative 'clearance' page (tasks/T014). noindex: not yet backed by a
+// published PageIntent/SeoPublication record.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ClearanceTemplate from '../../components/content/templates/ClearanceTemplate.astro';
+import SourceCitationList from '../../components/content/SourceCitationList.astro';
+import { dataset } from '../../data';
+import { buildBreadcrumb } from '../../lib/content';
+
+const h1 = 'Desk depth for a monitor';
+const breadcrumb = buildBreadcrumb('/workspace/desk-depth-for-monitor/', 'workspace');
+const rule = dataset.clearanceRules.find(
+  (candidate) => candidate.id === 'clr-desk-depth-for-monitor',
+)!;
+const sources = rule.sourceIds.map((id) => dataset.sources.find((source) => source.id === id)!);
+---
+
+<BaseLayout
+  title={`${h1} — Fitwise.stream`}
+  description="Minimum and recommended desk depth to fit a monitor and its stand, plus comfortable viewing distance."
+  noindex
+>
+  <div class="wrapper">
+    <ClearanceTemplate
+      breadcrumb={breadcrumb}
+      h1={h1}
+      intro="A monitor needs enough desk depth for its stand footprint, plus room in front for a comfortable viewing distance."
+      context="Monitor stand or base footprint plus seated viewing space, without an arm/mount."
+      recommendedMm={rule.recommendedMm?.valueMm}
+      notes={rule.notes}
+    />
+    <SourceCitationList sources={sources} />
+  </div>
+</BaseLayout>

@@ -1,0 +1,283 @@
+[
+  {
+    "pageIntentId": "pi-p001-desk-size-guide",
+    "route": "/workspace/desk-size-guide/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p002-desk-size-dual-monitors",
+    "route": "/workspace/desk-size-for-dual-monitors/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p003-desk-size-two-24in",
+    "route": "/workspace/desk-size-for-two-24-inch-monitors/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p004-desk-size-two-27in",
+    "route": "/workspace/desk-size-for-two-27-inch-monitors/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-p005-desk-size-two-32in",
+    "route": "/workspace/desk-size-for-two-32-inch-monitors/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p006-desk-size-34in-ultrawide",
+    "route": "/workspace/desk-size-for-34-inch-ultrawide/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p007-desk-size-49in-ultrawide",
+    "route": "/workspace/desk-size-for-49-inch-ultrawide/",
+    "intentStatus": "draft",
+    "disposition": "draft"
+  },
+  {
+    "pageIntentId": "pi-p008-desk-size-dual-monitors-laptop",
+    "route": "/workspace/desk-size-for-dual-monitors-and-laptop/",
+    "intentStatus": "published",
+    "disposition": "deferred",
+    "reason": "The local preview uses estimated laptop/monitor widths without linked source measurements. Keep it under /dev/ only until authoritative component dimensions are added."
+  },
+  {
+    "pageIntentId": "pi-p009-desk-size-dual-monitors-speakers",
+    "route": "/workspace/desk-size-for-dual-monitors-and-speakers/",
+    "intentStatus": "draft",
+    "disposition": "draft"
+  },
+  {
+    "pageIntentId": "pi-p010-what-fits-120cm-desk",
+    "route": "/workspace/what-fits-on-a-120cm-desk/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p011-what-fits-140cm-desk",
+    "route": "/workspace/what-fits-on-a-140cm-desk/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-p012-what-fits-160cm-desk",
+    "route": "/workspace/what-fits-on-a-160cm-desk/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p013-120-vs-140cm-desk",
+    "route": "/workspace/120cm-vs-140cm-desk/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-p014-140-vs-160cm-desk",
+    "route": "/workspace/140cm-vs-160cm-desk/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p015-desk-depth-for-monitor",
+    "route": "/workspace/desk-depth-for-monitor/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-p016-desk-depth-27in",
+    "route": "/workspace/desk-depth-for-27-inch-monitor/",
+    "intentStatus": "draft",
+    "disposition": "draft"
+  },
+  {
+    "pageIntentId": "pi-p017-desk-depth-32in",
+    "route": "/workspace/desk-depth-for-32-inch-monitor/",
+    "intentStatus": "draft",
+    "disposition": "draft"
+  },
+  {
+    "pageIntentId": "pi-p018-desk-chair-clearance",
+    "route": "/workspace/desk-chair-clearance/",
+    "intentStatus": "published",
+    "disposition": "deferred",
+    "reason": "No sourced chair footprint, movement envelope, or desk-to-chair configuration exists in the current model."
+  },
+  {
+    "pageIntentId": "pi-p019-monitor-size-chart",
+    "route": "/workspace/monitor-size-chart/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p020-24-vs-27in-monitor",
+    "route": "/workspace/24-vs-27-inch-monitor-size/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p021-27-vs-32in-monitor",
+    "route": "/workspace/27-vs-32-inch-monitor-size/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p022-workspace-fitcheck",
+    "route": "/workspace/fitcheck/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p023-bed-fits-room-hub",
+    "route": "/bedroom/what-size-bed-fits-my-room/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p024-room-for-king-bed",
+    "route": "/bedroom/minimum-room-size-for-king-bed/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p025-room-for-queen-bed",
+    "route": "/bedroom/minimum-room-size-for-queen-bed/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p026-room-for-double-bed",
+    "route": "/bedroom/minimum-room-size-for-double-bed/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p027-bed-in-10x10-room",
+    "route": "/bedroom/what-bed-fits-in-10x10-room/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p028-bed-in-10x12-room",
+    "route": "/bedroom/what-bed-fits-in-10x12-room/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p029-bed-in-9x10-room",
+    "route": "/bedroom/what-bed-fits-in-9x10-room/",
+    "intentStatus": "draft",
+    "disposition": "draft"
+  },
+  {
+    "pageIntentId": "pi-p030-king-vs-queen-room-space",
+    "route": "/bedroom/king-vs-queen-room-space/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p031-double-vs-queen-room-space",
+    "route": "/bedroom/double-vs-queen-room-space/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p032-clearance-around-bed",
+    "route": "/bedroom/clearance-around-bed/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p033-space-bed-wall",
+    "route": "/bedroom/space-between-bed-and-wall/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p034-space-bed-wardrobe",
+    "route": "/bedroom/space-between-bed-and-wardrobe/",
+    "intentStatus": "published",
+    "disposition": "deferred",
+    "reason": "The current model has a walking-aisle planning convention but lacks a sourced wardrobe depth, door swing, or open-door geometry; 900 mm alone would not answer this intent."
+  },
+  {
+    "pageIntentId": "pi-p035-bed-dresser-clearance",
+    "route": "/bedroom/bed-and-dresser-clearance/",
+    "intentStatus": "published",
+    "disposition": "deferred",
+    "reason": "The current model has a walking-aisle planning convention but lacks sourced dresser depth and drawer-extension geometry."
+  },
+  {
+    "pageIntentId": "pi-p036-king-bed-nightstands-room",
+    "route": "/bedroom/king-bed-two-nightstands-room-size/",
+    "intentStatus": "published",
+    "disposition": "deferred",
+    "reason": "No sourced nightstand dimensions or verified configuration inputs exist."
+  },
+  {
+    "pageIntentId": "pi-p037-queen-bed-nightstands-room",
+    "route": "/bedroom/queen-bed-two-nightstands-room-size/",
+    "intentStatus": "published",
+    "disposition": "deferred",
+    "reason": "No sourced nightstand dimensions or verified configuration inputs exist."
+  },
+  {
+    "pageIntentId": "pi-p038-bed-dresser-wardrobe-layout",
+    "route": "/bedroom/bed-dresser-wardrobe-layout/",
+    "intentStatus": "draft",
+    "disposition": "draft"
+  },
+  {
+    "pageIntentId": "pi-p039-us-bed-size-dimensions",
+    "route": "/bedroom/us-bed-size-dimensions/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p040-uk-bed-size-dimensions",
+    "route": "/bedroom/uk-bed-size-dimensions/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-p041-bedroom-fitcheck",
+    "route": "/bedroom/fitcheck/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "family"
+  }
+]

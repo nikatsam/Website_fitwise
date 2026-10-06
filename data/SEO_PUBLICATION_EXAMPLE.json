@@ -1,0 +1,30 @@
+{
+  "note": "Illustrative publication envelope; do not publish until actual editorial verification and content are completed.",
+  "site": "https://fitwise.stream",
+  "sitemapEntry": "/sitemap-index.xml",
+  "pages": [
+    {
+      "pageIntentId": "example-workspace-dual27",
+      "route": "/workspace/desk-size-for-two-27-inch-monitors/",
+      "family": "object_to_space",
+      "cluster": "workspace",
+      "status": "draft",
+      "indexable": false,
+      "title": "Two 27-Inch Monitors: What Desk Width Do You Need? | Fitwise",
+      "description": "Compare physical screen widths, monitor bases, margins and angled setups before choosing a desk.",
+      "h1": "What desk size do two 27-inch monitors need?",
+      "publishedOn": null,
+      "significantlyModifiedOn": null,
+      "breadcrumbIds": ["home", "workspace"],
+      "relatedPageIds": ["workspace-desk-size-guide"],
+      "sourceIds": [],
+      "primaryIntent": "desk size for two 27 inch monitors"
+    }
+  ],
+  "deployChangeManifest": {
+    "added": [],
+    "materiallyUpdated": [],
+    "removed": [],
+    "unchanged": []
+  }
+}

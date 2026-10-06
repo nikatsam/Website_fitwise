@@ -1,0 +1,103 @@
+---
+import type { FitState, DimensionDisplayRow } from '../../lib/fit';
+import { FIT_STATE_BADGE_COPY } from '../../lib/fit';
+import UnitValue from './UnitValue.astro';
+
+interface Props {
+  state: FitState;
+  /** The dimension most relevant to the headline sentence (e.g. desk width, room width). */
+  primary: DimensionDisplayRow;
+  /** Stable root id so client scripts can update this summary in place (e.g. T012 FitCheck). */
+  id?: string;
+}
+
+const { state, primary, id } = Astro.props;
+const { icon, label } = FIT_STATE_BADGE_COPY[state];
+---
+
+<div class="fit-summary" data-fit-state={state} id={id}>
+  <p class="fit-summary__badge">
+    <span class="fit-summary__icon" aria-hidden="true" data-field="icon">
+      {icon}
+    </span>
+    <span class="fit-summary__label" data-field="label">
+      {label}
+    </span>
+  </p>
+
+  <p class="fit-summary__detail" data-field="detail" aria-live="polite" aria-atomic="true">
+    {state === 'fits' && (
+      <>
+        Fits comfortably — approximately <UnitValue mm={primary.marginMm} /> remains on{' '}
+        {primary.label}.
+      </>
+    )}
+    {state === 'tight' && (
+      <>It fits physically, but the recommended clearance on {primary.label} is not fully met.</>
+    )}
+    {state === 'does_not_fit' && (
+      <>
+        Does not fit — {primary.label} is approximately{' '}
+        <UnitValue mm={Math.abs(primary.marginMm)} /> over the available space.
+      </>
+    )}
+  </p>
+</div>
+
+<style>
+  .fit-summary {
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+  }
+
+  .fit-summary[data-fit-state='fits'] {
+    background: var(--color-state-fit-bg);
+    color: var(--color-state-fit-fg);
+    border-color: transparent;
+  }
+
+  .fit-summary[data-fit-state='tight'] {
+    background: var(--color-state-tight-bg);
+    color: var(--color-state-tight-fg);
+    border-color: transparent;
+  }
+
+  .fit-summary[data-fit-state='does_not_fit'] {
+    background: var(--color-state-no-fit-bg);
+    color: var(--color-state-no-fit-fg);
+    border-color: transparent;
+  }
+
+  .fit-summary__badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-lg);
+    font-weight: 700;
+  }
+
+  .fit-summary__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 50%;
+    background: currentColor;
+    font-size: 0.75em;
+  }
+
+  /* The glyph itself renders in the surface color so it reads against the currentColor disc. */
+  .fit-summary__icon {
+    color: var(--color-surface-raised);
+  }
+
+  .fit-summary__detail {
+    margin: 0;
+    color: inherit;
+    opacity: 0.92;
+  }
+</style>

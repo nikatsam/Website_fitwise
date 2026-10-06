@@ -1,0 +1,60 @@
+---
+import { mmToPx, labelFontSizePx } from '../../lib/diagram';
+
+interface Props {
+  xMm: number;
+  yMm: number;
+  widthMm: number;
+  heightMm: number;
+  scale: number;
+  label: string;
+}
+
+const { xMm, yMm, widthMm, heightMm, scale, label } = Astro.props;
+const x = mmToPx(xMm, scale);
+const y = mmToPx(yMm, scale);
+const width = mmToPx(widthMm, scale);
+const height = mmToPx(heightMm, scale);
+const fontSize = labelFontSizePx(scale);
+---
+
+<g class="diagram-object">
+  <rect
+    x={x}
+    y={y}
+    width={width}
+    height={height}
+    class="diagram-object__rect"
+    vector-effect="non-scaling-stroke"
+  />
+  <text
+    x={x + width / 2}
+    y={y + height / 2}
+    class="diagram-object__label"
+    font-size={fontSize}
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >
+    {label}
+  </text>
+</g>
+
+<style>
+  /*
+    Solid fill + solid border distinguishes objects from the dashed space
+    outline and the dashed clearance zones without relying on color alone —
+    the text label is always present too.
+  */
+  :global(.diagram-object__rect) {
+    fill: var(--color-accent-1);
+    fill-opacity: 0.16;
+    stroke: var(--color-accent-1);
+    stroke-width: 2;
+  }
+
+  :global(.diagram-object__label) {
+    fill: var(--color-text-primary);
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
+</style>

@@ -1,0 +1,76 @@
+---
+// Representative 'configuration' page (tasks/T014): a multi-item footprint
+// (two monitors + an open laptop), same template as 'object_to_space' per
+// specs/CONTENT_SEO.md §3 — they differ in editorial framing, not structure.
+// noindex: not yet backed by a published PageIntent/SeoPublication record.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FitAnswerTemplate from '../../components/content/templates/FitAnswerTemplate.astro';
+import { buildBreadcrumb } from '../../lib/content';
+import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import { buildWorkspaceWidthCheck, computeConfigurationWidth } from '../../lib/geometry';
+import { renderWorkspaceDiagramMarkup } from '../../lib/diagram';
+
+const deskWidthMm = 1600;
+const gapMm = 20;
+const sideMarginMm = 38;
+// Nominal item widths: two 24" monitors (approx. screen-only) + a 15" laptop
+// open on a stand, each clearly an approximation, stated in the assumptions.
+const itemWidthsMm = [540, 540, 350];
+const configurationWidthMm = computeConfigurationWidth({ widthsMm: itemWidthsMm, gapMm });
+
+const check = buildWorkspaceWidthCheck({
+  configurationWidthMm,
+  sideMarginRecommendedMm: sideMarginMm,
+  deskWidthMm,
+});
+const assumptions = [
+  'Monitor width: approximate screen-only width for two 24" 16:9 displays; actual device is typically wider due to bezel.',
+  'Laptop width: approximate 15" laptop footprint on a stand.',
+  `Gap between items: ${gapMm} mm.`,
+  'Diagram shows two illustrative item slots; the table and totals above account for all three items.',
+];
+const result = evaluateFit([check], assumptions);
+const rows = toDimensionDisplayRows([check], result);
+
+const diagramId = 'dual-monitor-laptop-diagram';
+const diagramMarkup = renderWorkspaceDiagramMarkup({
+  diagramId,
+  viewportWidthPx: 640,
+  viewportHeightPx: 360,
+  paddingPx: 60,
+  deskWidthMm,
+  deskDepthMm: 700,
+  monitorWidthMm: itemWidthsMm[0]!,
+  monitorDepthMm: 200,
+  monitorCount: 2,
+  gapMm,
+  sideMarginMm,
+});
+
+const h1 = 'Dual monitors and laptop desk size — preview only';
+const breadcrumb = buildBreadcrumb('/dev/dual-monitors-and-laptop-desk-size/', 'workspace');
+---
+
+<BaseLayout
+  title={`${h1} — Fitwise.stream`}
+  description="See the minimum and recommended desk width for two monitors plus an open laptop, with a scale diagram."
+  noindex
+>
+  <div class="wrapper">
+    <FitAnswerTemplate
+      breadcrumb={breadcrumb}
+      h1={h1}
+      intro="Two monitors plus an open laptop on a stand need about this much desk width, including gaps and side clearance."
+      state={result.state}
+      primary={rows[0]!}
+      rows={rows}
+      diagramId={diagramId}
+      diagramWidthPx={640}
+      diagramHeightPx={360}
+      diagramSummary={`Two monitors plus a laptop on a ${deskWidthMm} mm desk, ${gapMm} mm gaps, ${sideMarginMm} mm recommended side clearance.`}
+      diagramMarkup={diagramMarkup}
+      tableCaption="Desk width breakdown: required, recommended, available and margin"
+      assumptions={result.assumptions}
+    />
+  </div>
+</BaseLayout>

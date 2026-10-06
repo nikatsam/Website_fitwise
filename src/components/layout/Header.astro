@@ -1,0 +1,161 @@
+---
+interface NavItem {
+  href: string;
+  label: string;
+}
+
+const navItems: NavItem[] = [
+  { href: '/', label: 'Home' },
+  { href: '/workspace/', label: 'Workspace' },
+  { href: '/bedroom/', label: 'Bedroom' },
+  { href: '/methodology/', label: 'Methodology' },
+];
+
+const currentPath = new URL(Astro.request.url).pathname;
+---
+
+<header class="site-header">
+  <div class="wrapper site-header__inner">
+    <a href="/" class="brand" aria-label="Fitwise.stream home">
+      <img
+        src="/assets/images/logo.svg"
+        alt=""
+        width="150"
+        height="33"
+        class="brand__logo brand__logo--light"
+      />
+      <img
+        src="/assets/images/logo-dark.svg"
+        alt=""
+        width="150"
+        height="33"
+        class="brand__logo brand__logo--dark"
+      />
+    </a>
+
+    <nav class="site-nav" aria-label="Primary">
+      <ul>
+        {navItems.map((item) => (
+          <li>
+            <a href={item.href} aria-current={currentPath === item.href ? 'page' : undefined}>
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <button type="button" class="theme-toggle" data-theme-toggle aria-pressed="false">
+      🌙 Dark
+    </button>
+  </div>
+</header>
+
+<script>
+  import '../../scripts/theme';
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .site-header__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding-block: var(--space-3);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+  }
+
+  .brand__logo {
+    height: 1.75rem;
+    width: auto;
+  }
+
+  .brand__logo--dark {
+    display: none;
+  }
+
+  :root[data-theme='dark'] .brand__logo--light {
+    display: none;
+  }
+
+  :root[data-theme='dark'] .brand__logo--dark {
+    display: block;
+  }
+
+  .site-nav {
+    flex: 1;
+  }
+
+  .site-nav ul {
+    display: flex;
+    gap: var(--space-5);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .site-nav a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    padding: var(--space-2) 0;
+    position: relative;
+  }
+
+  .site-nav a[aria-current='page'] {
+    color: var(--color-text-primary);
+  }
+
+  .site-nav a[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--gradient-brand);
+    border-radius: var(--radius-pill);
+  }
+
+  .theme-toggle {
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    border-radius: var(--radius-pill);
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      transform var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
+  }
+
+  .theme-toggle:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 40rem) {
+    .site-header__inner {
+      flex-wrap: wrap;
+    }
+    .site-nav ul {
+      gap: var(--space-4);
+    }
+  }
+</style>

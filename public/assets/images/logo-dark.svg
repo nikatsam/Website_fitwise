@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" width="220" height="48" role="img" aria-label="Fitwise.stream logo">
+  <defs>
+    <linearGradient id="fw-grad-logo-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="8" width="32" height="32" rx="8" fill="url(#fw-grad-logo-dark)" />
+  <rect x="13" y="19" width="10" height="10" rx="2" fill="#0f0e17" />
+  <path
+    d="M8 18v-3a1 1 0 0 1 1-1h3 M28 18v-3a1 1 0 0 0-1-1h-3 M8 30v3a1 1 0 0 0 1 1h3 M28 30v3a1 1 0 0 1-1 1h-3"
+    fill="none"
+    stroke="#0f0e17"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <text
+    x="44"
+    y="31"
+    font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    font-size="22"
+    font-weight="700"
+    fill="#f3f2fb"
+  >Fitwise<tspan fill="#c4b5fd" font-weight="500">.stream</tspan></text>
+</svg>

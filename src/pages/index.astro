@@ -1,17 +1,180 @@
 ---
-
+import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout
+  title="Fitwise.stream — Know what fits before you buy"
+  description="Plan desks, monitors, beds and rooms using real dimensions and clearances. Fitwise shows whether it fits before you buy, arrange or move it."
+  canonicalPath="/"
+  structuredData={[
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      '@id': 'https://fitwise.stream/#website',
+      url: 'https://fitwise.stream/',
+      name: 'Fitwise.stream',
+      inLanguage: 'en',
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      '@id': 'https://fitwise.stream/#webpage',
+      url: 'https://fitwise.stream/',
+      name: 'Fitwise.stream — Know what fits before you buy',
+      description:
+        'Plan desks, monitors, beds and rooms using real dimensions and clearances. Fitwise shows whether it fits before you buy, arrange or move it.',
+      inLanguage: 'en',
+      isPartOf: { '@id': 'https://fitwise.stream/#website' },
+    },
+  ]}
+>
+  <section class="hero">
+    <div class="hero__glow" aria-hidden="true"></div>
+    <div class="wrapper hero__inner">
+      <h1>Will it fit?</h1>
+      <p class="hero__lede">Plan spaces using real dimensions and clearances.</p>
+
+      <div class="hero__cards">
+        <a class="hero__card" href="/workspace/">
+          <span class="hero__card-kicker">Object → Space</span>
+          <span class="hero__card-title">Monitors into a desk</span>
+        </a>
+        <a class="hero__card" href="/bedroom/">
+          <span class="hero__card-kicker">Object → Space</span>
+          <span class="hero__card-title">Bed into a room</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrapper section">
+    <h2>Workspace FitChecks</h2>
+    <p>Dual-monitor desk sizing, clearances and configuration guides are coming online first.</p>
+    <a href="/workspace/">Browse workspace pages →</a>
+  </section>
+
+  <section class="wrapper section">
+    <h2>Bedroom FitChecks</h2>
+    <p>Bed-to-room fit, clearance and comparison pages are next.</p>
+    <a href="/bedroom/">Browse bedroom pages →</a>
+  </section>
+
+  <section class="wrapper section">
+    <h2>How Fitwise calculates fit</h2>
+    <p>
+      Every result is derived from sourced, provenance-tracked dimensions — never guessed. See the
+      full methodology.
+    </p>
+    <a href="/methodology/">Read the methodology →</a>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: var(--space-8) var(--space-7);
+    isolation: isolate;
+  }
+
+  .hero__glow {
+    position: absolute;
+    inset: -20% -10% auto -10%;
+    height: 32rem;
+    background:
+      radial-gradient(
+        45rem 20rem at 20% 20%,
+        color-mix(in srgb, var(--color-accent-1) 35%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        40rem 22rem at 80% 10%,
+        color-mix(in srgb, var(--color-accent-2) 30%, transparent),
+        transparent 70%
+      );
+    z-index: -1;
+    animation: drift 18s var(--ease-standard) infinite alternate;
+  }
+
+  @keyframes drift {
+    from {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+      transform: translate3d(2%, 3%, 0) scale(1.05);
+    }
+  }
+
+  .hero__inner h1 {
+    font-size: var(--fs-3xl);
+    background: var(--gradient-brand);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    display: inline-block;
+  }
+
+  .hero__lede {
+    font-size: var(--fs-md);
+    color: var(--color-text-secondary);
+    max-width: 38ch;
+  }
+
+  .hero__cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-top: var(--space-6);
+  }
+
+  .hero__card {
+    flex: 1 1 14rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+    color: var(--color-text-primary);
+    transition:
+      transform var(--duration-base) var(--ease-standard),
+      box-shadow var(--duration-base) var(--ease-standard);
+  }
+
+  .hero__card:hover,
+  .hero__card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .hero__card-kicker {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--color-accent-1);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .hero__card-title {
+    font-size: var(--fs-lg);
+    font-weight: 700;
+  }
+
+  .section {
+    padding-block: var(--space-6);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .section h2 {
+    margin-bottom: var(--space-2);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__glow {
+      animation: none;
+    }
+  }
+</style>

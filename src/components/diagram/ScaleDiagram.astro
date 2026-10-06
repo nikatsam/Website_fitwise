@@ -1,0 +1,116 @@
+---
+interface Props {
+  widthPx: number;
+  heightPx: number;
+  /** Full text alternative for the diagram, e.g. "1246 mm monitor configuration on a 1400 mm desk, 154 mm margin." */
+  summary: string;
+  id: string;
+}
+
+const { widthPx, heightPx, summary, id } = Astro.props;
+const captionId = `${id}-caption`;
+---
+
+<figure class="scale-diagram">
+  <svg
+    viewBox={`0 0 ${widthPx} ${heightPx}`}
+    role="img"
+    aria-labelledby={captionId}
+    class="scale-diagram__svg"
+  >
+    <defs>
+      <marker
+        id={`${id}-arrow-start`}
+        viewBox="0 0 10 10"
+        refX="1"
+        refY="5"
+        markerWidth="6"
+        markerHeight="6"
+        orient="auto-start-reverse"
+      >
+        <path d="M 10 0 L 0 5 L 10 10 z" class="scale-diagram__arrowhead" />
+      </marker>
+      <marker
+        id={`${id}-arrow-end`}
+        viewBox="0 0 10 10"
+        refX="9"
+        refY="5"
+        markerWidth="6"
+        markerHeight="6"
+        orient="auto"
+      >
+        <path d="M 10 0 L 0 5 L 10 10 z" class="scale-diagram__arrowhead" />
+      </marker>
+    </defs>
+    <slot />
+  </svg>
+  <figcaption id={captionId} class="visually-hidden">
+    {summary}
+  </figcaption>
+</figure>
+
+<style>
+  .scale-diagram {
+    margin: 0;
+  }
+
+  .scale-diagram__svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  :global(.scale-diagram__arrowhead) {
+    fill: var(--color-text-secondary);
+  }
+
+  :global(.diagram-space__rect) {
+    fill: none;
+    stroke: var(--color-text-secondary);
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+  }
+
+  :global(.diagram-space__label) {
+    fill: var(--color-text-secondary);
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
+
+  :global(.diagram-clearance__rect) {
+    fill: none;
+    stroke: var(--color-text-secondary);
+    stroke-width: 1.5;
+    stroke-dasharray: 3 3;
+  }
+
+  :global(.diagram-clearance__label) {
+    fill: var(--color-text-secondary);
+    font-family: var(--font-body);
+    font-style: italic;
+  }
+
+  :global(.diagram-object__rect) {
+    fill: var(--color-accent-1);
+    fill-opacity: 0.16;
+    stroke: var(--color-accent-1);
+    stroke-width: 2;
+  }
+
+  :global(.diagram-object__label) {
+    fill: var(--color-text-primary);
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
+
+  :global(.diagram-arrow__line) {
+    stroke: var(--color-text-secondary);
+    stroke-width: 1.5;
+  }
+
+  :global(.diagram-arrow__label) {
+    fill: var(--color-text-primary);
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
+</style>

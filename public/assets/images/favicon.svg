@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Fitwise.stream icon">
+  <defs>
+    <linearGradient id="fw-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#fw-grad)" />
+  <!-- object rectangle -->
+  <rect x="11" y="11" width="10" height="10" rx="2" fill="#ffffff" />
+  <!-- clearance corner brackets -->
+  <path
+    d="M6 10V7a1 1 0 0 1 1-1h3 M26 10V7a1 1 0 0 0-1-1h-3 M6 22v3a1 1 0 0 0 1 1h3 M26 22v3a1 1 0 0 1-1 1h-3"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+</svg>

@@ -1,0 +1,50 @@
+---
+import { mmToPx, labelFontSizePx } from '../../lib/diagram';
+
+interface Props {
+  xMm: number;
+  yMm: number;
+  widthMm: number;
+  heightMm: number;
+  scale: number;
+  label?: string;
+}
+
+const { xMm, yMm, widthMm, heightMm, scale, label } = Astro.props;
+const x = mmToPx(xMm, scale);
+const y = mmToPx(yMm, scale);
+const width = mmToPx(widthMm, scale);
+const height = mmToPx(heightMm, scale);
+const fontSize = labelFontSizePx(scale);
+---
+
+<g class="diagram-space">
+  <rect
+    x={x}
+    y={y}
+    width={width}
+    height={height}
+    class="diagram-space__rect"
+    vector-effect="non-scaling-stroke"
+  />
+  {label && (
+    <text x={x + 6} y={y + fontSize + 4} class="diagram-space__label" font-size={fontSize}>
+      {label}
+    </text>
+  )}
+</g>
+
+<style>
+  :global(.diagram-space__rect) {
+    fill: none;
+    stroke: var(--color-text-secondary);
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+  }
+
+  :global(.diagram-space__label) {
+    fill: var(--color-text-secondary);
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
+</style>

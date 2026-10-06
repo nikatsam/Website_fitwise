@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BedroomFitCheck from '../../components/fitcheck/BedroomFitCheck.astro';
+---
+
+<BaseLayout
+  title="Bedroom FitChecks — Fitwise.stream"
+  description="Check whether your bed fits your room, with real dimensions and clearances."
+  noindex
+>
+  <section class="wrapper section">
+    <h1>Will your bed fit your room?</h1>
+    <p>
+      Enter your room size and bed to see whether it fits comfortably, is tight, or doesn't fit —
+      with a scale diagram and the assumptions behind the answer.
+    </p>
+    <BedroomFitCheck />
+    <nav class="reference-links" aria-label="Bedroom measurement references">
+      <h2>Market-specific bed dimensions</h2>
+      <ul>
+        <li>
+          <a href="/bedroom/us-bed-size-dimensions/">US bed size dimensions</a>
+        </li>
+        <li>
+          <a href="/bedroom/uk-bed-size-dimensions/">UK bed size dimensions</a>
+        </li>
+      </ul>
+    </nav>
+  </section>
+</BaseLayout>
+
+<style>
+  .section {
+    padding-block: var(--space-7);
+  }
+
+  .reference-links {
+    margin-top: var(--space-6);
+  }
+</style>

@@ -1,0 +1,58 @@
+---
+// Shared by the 'object_to_space' and 'configuration' page families: both
+// answer "does this footprint fit in that space?" and differ only in
+// editorial framing (configuration = multiple distinct items), not in DOM
+// structure (specs/CONTENT_SEO.md §3).
+import PageFamilyLayout from '../PageFamilyLayout.astro';
+import FitResultSection from '../FitResultSection.astro';
+import type { BreadcrumbItem } from '../../../lib/content';
+import type { FitState, DimensionDisplayRow } from '../../../lib/fit';
+
+interface Props {
+  breadcrumb: BreadcrumbItem[];
+  h1: string;
+  intro: string;
+  state: FitState;
+  primary: DimensionDisplayRow;
+  rows: DimensionDisplayRow[];
+  diagramId: string;
+  diagramWidthPx: number;
+  diagramHeightPx: number;
+  diagramSummary: string;
+  diagramMarkup: string;
+  tableCaption: string;
+  assumptions: string[];
+}
+
+const {
+  breadcrumb,
+  h1,
+  intro,
+  state,
+  primary,
+  rows,
+  diagramId,
+  diagramWidthPx,
+  diagramHeightPx,
+  diagramSummary,
+  diagramMarkup,
+  tableCaption,
+  assumptions,
+} = Astro.props;
+---
+
+<PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
+  <p>{intro}</p>
+  <FitResultSection
+    state={state}
+    primary={primary}
+    rows={rows}
+    diagramId={diagramId}
+    diagramWidthPx={diagramWidthPx}
+    diagramHeightPx={diagramHeightPx}
+    diagramSummary={diagramSummary}
+    diagramMarkup={diagramMarkup}
+    tableCaption={tableCaption}
+    assumptions={assumptions}
+  />
+</PageFamilyLayout>

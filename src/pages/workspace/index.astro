@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WorkspaceFitCheck from '../../components/fitcheck/WorkspaceFitCheck.astro';
+---
+
+<BaseLayout
+  title="Workspace FitChecks — Fitwise.stream"
+  description="Check whether your monitors fit your desk, with real dimensions and clearances."
+  noindex
+>
+  <section class="wrapper section">
+    <h1>Will your monitors fit your desk?</h1>
+    <p>
+      Enter your desk width and monitor setup to see whether it fits comfortably, is tight, or
+      doesn't fit — with a scale diagram and the assumptions behind the answer.
+    </p>
+    <WorkspaceFitCheck />
+    <nav class="reference-links" aria-label="Workspace measurement references">
+      <h2>Measurement references</h2>
+      <ul>
+        <li>
+          <a href="/workspace/monitor-size-chart/">Monitor physical size chart</a>
+        </li>
+      </ul>
+    </nav>
+  </section>
+</BaseLayout>
+
+<style>
+  .section {
+    padding-block: var(--space-7);
+  }
+
+  .reference-links {
+    margin-top: var(--space-6);
+  }
+</style>

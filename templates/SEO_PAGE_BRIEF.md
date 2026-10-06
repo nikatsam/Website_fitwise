@@ -1,0 +1,26 @@
+# SEO / Product Page Brief — Copy Per Candidate
+
+- PageIntent ID / candidate path:
+- Status: `candidate | draft | published | deferred`
+- Cluster / page family:
+- Market/language & measurement standards:
+- User's exact decision to solve:
+- Primary query intent (not keyword stuffing):
+- Secondary natural question variants:
+- Demand evidence (Search Console, keyword tool, or manual SERP; date/geography/device):
+- Source URL(s) and observation date of competing results:
+- Concrete SERP gap or user need that existing answers miss:
+- Why this deserves separate URL vs existing hub:
+- Primary entities + data records / source IDs:
+- Formula/geometry assumptions and uncertainty notes:
+- Direct answer summary:
+- Specific diagrams/tables/interactive enhancement to create:
+- Visible content outline and accessibility fallback:
+- SEO title / description / H1 / canonicalPath:
+- Parent breadcrumb chain:
+- 2–6 relevant existing related pages (IDs):
+- Intended sources/methodology and physical safety qualifiers:
+- Date of substantive editorial verification:
+- Editor/reviewer and acceptance evidence:
+- Performance hypothesis (optional estimate, clearly labelled):
+- Publication decision / rejection reason:

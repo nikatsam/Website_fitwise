@@ -1,0 +1,126 @@
+---
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import '../styles/global.css';
+import { absoluteCanonical, serializeJsonLd } from '../lib/seo/metadata';
+
+interface Props {
+  title: string;
+  description: string;
+  noindex?: boolean;
+  canonicalPath?: string;
+  language?: string;
+  structuredData?: Record<string, unknown>[];
+}
+
+const {
+  title,
+  description,
+  noindex = false,
+  canonicalPath,
+  language = 'en',
+  structuredData = [],
+} = Astro.props;
+const canonicalUrl = canonicalPath ? absoluteCanonical(canonicalPath) : undefined;
+---
+
+<html lang={language}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#7c3aed" />
+    {noindex && <meta name="robots" content="noindex" />}
+    {canonicalUrl && !noindex && <link rel="canonical" href={canonicalUrl} />}
+    {canonicalUrl && !noindex && (
+      <>
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Fitwise.stream" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+      </>
+    )}
+    {structuredData.map((record) => (
+      <script type="application/ld+json" set:html={serializeJsonLd(record)} />
+    ))}
+    <script is:inline>
+      (function () {
+        try {
+          const stored = localStorage.getItem('fitwise-theme');
+          const theme =
+            stored === 'dark' || stored === 'light'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch {
+          /* localStorage/matchMedia unavailable; default light tokens apply. */
+        }
+        try {
+          const storedUnit = localStorage.getItem('fitwise-unit-system');
+          if (storedUnit === 'imperial') {
+            document.documentElement.setAttribute('data-unit-system', 'imperial');
+          }
+        } catch {
+          /* localStorage unavailable; default metric display applies. */
+        }
+      })();
+    </script>
+    <style>
+      /*
+        Critical, render-blocking fallback so background/text color are correct
+        on first paint even before tokens.css/global.css finish loading (Astro
+        dev serves component CSS via async JS, which otherwise briefly flashes
+        the browser default/light background before the real theme applies).
+        Values mirror src/styles/tokens.css and must stay in sync with it.
+      */
+      html {
+        background: #f7f7fb;
+        color: #15141f;
+      }
+      html[data-theme='dark'] {
+        background: #0f0e17;
+        color: #f3f2fb;
+      }
+      /* Same early-paint guarantee for the theme-swapped header logo. */
+      .brand__logo--dark {
+        display: none;
+      }
+      html[data-theme='dark'] .brand__logo--light {
+        display: none;
+      }
+      html[data-theme='dark'] .brand__logo--dark {
+        display: block;
+      }
+      /* Same early-paint guarantee for dual-unit values (src/components/fit/UnitValue.astro). */
+      [data-unit='imperial'] {
+        display: none;
+      }
+      html[data-unit-system='imperial'] [data-unit='imperial'] {
+        display: inline;
+      }
+      html[data-unit-system='imperial'] [data-unit='metric'] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">
+      Skip to main content
+    </a>
+    <Header />
+    <main id="main-content">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

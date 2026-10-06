@@ -1,0 +1,48 @@
+---
+import type { FitState, DimensionDisplayRow } from '../../lib/fit';
+import FitSummary from '../fit/FitSummary.astro';
+import DimensionTable from '../fit/DimensionTable.astro';
+import AssumptionList from '../fit/AssumptionList.astro';
+import ScaleDiagram from '../diagram/ScaleDiagram.astro';
+
+interface Props {
+  state: FitState;
+  primary: DimensionDisplayRow;
+  rows: DimensionDisplayRow[];
+  diagramId: string;
+  diagramWidthPx: number;
+  diagramHeightPx: number;
+  diagramSummary: string;
+  diagramMarkup: string;
+  tableCaption: string;
+  assumptions: string[];
+}
+
+const {
+  state,
+  primary,
+  rows,
+  diagramId,
+  diagramWidthPx,
+  diagramHeightPx,
+  diagramSummary,
+  diagramMarkup,
+  tableCaption,
+  assumptions,
+} = Astro.props;
+---
+
+<FitSummary state={state} primary={primary} />
+
+<ScaleDiagram
+  id={diagramId}
+  widthPx={diagramWidthPx}
+  heightPx={diagramHeightPx}
+  summary={diagramSummary}
+>
+  <Fragment set:html={diagramMarkup} />
+</ScaleDiagram>
+
+<DimensionTable rows={rows} caption={tableCaption} />
+
+<AssumptionList assumptions={assumptions} />

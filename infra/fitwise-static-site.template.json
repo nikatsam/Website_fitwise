@@ -1,0 +1,326 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "OFFLINE PREPARATION ONLY: private S3 + CloudFront OAC static hosting for Fitwise.stream. Do not deploy until Gate T021 is signed and cloudDeploymentAllowed is true.",
+  "Parameters": {
+    "ApexDomainName": {
+      "Type": "String",
+      "Default": "fitwise.stream",
+      "AllowedPattern": "^[A-Za-z0-9.-]+$",
+      "Description": "Apex hostname to attach to CloudFront. This template does not change DNS."
+    },
+    "AcmCertificateArn": {
+      "Type": "String",
+      "AllowedPattern": "^arn:aws:acm:us-east-1:[0-9]{12}:certificate/[A-Fa-f0-9-]{36}$",
+      "ConstraintDescription": "Supply an issued ACM certificate ARN in us-east-1 covering ApexDomainName.",
+      "Description": "Existing, issued us-east-1 ACM certificate. Certificate creation/validation is a separate owner action."
+    }
+  },
+  "Resources": {
+    "StaticSiteBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "OwnershipControls": {
+          "Rules": [{ "ObjectOwnership": "BucketOwnerEnforced" }]
+        },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "VersioningConfiguration": { "Status": "Enabled" },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "ExpireOldFingerprintedAssets",
+              "Status": "Enabled",
+              "Prefix": "_astro/",
+              "ExpirationInDays": 400
+            },
+            {
+              "Id": "BoundNoncurrentVersions",
+              "Status": "Enabled",
+              "NoncurrentVersionExpirationInDays": 30,
+              "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+            }
+          ]
+        },
+        "Tags": [
+          { "Key": "Project", "Value": "Fitwise" },
+          { "Key": "Purpose", "Value": "StaticSiteOrigin" },
+          { "Key": "ProvisioningStatus", "Value": "DraftNotDeployed" }
+        ]
+      }
+    },
+    "SiteOriginAccessControl": {
+      "Type": "AWS::CloudFront::OriginAccessControl",
+      "Properties": {
+        "OriginAccessControlConfig": {
+          "Name": { "Fn::Sub": "${AWS::StackName}-site-oac" },
+          "Description": "SigV4 access from the Fitwise CloudFront distribution only.",
+          "OriginAccessControlOriginType": "s3",
+          "SigningBehavior": "always",
+          "SigningProtocol": "sigv4"
+        }
+      }
+    },
+    "HtmlCachePolicy": {
+      "Type": "AWS::CloudFront::CachePolicy",
+      "Properties": {
+        "CachePolicyConfig": {
+          "Name": { "Fn::Sub": "${AWS::StackName}-html-short-ttl" },
+          "Comment": "HTML and route documents; honor short shared-cache s-maxage and revalidate browsers.",
+          "DefaultTTL": 60,
+          "MaxTTL": 300,
+          "MinTTL": 0,
+          "ParametersInCacheKeyAndForwardedToOrigin": {
+            "EnableAcceptEncodingBrotli": true,
+            "EnableAcceptEncodingGzip": true,
+            "HeadersConfig": { "HeaderBehavior": "none" },
+            "CookiesConfig": { "CookieBehavior": "none" },
+            "QueryStringsConfig": { "QueryStringBehavior": "none" }
+          }
+        }
+      }
+    },
+    "HashedAssetsCachePolicy": {
+      "Type": "AWS::CloudFront::CachePolicy",
+      "Properties": {
+        "CachePolicyConfig": {
+          "Name": { "Fn::Sub": "${AWS::StackName}-hashed-assets-immutable" },
+          "Comment": "Astro fingerprinted assets can be cached for one year.",
+          "DefaultTTL": 31536000,
+          "MaxTTL": 31536000,
+          "MinTTL": 0,
+          "ParametersInCacheKeyAndForwardedToOrigin": {
+            "EnableAcceptEncodingBrotli": true,
+            "EnableAcceptEncodingGzip": true,
+            "HeadersConfig": { "HeaderBehavior": "none" },
+            "CookiesConfig": { "CookieBehavior": "none" },
+            "QueryStringsConfig": { "QueryStringBehavior": "none" }
+          }
+        }
+      }
+    },
+    "ImagesCachePolicy": {
+      "Type": "AWS::CloudFront::CachePolicy",
+      "Properties": {
+        "CachePolicyConfig": {
+          "Name": { "Fn::Sub": "${AWS::StackName}-images-one-day" },
+          "Comment": "Public non-fingerprinted images use a short, bounded TTL.",
+          "DefaultTTL": 86400,
+          "MaxTTL": 86400,
+          "MinTTL": 0,
+          "ParametersInCacheKeyAndForwardedToOrigin": {
+            "EnableAcceptEncodingBrotli": true,
+            "EnableAcceptEncodingGzip": true,
+            "HeadersConfig": { "HeaderBehavior": "none" },
+            "CookiesConfig": { "CookieBehavior": "none" },
+            "QueryStringsConfig": { "QueryStringBehavior": "none" }
+          }
+        }
+      }
+    },
+    "SiteSecurityHeadersPolicy": {
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Name": { "Fn::Sub": "${AWS::StackName}-security-headers" },
+          "Comment": "Baseline headers for the static Fitwise origin.",
+          "SecurityHeadersConfig": {
+            "ContentSecurityPolicy": {
+              "ContentSecurityPolicy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+              "Override": true
+            },
+            "ContentTypeOptions": { "Override": true },
+            "FrameOptions": { "FrameOption": "DENY", "Override": true },
+            "ReferrerPolicy": {
+              "ReferrerPolicy": "strict-origin-when-cross-origin",
+              "Override": true
+            },
+            "StrictTransportSecurity": {
+              "AccessControlMaxAgeSec": 31536000,
+              "IncludeSubdomains": false,
+              "Preload": false,
+              "Override": true
+            }
+          },
+          "CustomHeadersConfig": {
+            "Items": [
+              {
+                "Header": "Permissions-Policy",
+                "Value": "camera=(), microphone=(), geolocation=()",
+                "Override": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    "DirectoryIndexFunction": {
+      "Type": "AWS::CloudFront::Function",
+      "Properties": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-directory-index" },
+        "AutoPublish": true,
+        "FunctionConfig": {
+          "Comment": "Map static route paths to S3 index.html objects without Lambda.",
+          "Runtime": "cloudfront-js-2.0"
+        },
+        "FunctionCode": "function handler(event) {\n  var request = event.request;\n  var uri = request.uri;\n  if (uri.charAt(uri.length - 1) === '/') {\n    request.uri = uri + 'index.html';\n  } else if (uri.split('/').pop().indexOf('.') === -1) {\n    request.uri = uri + '/index.html';\n  }\n  return request;\n}"
+      }
+    },
+    "SiteDistribution": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": true,
+          "Comment": "Fitwise static distribution; deploy only after the local release gate is signed.",
+          "Aliases": [{ "Ref": "ApexDomainName" }],
+          "DefaultRootObject": "index.html",
+          "HttpVersion": "http2and3",
+          "IPV6Enabled": true,
+          "PriceClass": "PriceClass_100",
+          "Origins": [
+            {
+              "Id": "PrivateS3Origin",
+              "DomainName": { "Fn::GetAtt": ["StaticSiteBucket", "RegionalDomainName"] },
+              "OriginAccessControlId": { "Ref": "SiteOriginAccessControl" },
+              "S3OriginConfig": { "OriginAccessIdentity": "" }
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "PrivateS3Origin",
+            "ViewerProtocolPolicy": "redirect-to-https",
+            "AllowedMethods": ["GET", "HEAD"],
+            "CachedMethods": ["GET", "HEAD"],
+            "Compress": true,
+            "CachePolicyId": { "Ref": "HtmlCachePolicy" },
+            "ResponseHeadersPolicyId": { "Ref": "SiteSecurityHeadersPolicy" },
+            "FunctionAssociations": [
+              {
+                "EventType": "viewer-request",
+                "FunctionARN": { "Fn::GetAtt": ["DirectoryIndexFunction", "FunctionARN"] }
+              }
+            ]
+          },
+          "CacheBehaviors": [
+            {
+              "PathPattern": "_astro/*",
+              "TargetOriginId": "PrivateS3Origin",
+              "ViewerProtocolPolicy": "redirect-to-https",
+              "AllowedMethods": ["GET", "HEAD"],
+              "CachedMethods": ["GET", "HEAD"],
+              "Compress": true,
+              "CachePolicyId": { "Ref": "HashedAssetsCachePolicy" },
+              "ResponseHeadersPolicyId": { "Ref": "SiteSecurityHeadersPolicy" },
+              "FunctionAssociations": [
+                {
+                  "EventType": "viewer-request",
+                  "FunctionARN": { "Fn::GetAtt": ["DirectoryIndexFunction", "FunctionARN"] }
+                }
+              ]
+            },
+            {
+              "PathPattern": "assets/images/*",
+              "TargetOriginId": "PrivateS3Origin",
+              "ViewerProtocolPolicy": "redirect-to-https",
+              "AllowedMethods": ["GET", "HEAD"],
+              "CachedMethods": ["GET", "HEAD"],
+              "Compress": true,
+              "CachePolicyId": { "Ref": "ImagesCachePolicy" },
+              "ResponseHeadersPolicyId": { "Ref": "SiteSecurityHeadersPolicy" },
+              "FunctionAssociations": [
+                {
+                  "EventType": "viewer-request",
+                  "FunctionARN": { "Fn::GetAtt": ["DirectoryIndexFunction", "FunctionARN"] }
+                }
+              ]
+            }
+          ],
+          "CustomErrorResponses": [
+            {
+              "ErrorCode": 403,
+              "ResponseCode": "404",
+              "ResponsePagePath": "/404.html",
+              "ErrorCachingMinTTL": 60
+            },
+            {
+              "ErrorCode": 404,
+              "ResponseCode": "404",
+              "ResponsePagePath": "/404.html",
+              "ErrorCachingMinTTL": 60
+            }
+          ],
+          "ViewerCertificate": {
+            "AcmCertificateArn": { "Ref": "AcmCertificateArn" },
+            "SslSupportMethod": "sni-only",
+            "MinimumProtocolVersion": "TLSv1.2_2021"
+          }
+        },
+        "Tags": [
+          { "Key": "Project", "Value": "Fitwise" },
+          { "Key": "ProvisioningStatus", "Value": "DraftNotDeployed" }
+        ]
+      }
+    },
+    "PrivateOriginBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": { "Ref": "StaticSiteBucket" },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowOnlyThisCloudFrontDistributionRead",
+              "Effect": "Allow",
+              "Principal": { "Service": "cloudfront.amazonaws.com" },
+              "Action": "s3:GetObject",
+              "Resource": { "Fn::Sub": "${StaticSiteBucket.Arn}/*" },
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${SiteDistribution}"
+                  }
+                }
+              }
+            },
+            {
+              "Sid": "DenyInsecureTransport",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:*",
+              "Resource": [
+                { "Fn::GetAtt": ["StaticSiteBucket", "Arn"] },
+                { "Fn::Sub": "${StaticSiteBucket.Arn}/*" }
+              ],
+              "Condition": { "Bool": { "aws:SecureTransport": "false" } }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "SiteBucketName": {
+      "Description": "Private REST-origin bucket; do not enable static website hosting/public access.",
+      "Value": { "Ref": "StaticSiteBucket" }
+    },
+    "DistributionId": {
+      "Description": "Use only in an explicitly authorized deployment/invalidation workflow.",
+      "Value": { "Ref": "SiteDistribution" }
+    },
+    "DistributionDomainName": {
+      "Description": "CloudFront host to configure in DNS after owner approval.",
+      "Value": { "Fn::GetAtt": ["SiteDistribution", "DomainName"] }
+    }
+  }
+}

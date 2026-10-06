@@ -1,0 +1,58 @@
+---
+import PageFamilyLayout from '../PageFamilyLayout.astro';
+import type { BreadcrumbItem } from '../../../lib/content';
+
+interface HubLink {
+  href: string;
+  label: string;
+  description?: string;
+}
+
+interface Props {
+  breadcrumb: BreadcrumbItem[];
+  h1: string;
+  intro: string;
+  links: HubLink[];
+}
+
+const { breadcrumb, h1, intro, links } = Astro.props;
+---
+
+<PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
+  <p>{intro}</p>
+  <ul class="hub-links">
+    {links.map((link) => (
+      <li>
+        <a href={link.href}>{link.label}</a>
+        {link.description && <p>{link.description}</p>}
+      </li>
+    ))}
+  </ul>
+</PageFamilyLayout>
+
+<style>
+  .hub-links {
+    display: grid;
+    gap: var(--space-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .hub-links li {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+
+  .hub-links a {
+    font-weight: 700;
+    font-size: var(--fs-md);
+  }
+
+  .hub-links p {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-secondary);
+  }
+</style>

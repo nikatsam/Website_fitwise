@@ -1,0 +1,126 @@
+---
+// Internal-only QA page for the T011 scale-diagram primitives. Not linked
+// from navigation, noindex (same rationale as dev/fit-components-preview.astro).
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ScaleDiagram from '../../components/diagram/ScaleDiagram.astro';
+import SpaceRect from '../../components/diagram/SpaceRect.astro';
+import ObjectRect from '../../components/diagram/ObjectRect.astro';
+import ClearanceZone from '../../components/diagram/ClearanceZone.astro';
+import DimensionArrow from '../../components/diagram/DimensionArrow.astro';
+import Legend from '../../components/diagram/Legend.astro';
+import { computeScale } from '../../lib/diagram';
+import { computeConfigurationWidth } from '../../lib/geometry';
+
+// Desk: 1400mm wide x 700mm deep. Two monitors, 613mm wide each, 20mm gap,
+// 38mm recommended side clearance either side of the configuration.
+const deskWidthMm = 1400;
+const deskDepthMm = 700;
+const monitorWidthMm = 613;
+const monitorDepthMm = 200;
+const gapMm = 20;
+const sideClearanceMm = 38;
+
+const configurationWidthMm = computeConfigurationWidth({
+  widthsMm: [monitorWidthMm, monitorWidthMm],
+  gapMm,
+});
+const configurationStartXMm = (deskWidthMm - configurationWidthMm) / 2;
+const monitor2XMm = configurationStartXMm + monitorWidthMm + gapMm;
+
+const viewportWidthPx = 640;
+const viewportHeightPx = 360;
+const diagramPaddingPx = 60;
+const scale = computeScale(
+  viewportWidthPx - diagramPaddingPx * 2,
+  viewportHeightPx - diagramPaddingPx * 2,
+  deskWidthMm,
+  deskDepthMm,
+);
+
+const originXMm = diagramPaddingPx / scale;
+const originYMm = diagramPaddingPx / scale;
+---
+
+<BaseLayout
+  title="Diagram primitives preview — Fitwise.stream"
+  description="Internal QA preview of the scale-diagram primitives."
+  noindex
+>
+  <section class="wrapper preview">
+    <h1>Diagram primitives preview</h1>
+    <p>Internal QA page for T011. Resize the window to check mobile/desktop legibility.</p>
+
+    <figure class="preview__diagram-wrapper">
+      <ScaleDiagram
+        id="desk-diagram"
+        widthPx={viewportWidthPx}
+        heightPx={viewportHeightPx}
+        summary={`Desk ${deskWidthMm} mm wide by ${deskDepthMm} mm deep, with two ${monitorWidthMm} mm monitors and a ${gapMm} mm gap, totalling ${configurationWidthMm} mm, centred with ${sideClearanceMm} mm recommended clearance on each side.`}
+      >
+        <SpaceRect
+          xMm={originXMm}
+          yMm={originYMm}
+          widthMm={deskWidthMm}
+          heightMm={deskDepthMm}
+          scale={scale}
+          label="Desk"
+        />
+        <ClearanceZone
+          xMm={originXMm + configurationStartXMm - sideClearanceMm}
+          yMm={originYMm}
+          widthMm={sideClearanceMm}
+          heightMm={monitorDepthMm}
+          scale={scale}
+        />
+        <ClearanceZone
+          xMm={originXMm + configurationStartXMm + configurationWidthMm}
+          yMm={originYMm}
+          widthMm={sideClearanceMm}
+          heightMm={monitorDepthMm}
+          scale={scale}
+        />
+        <ObjectRect
+          xMm={originXMm + configurationStartXMm}
+          yMm={originYMm}
+          widthMm={monitorWidthMm}
+          heightMm={monitorDepthMm}
+          scale={scale}
+          label="Monitor 1"
+        />
+        <ObjectRect
+          xMm={originXMm + monitor2XMm}
+          yMm={originYMm}
+          widthMm={monitorWidthMm}
+          heightMm={monitorDepthMm}
+          scale={scale}
+          label="Monitor 2"
+        />
+        <DimensionArrow
+          diagramId="desk-diagram"
+          x1Mm={originXMm}
+          y1Mm={originYMm + deskDepthMm + 24 / scale}
+          x2Mm={originXMm + deskWidthMm}
+          y2Mm={originYMm + deskDepthMm + 24 / scale}
+          scale={scale}
+          valueMm={deskWidthMm}
+        />
+      </ScaleDiagram>
+      <Legend />
+    </figure>
+  </section>
+</BaseLayout>
+
+<style>
+  .preview {
+    padding-block: var(--space-6);
+  }
+
+  .preview__diagram-wrapper {
+    margin: var(--space-5) 0;
+    max-width: 40rem;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+</style>

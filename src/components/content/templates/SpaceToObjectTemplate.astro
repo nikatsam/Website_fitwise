@@ -1,0 +1,80 @@
+---
+import PageFamilyLayout from '../PageFamilyLayout.astro';
+import UnitValue from '../../fit/UnitValue.astro';
+import AssumptionList from '../../fit/AssumptionList.astro';
+import { FIT_STATE_BADGE_COPY, type FitState } from '../../../lib/fit';
+import type { BreadcrumbItem } from '../../../lib/content';
+
+interface Candidate {
+  label: string;
+  requiredMm: number;
+  availableMm: number;
+  state: FitState;
+}
+
+interface Props {
+  breadcrumb: BreadcrumbItem[];
+  h1: string;
+  intro: string;
+  spaceLabel: string;
+  candidates: Candidate[];
+  assumptions: string[];
+}
+
+const { breadcrumb, h1, intro, spaceLabel, candidates, assumptions } = Astro.props;
+---
+
+<PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
+  <p>{intro}</p>
+  <table class="reverse-fit-table">
+    <caption class="visually-hidden">{`What fits ${spaceLabel}`}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Option</th>
+        <th scope="col">Required</th>
+        <th scope="col">Available</th>
+        <th scope="col">Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      {candidates.map((candidate) => {
+        const copy = FIT_STATE_BADGE_COPY[candidate.state];
+        return (
+          <tr data-fit-state={candidate.state}>
+            <th scope="row">{candidate.label}</th>
+            <td>
+              <UnitValue mm={candidate.requiredMm} />
+            </td>
+            <td>
+              <UnitValue mm={candidate.availableMm} />
+            </td>
+            <td>
+              <span aria-hidden="true">{copy.icon}</span> {copy.label}
+            </td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+  <AssumptionList assumptions={assumptions} />
+</PageFamilyLayout>
+
+<style>
+  .reverse-fit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-sm);
+  }
+
+  .reverse-fit-table th,
+  .reverse-fit-table td {
+    text-align: left;
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .reverse-fit-table tr[data-fit-state='does_not_fit'] td,
+  .reverse-fit-table tr[data-fit-state='does_not_fit'] th {
+    color: var(--color-state-no-fit-fg);
+  }
+</style>

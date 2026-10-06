@@ -1,0 +1,58 @@
+---
+import { mmToPx, labelFontSizePx } from '../../lib/diagram';
+
+interface Props {
+  xMm: number;
+  yMm: number;
+  widthMm: number;
+  heightMm: number;
+  scale: number;
+  label?: string;
+}
+
+const { xMm, yMm, widthMm, heightMm, scale, label } = Astro.props;
+const x = mmToPx(xMm, scale);
+const y = mmToPx(yMm, scale);
+const width = mmToPx(widthMm, scale);
+const height = mmToPx(heightMm, scale);
+const fontSize = labelFontSizePx(scale, 9, 14);
+---
+
+<g class="diagram-clearance">
+  <rect
+    x={x}
+    y={y}
+    width={width}
+    height={height}
+    class="diagram-clearance__rect"
+    vector-effect="non-scaling-stroke"
+  />
+  {label && (
+    <text
+      x={x + width / 2}
+      y={y + height / 2}
+      class="diagram-clearance__label"
+      font-size={fontSize}
+      text-anchor="middle"
+      dominant-baseline="middle"
+    >
+      {label}
+    </text>
+  )}
+</g>
+
+<style>
+  /* Dashed stroke, no fill: visually and texturally distinct from the solid object fill. */
+  :global(.diagram-clearance__rect) {
+    fill: none;
+    stroke: var(--color-text-secondary);
+    stroke-width: 1.5;
+    stroke-dasharray: 3 3;
+  }
+
+  :global(.diagram-clearance__label) {
+    fill: var(--color-text-secondary);
+    font-family: var(--font-body);
+    font-style: italic;
+  }
+</style>

@@ -1,0 +1,41 @@
+---
+// Representative 'comparison' page (tasks/T014). noindex: not yet backed by
+// a published PageIntent/SeoPublication record.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ComparisonTemplate from '../../components/content/templates/ComparisonTemplate.astro';
+import { buildBreadcrumb } from '../../lib/content';
+import { formatCm } from '../../lib/units';
+import { computeConfigurationWidth } from '../../lib/geometry';
+
+const deskWidths = [1200, 1400];
+const gapMm = 20;
+const twoMonitorWidthMm = computeConfigurationWidth({ widthsMm: [613, 613], gapMm });
+
+const rowLabels = ['Desk width', 'Fits two 27" monitors (20 mm gap)', 'Remaining margin'];
+const columns = deskWidths.map((widthMm) => {
+  const marginMm = widthMm - twoMonitorWidthMm;
+  return {
+    title: formatCm(widthMm),
+    values: [formatCm(widthMm), marginMm >= 0 ? 'Yes' : 'No', formatCm(Math.abs(marginMm))],
+  };
+});
+
+const h1 = '120cm vs 140cm desk';
+const breadcrumb = buildBreadcrumb('/workspace/120cm-vs-140cm-desk/', 'workspace');
+---
+
+<BaseLayout
+  title={`${h1} — Fitwise.stream`}
+  description="Compare a 120cm and a 140cm desk for fitting two 27-inch monitors side by side."
+  noindex
+>
+  <div class="wrapper">
+    <ComparisonTemplate
+      breadcrumb={breadcrumb}
+      h1={h1}
+      intro="How a 120 cm desk compares to a 140 cm desk for a common two-monitor setup."
+      rowLabels={rowLabels}
+      columns={columns}
+    />
+  </div>
+</BaseLayout>

@@ -1,0 +1,67 @@
+---
+import { mmToPx, labelFontSizePx } from '../../lib/diagram';
+import { formatMetric, formatFeetInches } from '../../lib/units';
+
+interface Props {
+  /** id of the enclosing ScaleDiagram, to reference its arrowhead markers. */
+  diagramId: string;
+  x1Mm: number;
+  y1Mm: number;
+  x2Mm: number;
+  y2Mm: number;
+  scale: number;
+  valueMm: number;
+  /** Offsets the label to one side of the line so it doesn't overlap it. */
+  labelOffsetPx?: number;
+}
+
+const { diagramId, x1Mm, y1Mm, x2Mm, y2Mm, scale, valueMm, labelOffsetPx = 14 } = Astro.props;
+
+const x1 = mmToPx(x1Mm, scale);
+const y1 = mmToPx(y1Mm, scale);
+const x2 = mmToPx(x2Mm, scale);
+const y2 = mmToPx(y2Mm, scale);
+const isHorizontal = Math.abs(y2 - y1) < 0.01;
+const fontSize = labelFontSizePx(scale, 10, 16);
+
+const labelX = (x1 + x2) / 2;
+const labelY = isHorizontal ? y1 - labelOffsetPx : (y1 + y2) / 2;
+---
+
+<g class="diagram-arrow">
+  <line
+    x1={x1}
+    y1={y1}
+    x2={x2}
+    y2={y2}
+    class="diagram-arrow__line"
+    marker-start={`url(#${diagramId}-arrow-start)`}
+    marker-end={`url(#${diagramId}-arrow-end)`}
+    vector-effect="non-scaling-stroke"
+  />
+  <text
+    x={labelX}
+    y={labelY}
+    class="diagram-arrow__label"
+    font-size={fontSize}
+    text-anchor="middle"
+    dominant-baseline={isHorizontal ? 'auto' : 'middle'}
+    transform={isHorizontal ? undefined : `rotate(-90 ${labelX} ${labelY})`}
+  >
+    <tspan data-unit="metric">{formatMetric(valueMm)}</tspan>
+    <tspan data-unit="imperial">{formatFeetInches(valueMm)}</tspan>
+  </text>
+</g>
+
+<style>
+  :global(.diagram-arrow__line) {
+    stroke: var(--color-text-secondary);
+    stroke-width: 1.5;
+  }
+
+  :global(.diagram-arrow__label) {
+    fill: var(--color-text-primary);
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
+</style>

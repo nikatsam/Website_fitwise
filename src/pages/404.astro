@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page not found — Fitwise.stream" description="This page does not exist." noindex>
+  <section class="wrapper not-found">
+    <h1>Page not found</h1>
+    <p>
+      The page you requested does not exist. <a href="/">Return to the homepage</a>.
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    padding-block: var(--space-7);
+    min-height: 40vh;
+  }
+</style>

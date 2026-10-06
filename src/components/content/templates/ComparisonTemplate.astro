@@ -1,0 +1,60 @@
+---
+import PageFamilyLayout from '../PageFamilyLayout.astro';
+import type { BreadcrumbItem } from '../../../lib/content';
+
+interface ComparisonColumn {
+  title: string;
+  /** Display-ready values, one per rowLabel, already unit-formatted by the caller. */
+  values: string[];
+}
+
+interface Props {
+  breadcrumb: BreadcrumbItem[];
+  h1: string;
+  intro: string;
+  rowLabels: string[];
+  columns: ComparisonColumn[];
+}
+
+const { breadcrumb, h1, intro, rowLabels, columns } = Astro.props;
+---
+
+<PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
+  <p>{intro}</p>
+  <table class="comparison-table">
+    <caption class="visually-hidden">{`${h1} comparison`}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Dimension</th>
+        {columns.map((column) => (
+          <th scope="col">{column.title}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rowLabels.map((label, rowIndex) => (
+        <tr>
+          <th scope="row">{label}</th>
+          {columns.map((column) => (
+            <td>{column.values[rowIndex]}</td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</PageFamilyLayout>
+
+<style>
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-sm);
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    text-align: left;
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+</style>

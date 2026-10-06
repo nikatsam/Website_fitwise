@@ -1,0 +1,64 @@
+{
+  "sources": [
+    {
+      "id": "src-example-method",
+      "title": "Example only \u2014 replace with verified source before publication",
+      "publisher": "Fitwise development fixture",
+      "accessedOn": "2026-10-06",
+      "confidence": "low",
+      "notes": "Development fixture; MUST NOT ship as production provenance."
+    }
+  ],
+  "derivations": [
+    {
+      "id": "derive-16-9-screen",
+      "description": "Derive 16:9 screen width and height from diagonal using Pythagorean geometry."
+    }
+  ],
+  "entities": [
+    {
+      "id": "display-27-16x9-generic",
+      "slug": "27-inch-16-9-screen",
+      "name": "27-inch 16:9 screen",
+      "category": "display",
+      "status": "draft",
+      "diagonalInches": 27,
+      "aspectRatio": {
+        "width": 16,
+        "height": 9
+      },
+      "note": "Overall monitor width is intentionally absent; derive screen-only dimensions for development."
+    },
+    {
+      "id": "desk-1400-reference",
+      "slug": "140cm-desk",
+      "name": "140 cm desk",
+      "category": "desk",
+      "status": "draft",
+      "widthMm": {
+        "valueMm": 1400,
+        "kind": "nominal",
+        "sourceId": "src-example-method"
+      }
+    },
+    {
+      "id": "bed-us-king-dev",
+      "slug": "us-king-bed-dev",
+      "name": "US King bed development fixture",
+      "category": "bed",
+      "status": "draft",
+      "market": "US",
+      "mattressWidthMm": {
+        "valueMm": 1930,
+        "kind": "nominal",
+        "sourceId": "src-example-method"
+      },
+      "mattressLengthMm": {
+        "valueMm": 2030,
+        "kind": "nominal",
+        "sourceId": "src-example-method"
+      },
+      "note": "Example fixture only; verify before publication."
+    }
+  ]
+}

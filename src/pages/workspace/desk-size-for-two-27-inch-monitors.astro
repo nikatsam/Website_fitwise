@@ -1,0 +1,72 @@
+---
+// Representative 'object_to_space' page (tasks/T014). noindex: not yet backed
+// by a published PageIntent/SeoPublication record (T015-T017).
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FitAnswerTemplate from '../../components/content/templates/FitAnswerTemplate.astro';
+import { buildBreadcrumb } from '../../lib/content';
+import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import { buildWorkspaceWidthCheck, deriveScreenDimensions } from '../../lib/geometry';
+import { renderWorkspaceDiagramMarkup } from '../../lib/diagram';
+
+const deskWidthMm = 1400;
+const gapMm = 20;
+const sideMarginMm = 38;
+const derived = deriveScreenDimensions(27, { width: 16, height: 9 });
+const monitorWidthMm = Math.round(derived.screenWidthMm.valueMm);
+const configurationWidthMm = monitorWidthMm * 2 + gapMm;
+
+const check = buildWorkspaceWidthCheck({
+  configurationWidthMm,
+  sideMarginRecommendedMm: sideMarginMm,
+  deskWidthMm,
+});
+const assumptions = [
+  `Monitor width: approximate screen-only width derived from a 27" 16:9 diagonal; actual device is typically wider due to bezel.`,
+  'Monitor depth (incl. stand) assumed at 200 mm.',
+  `Gap between monitors: ${gapMm} mm.`,
+];
+const result = evaluateFit([check], assumptions);
+const rows = toDimensionDisplayRows([check], result);
+
+const diagramId = 'desk-two-27in-diagram';
+const diagramMarkup = renderWorkspaceDiagramMarkup({
+  diagramId,
+  viewportWidthPx: 640,
+  viewportHeightPx: 360,
+  paddingPx: 60,
+  deskWidthMm,
+  deskDepthMm: 700,
+  monitorWidthMm,
+  monitorDepthMm: 200,
+  monitorCount: 2,
+  gapMm,
+  sideMarginMm,
+});
+
+const h1 = 'Desk size for two 27-inch monitors';
+const breadcrumb = buildBreadcrumb('/workspace/desk-size-for-two-27-inch-monitors/', 'workspace');
+---
+
+<BaseLayout
+  title={`${h1} — Fitwise.stream`}
+  description="See the minimum and recommended desk width for two 27-inch monitors side by side, with a scale diagram."
+  noindex
+>
+  <div class="wrapper">
+    <FitAnswerTemplate
+      breadcrumb={breadcrumb}
+      h1={h1}
+      intro="Two 27-inch monitors side by side need about this much desk width, including a comfortable gap and side clearance."
+      state={result.state}
+      primary={rows[0]!}
+      rows={rows}
+      diagramId={diagramId}
+      diagramWidthPx={640}
+      diagramHeightPx={360}
+      diagramSummary={`Two 27-inch monitors on a ${deskWidthMm} mm desk, ${gapMm} mm gap, ${sideMarginMm} mm recommended side clearance.`}
+      diagramMarkup={diagramMarkup}
+      tableCaption="Desk width breakdown: required, recommended, available and margin"
+      assumptions={result.assumptions}
+    />
+  </div>
+</BaseLayout>

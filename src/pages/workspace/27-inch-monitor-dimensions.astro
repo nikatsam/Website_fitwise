@@ -1,0 +1,39 @@
+---
+// Representative 'entity' page (tasks/T014). noindex: not yet backed by a
+// published PageIntent/SeoPublication record.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EntityTemplate from '../../components/content/templates/EntityTemplate.astro';
+import { buildBreadcrumb } from '../../lib/content';
+import { deriveScreenDimensions } from '../../lib/geometry';
+
+const derived = deriveScreenDimensions(27, { width: 16, height: 9 });
+
+const h1 = '27-inch monitor dimensions';
+const breadcrumb = buildBreadcrumb('/workspace/27-inch-monitor-dimensions/', 'workspace');
+---
+
+<BaseLayout
+  title={`${h1} — Fitwise.stream`}
+  description="Screen-only width and height for a 27-inch 16:9 monitor, derived from the diagonal size."
+  noindex
+>
+  <div class="wrapper">
+    <EntityTemplate
+      breadcrumb={breadcrumb}
+      h1={h1}
+      intro="A 27-inch monitor's screen dimensions, calculated from its diagonal size and 16:9 aspect ratio. This is the screen only — the overall device is wider due to the bezel, and deeper once you include the stand."
+      measurements={[
+        {
+          label: 'Screen width',
+          valueMm: derived.screenWidthMm.valueMm,
+          note: 'derived from diagonal, screen only',
+        },
+        {
+          label: 'Screen height',
+          valueMm: derived.screenHeightMm.valueMm,
+          note: 'derived from diagonal, screen only',
+        },
+      ]}
+    />
+  </div>
+</BaseLayout>

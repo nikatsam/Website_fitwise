@@ -1,0 +1,49 @@
+id,priority,cluster,family,title,route,primary_query,rationale,status
+P001,P0,workspace,hub,Desk Size Guide for Monitors,/workspace/desk-size-guide/,desk size for monitors,Core workspace hub consolidating broad variants,published
+P002,P0,workspace,object_to_space,Desk Size for Dual Monitors,/workspace/desk-size-for-dual-monitors/,desk size for dual monitors,Primary decision intent with strong geometry utility,published
+P003,P0,workspace,object_to_space,Desk Size for Two 24-Inch Monitors,/workspace/desk-size-for-two-24-inch-monitors/,desk size for two 24 inch monitors,Common dual-monitor setup,published
+P004,P0,workspace,object_to_space,Desk Size for Two 27-Inch Monitors,/workspace/desk-size-for-two-27-inch-monitors/,desk size for two 27 inch monitors,High-value common setup; assumptions materially affect answer,published
+P005,P0,workspace,object_to_space,Desk Size for Two 32-Inch Monitors,/workspace/desk-size-for-two-32-inch-monitors/,desk size for two 32 inch monitors,Large-display workspace intent,published
+P006,P0,workspace,object_to_space,Desk Size for a 34-Inch Ultrawide Monitor,/workspace/desk-size-for-34-inch-ultrawide/,desk size for 34 inch ultrawide,Ultrawide decision intent,published
+P007,P1,workspace,object_to_space,Desk Size for a 49-Inch Ultrawide Monitor,/workspace/desk-size-for-49-inch-ultrawide/,desk size for 49 inch ultrawide,Large footprint decision; add after robust seed data,draft
+P008,P0,workspace,configuration,Desk Size for Dual Monitors and a Laptop,/workspace/desk-size-for-dual-monitors-and-laptop/,desk size for two monitors and laptop,Configuration intent beyond simple width chart,published
+P009,P1,workspace,configuration,Desk Size for Dual Monitors and Speakers,/workspace/desk-size-for-dual-monitors-and-speakers/,desk size for dual monitors and speakers,Useful adjacent configuration,draft
+P010,P0,workspace,space_to_object,What Fits on a 120cm Desk?,/workspace/what-fits-on-a-120cm-desk/,what fits on 120cm desk,Reverse-fit matrix page,published
+P011,P0,workspace,space_to_object,What Fits on a 140cm Desk?,/workspace/what-fits-on-a-140cm-desk/,what fits on 140cm desk,Reverse-fit matrix; strong internal-link hub,published
+P012,P0,workspace,space_to_object,What Fits on a 160cm Desk?,/workspace/what-fits-on-a-160cm-desk/,what fits on 160cm desk,Reverse-fit matrix,published
+P013,P0,workspace,comparison,120cm vs 140cm Desk,/workspace/120cm-vs-140cm-desk/,120cm vs 140cm desk,Purchase decision comparison,published
+P014,P0,workspace,comparison,140cm vs 160cm Desk,/workspace/140cm-vs-160cm-desk/,140cm vs 160cm desk,Purchase decision comparison,published
+P015,P0,workspace,clearance,Desk Depth for Monitors,/workspace/desk-depth-for-monitor/,desk depth for monitor,Depth/ergonomics adjacency with distinct intent,published
+P016,P1,workspace,clearance,Desk Depth for a 27-Inch Monitor,/workspace/desk-depth-for-27-inch-monitor/,desk depth for 27 inch monitor,Dedicated page only if content can add viewing/stand depth utility,draft
+P017,P1,workspace,clearance,Desk Depth for a 32-Inch Monitor,/workspace/desk-depth-for-32-inch-monitor/,desk depth for 32 inch monitor,Potential long-tail expansion,draft
+P018,P0,workspace,clearance,Desk Chair Clearance Guide,/workspace/desk-chair-clearance/,desk chair clearance,Extends from desktop to whole workspace footprint,published
+P019,P0,workspace,entity,Monitor Physical Size Chart,/workspace/monitor-size-chart/,monitor physical size chart,Supporting reference for fit decisions,published
+P020,P0,workspace,comparison,24 vs 27-Inch Monitor Physical Size,/workspace/24-vs-27-inch-monitor-size/,24 vs 27 monitor size,Physical-fit comparison distinct from specs/performance,published
+P021,P0,workspace,comparison,27 vs 32-Inch Monitor Physical Size,/workspace/27-vs-32-inch-monitor-size/,27 vs 32 monitor size,Physical-fit comparison,published
+P022,P0,workspace,hub,Workspace FitCheck,/workspace/fitcheck/,workspace fit calculator,Product landing route; static default + client enhancement,published
+P023,P0,bedroom,hub,What Size Bed Fits My Room?,/bedroom/what-size-bed-fits-my-room/,what size bed fits my room,Primary reverse-fit bedroom hub,published
+P024,P0,bedroom,object_to_space,Minimum Room Size for a King Bed,/bedroom/minimum-room-size-for-king-bed/,minimum room size for king bed,Core high-intent fit decision,published
+P025,P0,bedroom,object_to_space,Minimum Room Size for a Queen Bed,/bedroom/minimum-room-size-for-queen-bed/,minimum room size for queen bed,Core high-intent fit decision,published
+P026,P0,bedroom,object_to_space,Minimum Room Size for a Double Bed,/bedroom/minimum-room-size-for-double-bed/,minimum room size for double bed,Core fit decision; geography must be explicit,published
+P027,P0,bedroom,space_to_object,What Bed Fits a 10×10 Room?,/bedroom/what-bed-fits-a-10x10-room/,what bed fits in 10x10 room,Reverse-fit intent; useful matrix/diagram,published
+P028,P0,bedroom,space_to_object,What Bed Fits a 10×12 Room?,/bedroom/what-bed-fits-a-10x12-room/,what bed fits in 10x12 room,Reverse-fit intent with multiple valid configurations,published
+P029,P1,bedroom,space_to_object,What Bed Fits a 9×10 Room?,/bedroom/what-bed-fits-a-9x10-room/,what bed fits in 9x10 room,Add if seed research supports independent value,draft
+P030,P0,bedroom,comparison,King vs Queen: Room Space Required,/bedroom/king-vs-queen-room-space/,king vs queen room size,Decision comparison focused on space not mattress comfort,published
+P031,P0,bedroom,comparison,Double vs Queen: Room Space Required,/bedroom/double-vs-queen-room-space/,double vs queen room size,Space comparison,published
+P032,P0,bedroom,clearance,Clearance Around a Bed,/bedroom/clearance-around-bed/,clearance around bed,Foundational clearance reference used across pages,published
+P033,P0,bedroom,clearance,Space Between Bed and Wall,/bedroom/space-between-bed-and-wall/,space between bed and wall,Common layout clearance intent,published
+P034,P0,bedroom,clearance,Space Between Bed and Wardrobe,/bedroom/space-between-bed-and-wardrobe/,space between bed and wardrobe,Adds door/wardrobe interaction later,published
+P035,P0,bedroom,clearance,Bed and Dresser Clearance,/bedroom/bed-and-dresser-clearance/,space between bed and dresser,Bedroom configuration intent,published
+P036,P0,bedroom,configuration,King Bed with Two Nightstands: Room Size,/bedroom/king-bed-two-nightstands-room-size/,room size for king bed and two nightstands,Configuration-specific useful geometry,published
+P037,P0,bedroom,configuration,Queen Bed with Two Nightstands: Room Size,/bedroom/queen-bed-two-nightstands-room-size/,room size for queen bed and two nightstands,Configuration-specific useful geometry,published
+P038,P1,bedroom,configuration,Bed + Dresser + Wardrobe Bedroom Layout,/bedroom/bed-dresser-wardrobe-layout/,bedroom layout bed dresser wardrobe,More complex configuration after base geometry proves stable,draft
+P039,P0,bedroom,entity,US Bed Size Dimensions,/bedroom/us-bed-size-dimensions/,US bed sizes,Supporting market-specific reference,published
+P040,P0,bedroom,entity,UK Bed Size Dimensions,/bedroom/uk-bed-size-dimensions/,UK bed sizes,Supporting market-specific reference,published
+P041,P0,bedroom,hub,Bedroom FitCheck,/bedroom/fitcheck/,bedroom fit calculator,Product landing route; static default + client enhancement,published
+P042,P0,site,hub,How Fitwise Calculates Fit,/methodology/,how fitwise calculates fit,Trust/methodology page,published
+P043,P0,site,hub,About Fitwise,/about/,about fitwise,Site purpose and editorial/data principles,published
+P044,P0,site,hub,Sources and Data Standards,/data-sources/,fitwise data sources,Provenance and source methodology,published
+P045,P2,dining,hub,What Dining Table Fits My Room?,/dining/what-dining-table-fits-my-room/,what dining table fits my room,Phase 3 expansion,deferred
+P046,P2,living,clearance,Space Between Sofa and Coffee Table,/living/sofa-coffee-table-clearance/,space between sofa and coffee table,Phase 3 expansion,deferred
+P047,P3,appliances,object_to_space,Washer Dryer Closet Size Guide,/appliances/washer-dryer-closet-size/,washer dryer closet size,Phase 4 purchase-intent expansion,deferred
+P048,P3,gym,object_to_space,Room Size for a Power Rack,/home-gym/room-size-for-power-rack/,room size for power rack,Phase 4 space/clearance expansion,deferred

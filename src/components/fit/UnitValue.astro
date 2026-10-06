@@ -1,0 +1,16 @@
+---
+import { formatMetric, formatFeetInches } from '../../lib/units';
+
+interface Props {
+  mm: number;
+  /** Stable id so a client script can update this value in place (see T012). */
+  id?: string;
+}
+
+const { mm, id } = Astro.props;
+---
+
+<span class="unit-value" id={id}>
+  <span data-unit="metric">{formatMetric(mm)}</span>
+  <span data-unit="imperial">{formatFeetInches(mm)}</span>
+</span>

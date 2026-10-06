@@ -1,0 +1,122 @@
+---
+import PageFamilyLayout from '../PageFamilyLayout.astro';
+import UnitValue from '../../fit/UnitValue.astro';
+import SourceCitationList from '../SourceCitationList.astro';
+import type { BreadcrumbItem } from '../../../lib/content';
+import type { SourceRecord } from '../../../types';
+
+interface Fact {
+  label: string;
+  valueMm?: number;
+  valueText?: string;
+  note?: string;
+}
+
+interface Section {
+  title: string;
+  intro?: string;
+  facts: Fact[];
+  assumptions?: string[];
+}
+
+interface Props {
+  breadcrumb: BreadcrumbItem[];
+  h1: string;
+  intro: string;
+  sections: Section[];
+  sources: SourceRecord[];
+}
+
+const { breadcrumb, h1, intro, sections, sources } = Astro.props;
+---
+
+<PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
+  <p>{intro}</p>
+  {sections.map((section, sectionIndex) => (
+    <section class="family-facts" aria-labelledby={`family-section-${sectionIndex}`}>
+      <h2 id={`family-section-${sectionIndex}`}>{section.title}</h2>
+      {section.intro && <p>{section.intro}</p>}
+      <dl class="family-facts__list">
+        {section.facts.map((fact) => (
+          <div class="family-facts__row">
+            <dt>{fact.label}</dt>
+            <dd>
+              {fact.valueMm !== undefined && <UnitValue mm={fact.valueMm} />}
+              {fact.valueText}
+              {fact.note && <span class="family-facts__note">{fact.note}</span>}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {section.assumptions && section.assumptions.length > 0 && (
+        <details class="family-facts__assumptions">
+          <summary>Assumptions for {section.title.toLowerCase()}</summary>
+          <ul>
+            {section.assumptions.map((assumption) => (
+              <li>{assumption}</li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </section>
+  ))}
+  <SourceCitationList sources={sources} />
+</PageFamilyLayout>
+
+<style>
+  .family-facts {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .family-facts__list {
+    margin: 0;
+    font-size: var(--fs-sm);
+  }
+
+  .family-facts__row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: var(--space-4);
+    padding-block: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .family-facts dt {
+    font-weight: 600;
+  }
+
+  .family-facts dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .family-facts__note {
+    display: block;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+  }
+
+  .family-facts__assumptions {
+    margin-top: var(--space-3);
+  }
+
+  .family-facts__assumptions summary {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .family-facts__assumptions li + li {
+    margin-top: var(--space-2);
+  }
+
+  @media (max-width: 36rem) {
+    .family-facts__row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-1);
+    }
+  }
+</style>

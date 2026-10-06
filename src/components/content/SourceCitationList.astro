@@ -1,0 +1,45 @@
+---
+import type { SourceRecord } from '../../types';
+
+interface Props {
+  sources: SourceRecord[];
+}
+
+const { sources } = Astro.props;
+---
+
+{sources.length > 0 && (
+  <section class="source-citations" aria-labelledby="source-citations-heading">
+    <h2 id="source-citations-heading">Sources and evidence</h2>
+    <ul>
+      {sources.map((source) => (
+        <li>
+          {source.url ? <a href={source.url}>{source.title}</a> : <span>{source.title}</span>}
+          <span class="source-citations__publisher">
+            {' '}
+            {source.publisher}; accessed {source.accessedOn}
+          </span>
+          {source.notes && <p>{source.notes}</p>}
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .source-citations ul {
+    display: grid;
+    gap: var(--space-3);
+    padding-inline-start: var(--space-5);
+  }
+
+  .source-citations__publisher,
+  .source-citations p {
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+  }
+
+  .source-citations p {
+    margin: var(--space-1) 0 0;
+  }
+</style>

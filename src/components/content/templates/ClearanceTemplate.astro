@@ -1,0 +1,71 @@
+---
+import PageFamilyLayout from '../PageFamilyLayout.astro';
+import UnitValue from '../../fit/UnitValue.astro';
+import type { BreadcrumbItem } from '../../../lib/content';
+
+interface Props {
+  breadcrumb: BreadcrumbItem[];
+  h1: string;
+  intro: string;
+  context: string;
+  minimumMm?: number;
+  recommendedMm?: number;
+  notes?: string;
+}
+
+const { breadcrumb, h1, intro, context, minimumMm, recommendedMm, notes } = Astro.props;
+---
+
+<PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
+  <p>{intro}</p>
+  <dl class="clearance-facts">
+    <div>
+      <dt>Context</dt>
+      <dd>{context}</dd>
+    </div>
+    {minimumMm !== undefined && (
+      <div>
+        <dt>Minimum</dt>
+        <dd>
+          <UnitValue mm={minimumMm} />
+        </dd>
+      </div>
+    )}
+    {recommendedMm !== undefined && (
+      <div>
+        <dt>Recommended</dt>
+        <dd>
+          <UnitValue mm={recommendedMm} />
+        </dd>
+      </div>
+    )}
+  </dl>
+  {notes && <p class="clearance-facts__notes">{notes}</p>}
+</PageFamilyLayout>
+
+<style>
+  .clearance-facts {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .clearance-facts div {
+    display: flex;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .clearance-facts dt {
+    font-weight: 600;
+    min-width: 10rem;
+  }
+
+  .clearance-facts dd {
+    margin: 0;
+  }
+
+  .clearance-facts__notes {
+    color: var(--color-text-secondary);
+  }
+</style>
