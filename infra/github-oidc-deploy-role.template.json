@@ -259,6 +259,19 @@
                   }
                 },
                 {
+                  "Sid": "TagNewFitwiseCertificateAtRequest",
+                  "Effect": "Allow",
+                  "Action": "acm:AddTagsToCertificate",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:acm:us-east-1:${AWS::AccountId}:certificate/*"
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "aws:RequestTag/project": "fitwise"
+                    }
+                  }
+                },
+                {
                   "Sid": "AddProjectTagToFitwiseCertificate",
                   "Effect": "Allow",
                   "Action": "acm:AddTagsToCertificate",

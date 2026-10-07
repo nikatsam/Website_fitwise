@@ -338,6 +338,12 @@ export function validateOidcDeployRoleTemplate(template) {
   if (
     !statements.some(
       (statement) =>
+        statement.Sid === 'TagNewFitwiseCertificateAtRequest' &&
+        statement.Action === 'acm:AddTagsToCertificate' &&
+        statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise',
+    ) ||
+    !statements.some(
+      (statement) =>
         statement.Sid === 'ReadTaggedFitwiseCertificates' &&
         statement.Action?.includes('acm:DescribeCertificate') &&
         statement.Condition?.StringEquals?.['aws:ResourceTag/project'] === 'fitwise',
