@@ -325,6 +325,23 @@ export function validateOidcDeployRoleTemplate(template) {
     errors.push('ACM request permission must be limited to the tagged fitwise.stream certificate.');
   }
   if (
+    !statements.some(
+      (statement) =>
+        statement.Sid === 'ReadTaggedFitwiseCertificates' &&
+        statement.Action?.includes('acm:DescribeCertificate') &&
+        statement.Condition?.StringEquals?.['aws:ResourceTag/project'] === 'fitwise',
+    ) ||
+    !statements.some(
+      (statement) =>
+        statement.Sid === 'AddProjectTagToFitwiseCertificate' &&
+        statement.Condition?.StringEquals?.['aws:RequestTag/Project'] === 'FitWise',
+    )
+  ) {
+    errors.push(
+      'ACM read access must target fitwise certificates; Project=FitWise tagging must be explicit.',
+    );
+  }
+  if (
     statements.some(
       (statement) =>
         typeof statement.Action === 'string' &&

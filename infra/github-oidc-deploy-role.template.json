@@ -248,13 +248,20 @@
                   }
                 },
                 {
-                  "Sid": "ReadAndTagFitwiseCertificates",
+                  "Sid": "ReadTaggedFitwiseCertificates",
                   "Effect": "Allow",
-                  "Action": [
-                    "acm:AddTagsToCertificate",
-                    "acm:DescribeCertificate",
-                    "acm:ListTagsForCertificate"
-                  ],
+                  "Action": ["acm:DescribeCertificate", "acm:ListTagsForCertificate"],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:acm:us-east-1:${AWS::AccountId}:certificate/*"
+                  },
+                  "Condition": {
+                    "StringEquals": { "aws:ResourceTag/project": "fitwise" }
+                  }
+                },
+                {
+                  "Sid": "AddProjectTagToFitwiseCertificate",
+                  "Effect": "Allow",
+                  "Action": "acm:AddTagsToCertificate",
                   "Resource": {
                     "Fn::Sub": "arn:${AWS::Partition}:acm:us-east-1:${AWS::AccountId}:certificate/*"
                   },
