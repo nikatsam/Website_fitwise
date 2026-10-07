@@ -35,3 +35,9 @@ Reviewer: **Project owner — sign-off confirmed through authenticated user inte
 **Outcome:** PASS — production site is live on the custom apex with HTTPS. Search-engine property verification is operationally pending owner access.
 
 **Evidence:** Workflow runs above, live HTTP checks, AWS stack/resource reads, `QA_REPORT.md`, route-disposition manifest, and Gate E sign-off.
+
+## Follow-up — T025 www hostname (in progress)
+
+- The production evidence above applies to `fitwise.stream` only. The deployed certificate and CloudFront aliases currently cover the apex only; `www.fitwise.stream` is not configured or verified.
+- Local changes add a dual-name ACM request workflow, CloudFront alias and permanent apex redirect with path/query preservation. They have not been published or deployed.
+- Live acceptance remains pending ACM DNS validation in Cloudflare, certificate issuance, GitHub `ACM_CERTIFICATE_ARN` update, CloudFront deployment, the DNS-only `www` CNAME, and HTTPS redirect smoke checks.

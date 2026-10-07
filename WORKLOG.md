@@ -20,39 +20,40 @@
 ### Current progress
 
 - Specification/development-pack progress: **100%**
-- Implementation progress: **100%**
-- Deployment progress: **100%**
-- Current active task: **None — T001–T024 complete; webmaster properties are owner operations**
-- Next task: **None — no T025 task card exists**
+- Implementation progress: **99%**
+- Deployment progress: **99%**
+- Current active task: **T025 — add www CloudFront alias and apex redirect**
+- Next task: **Complete certificate validation and live rollout after owner DNS actions**
 
 ## Task tracker
 
-| ID   | Status  | Weight | Completed  | Verification / notes                                                                                             |
-| ---- | ------- | -----: | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| T001 | 🟩 DONE |     4% | 2026-10-06 | `npm install`, `npm run build`, `npm run dev` all verified; Astro 7 static output, no framework runtime          |
-| T002 | 🟩 DONE |     3% | 2026-10-06 | `npm run verify` passes (typecheck, lint, format:check, test, build)                                             |
-| T003 | 🟩 DONE |     3% | 2026-10-06 | `npm run verify` passes; dev-server smoke test of `/`, `/workspace/`, `/bedroom/`, `/methodology/`               |
-| T004 | 🟩 DONE |     5% | 2026-10-06 | `npm run verify` passes (7/7 tests incl. new fixture/type tests)                                                 |
-| T005 | 🟩 DONE |     5% | 2026-10-06 | `npm run verify` passes (18/18 tests); build-abort behavior manually verified with injected bad data             |
-| T006 | 🟩 DONE |     4% | 2026-10-06 | `npm run verify` passes (40/40 tests)                                                                            |
-| T007 | 🟩 DONE |     6% | 2026-10-06 | `npm run verify` passes (53/53 tests, incl. equality/±1mm boundary cases)                                        |
-| T008 | 🟩 DONE |     6% | 2026-10-06 | `npm run verify` passes (66/66 tests)                                                                            |
-| T009 | 🟩 DONE |     6% | 2026-10-06 | `npm run verify` passes (78/78 tests)                                                                            |
-| T010 | 🟩 DONE |     4% | 2026-10-06 | `npm run verify` passes (82/82 tests); manual dev-server check of all 3 states + keyboard/ARIA                   |
-| T011 | 🟩 DONE |     6% | 2026-10-06 | `npm run verify` passes (90/90 tests); manual dev-server check of the diagram preview page                       |
-| T012 | 🟩 DONE |     7% | 2026-10-06 | `npm run verify` passes (98/98 tests); dev-server HTML inspection of `/workspace/`                               |
-| T013 | 🟩 DONE |     7% | 2026-10-06 | `npm run verify` passes (105/105 tests); dev-server HTML inspection of `/bedroom/`                               |
-| T014 | 🟩 DONE |     6% | 2026-10-06 | `npm run verify` passes (110/110 tests); all 14 pages built, 7 representative family pages checked               |
-| T015 | 🟩 DONE |     4% | 2026-10-06 | Workspace seed data wired; validator passes; `npm run verify` passes (110 tests), 16 pages built                 |
-| T016 | 🟩 DONE |     4% | 2026-10-06 | US/UK bed references, US room scenarios, sourced clearances, 19 intents; `npm run verify` passes; 20 pages built |
-| T017 | 🟩 DONE |     3% | 2026-10-06 | SEO envelopes, canonicals, social tags and typed JSON-LD breadcrumbs; 115 tests pass                             |
-| T018 | 🟩 DONE |     2% | 2026-10-06 | Build sitemap/robots, offline SEO/link validators, redirect registry and deterministic local URL diff; 123 tests |
-| T019 | 🟩 DONE |     4% | 2026-10-06 | Clean `npm ci`, 130 tests, 20-page build, SEO/link and route smoke checks pass; numeric boundaries hardened      |
-| T020 | 🟩 DONE |     3% | 2026-10-06 | Lighthouse: a11y/performance 100; keyboard, mobile/desktop visual QA passed; fixed SVG and accessibility issues  |
-| T021 | 🟩 DONE |     2% | 2026-10-06 | Gate E passed; owner sign-off recorded; local release candidate approved                                         |
-| T022 | 🟩 DONE |     3% | 2026-10-07 | Private S3/CloudFront/OAC/ACM deployed through GitHub OIDC; project tags and security smoke verified             |
-| T023 | 🟩 DONE |     2% | 2026-10-07 | Repeatable OIDC deploy, cache sync, invalidation and IndexNow workflow passed                                    |
-| T024 | 🟩 DONE |     1% | 2026-10-07 | Cloudflare apex HTTPS/DNS and production smoke pass; GSC/Bing/Yandex remain owner-operationally-pending          |
+| ID   | Status         | Weight | Completed  | Verification / notes                                                                                             |
+| ---- | -------------- | -----: | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| T001 | 🟩 DONE        |     4% | 2026-10-06 | `npm install`, `npm run build`, `npm run dev` all verified; Astro 7 static output, no framework runtime          |
+| T002 | 🟩 DONE        |     3% | 2026-10-06 | `npm run verify` passes (typecheck, lint, format:check, test, build)                                             |
+| T003 | 🟩 DONE        |     3% | 2026-10-06 | `npm run verify` passes; dev-server smoke test of `/`, `/workspace/`, `/bedroom/`, `/methodology/`               |
+| T004 | 🟩 DONE        |     5% | 2026-10-06 | `npm run verify` passes (7/7 tests incl. new fixture/type tests)                                                 |
+| T005 | 🟩 DONE        |     5% | 2026-10-06 | `npm run verify` passes (18/18 tests); build-abort behavior manually verified with injected bad data             |
+| T006 | 🟩 DONE        |     4% | 2026-10-06 | `npm run verify` passes (40/40 tests)                                                                            |
+| T007 | 🟩 DONE        |     6% | 2026-10-06 | `npm run verify` passes (53/53 tests, incl. equality/±1mm boundary cases)                                        |
+| T008 | 🟩 DONE        |     6% | 2026-10-06 | `npm run verify` passes (66/66 tests)                                                                            |
+| T009 | 🟩 DONE        |     6% | 2026-10-06 | `npm run verify` passes (78/78 tests)                                                                            |
+| T010 | 🟩 DONE        |     4% | 2026-10-06 | `npm run verify` passes (82/82 tests); manual dev-server check of all 3 states + keyboard/ARIA                   |
+| T011 | 🟩 DONE        |     6% | 2026-10-06 | `npm run verify` passes (90/90 tests); manual dev-server check of the diagram preview page                       |
+| T012 | 🟩 DONE        |     7% | 2026-10-06 | `npm run verify` passes (98/98 tests); dev-server HTML inspection of `/workspace/`                               |
+| T013 | 🟩 DONE        |     7% | 2026-10-06 | `npm run verify` passes (105/105 tests); dev-server HTML inspection of `/bedroom/`                               |
+| T014 | 🟩 DONE        |     6% | 2026-10-06 | `npm run verify` passes (110/110 tests); all 14 pages built, 7 representative family pages checked               |
+| T015 | 🟩 DONE        |     4% | 2026-10-06 | Workspace seed data wired; validator passes; `npm run verify` passes (110 tests), 16 pages built                 |
+| T016 | 🟩 DONE        |     4% | 2026-10-06 | US/UK bed references, US room scenarios, sourced clearances, 19 intents; `npm run verify` passes; 20 pages built |
+| T017 | 🟩 DONE        |     3% | 2026-10-06 | SEO envelopes, canonicals, social tags and typed JSON-LD breadcrumbs; 115 tests pass                             |
+| T018 | 🟩 DONE        |     2% | 2026-10-06 | Build sitemap/robots, offline SEO/link validators, redirect registry and deterministic local URL diff; 123 tests |
+| T019 | 🟩 DONE        |     4% | 2026-10-06 | Clean `npm ci`, 130 tests, 20-page build, SEO/link and route smoke checks pass; numeric boundaries hardened      |
+| T020 | 🟩 DONE        |     3% | 2026-10-06 | Lighthouse: a11y/performance 100; keyboard, mobile/desktop visual QA passed; fixed SVG and accessibility issues  |
+| T021 | 🟩 DONE        |     2% | 2026-10-06 | Gate E passed; owner sign-off recorded; local release candidate approved                                         |
+| T022 | 🟩 DONE        |     3% | 2026-10-07 | Private S3/CloudFront/OAC/ACM deployed through GitHub OIDC; project tags and security smoke verified             |
+| T023 | 🟩 DONE        |     2% | 2026-10-07 | Repeatable OIDC deploy, cache sync, invalidation and IndexNow workflow passed                                    |
+| T024 | 🟩 DONE        |     1% | 2026-10-07 | Cloudflare apex HTTPS/DNS and production smoke pass; GSC/Bing/Yandex remain owner-operationally-pending          |
+| T025 | 🟦 IN PROGRESS |     1% | —          | Local dual-SAN ACM workflow, CloudFront alias/301 and regression tests; certificate/DNS/deployment pending       |
 
 ## Session log
 
@@ -335,6 +336,13 @@ Paused mid-task at the user's request to document progress. Current state is saf
 - The CloudFront distribution, ACM certificate, security headers, private S3 block, sitemap/robots, dynamic route rewrite, and actual 404 were checked on the production hostname. The IndexNow key is served and deployment notifications completed.
 - GSC/Bing/Yandex account/property verification remains owner-operationally-pending. The optional GSC API step is skipped until the owner adds service-account/property configuration; no credentials are stored in the repo.
 - `npm run verify` passes with 153 tests; all T001-T024 are done, implementation/deployment progress 100%. No T025 task card currently exists.
+
+### 2026-10-07 — T025 www hostname support (IN PROGRESS)
+
+- Updated the ACM request workflow to require both `fitwise.stream` and `www.fitwise.stream`, request both SANs, and print DNS validation records for both hostnames. Existing OIDC policy already allows these domain names with the required `Project=FitWise` tag.
+- Added `www.fitwise.stream` to CloudFront and a viewer-request 301 redirect to the apex that preserves path, single-value queries, and multi-value queries. Added offline infrastructure and redirect regression checks.
+- Live rollout is not performed. The workflow/template edits must be published before the GitHub workflow can request the certificate; the owner must add the ACM validation CNAMEs in Cloudflare, wait for issuance, then configure GitHub `ACM_CERTIFICATE_ARN`, deploy, and add the DNS-only `www` CNAME.
+- `npm run verify` passes with 155 tests, type/lint/format, the 38-page build, SEO/link/route/content checks and offline infrastructure validation; both CloudFormation templates pass `sam validate --lint`.
 
 ### 2026-10-06 — T020 accessibility, performance and manual QA (DONE)
 

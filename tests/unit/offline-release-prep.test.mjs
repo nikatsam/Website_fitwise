@@ -85,6 +85,17 @@ describe('offline cloud release preparation', () => {
     expect(errors.some((error) => error.includes('CloudFront distribution must carry'))).toBe(true);
   });
 
+  it('requires the www alias and permanent apex redirect', async () => {
+    const template = JSON.parse(await readFile(templatePath, 'utf8'));
+    template.Resources.SiteDistribution.Properties.DistributionConfig.Aliases = [
+      { Ref: 'ApexDomainName' },
+    ];
+    template.Resources.DirectoryIndexFunction.Properties.FunctionCode = 'function handler() {}';
+    const errors = validateInfrastructureTemplate(template);
+    expect(errors.some((error) => error.includes('apex and www aliases'))).toBe(true);
+    expect(errors.some((error) => error.includes('permanently redirect www'))).toBe(true);
+  });
+
   it('rejects broad bucket listing and an unsafe immutable-asset policy', async () => {
     const template = JSON.parse(await readFile(templatePath, 'utf8'));
     const statements =
@@ -108,7 +119,8 @@ describe('offline cloud release preparation', () => {
       'function',
     );
     const handler = vm.runInNewContext(`(${handlerSource})`);
-    const rewrite = (uri, querystring = {}) => handler({ request: { uri, querystring } });
+    const rewrite = (uri, querystring = {}, host = 'fitwise.stream') =>
+      handler({ request: { uri, querystring, headers: { host: { value: host } } } });
 
     expect(rewrite('/').uri).toBe('/index.html');
     expect(rewrite('/workspace/').uri).toBe('/workspace/index.html');
@@ -120,6 +132,17 @@ describe('offline cloud release preparation', () => {
     const queryRoute = rewrite('/workspace/', { units: { value: 'imperial' } });
     expect(queryRoute.uri).toBe('/workspace/index.html');
     expect(queryRoute.querystring.units.value).toBe('imperial');
+
+    const wwwRedirect = rewrite(
+      '/workspace/what-fits',
+      { units: { value: 'imperial' }, tag: { multiValue: [{ value: 'one' }, { value: 'two' }] } },
+      'www.fitwise.stream',
+    );
+    expect(wwwRedirect.statusCode).toBe(301);
+    expect(wwwRedirect.headers.location.value).toBe(
+      'https://fitwise.stream/workspace/what-fits?units=imperial&tag=one&tag=two',
+    );
+    expect(rewrite('/workspace/what-fits').uri).toBe('/workspace/what-fits/index.html');
 
     const errors =
       template.Resources.SiteDistribution.Properties.DistributionConfig.CustomErrorResponses;

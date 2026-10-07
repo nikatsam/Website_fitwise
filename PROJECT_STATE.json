@@ -1,13 +1,15 @@
 {
   "project": "fitwise.stream",
   "stage": "production",
-  "activeTask": null,
+  "activeTask": "T025",
   "nextTask": null,
   "lastCompletedTask": "T024",
-  "implementationProgressPct": 100,
-  "deploymentProgressPct": 100,
-  "knownBlockers": [],
+  "implementationProgressPct": 99,
+  "deploymentProgressPct": 99,
+  "knownBlockers": [
+    "T025 live rollout requires publishing the workflow changes, ACM DNS validation and owner-managed Cloudflare DNS updates."
+  ],
   "lastVerificationCommand": "npm run verify",
   "cloudDeploymentAllowed": true,
-  "notes": "T001-T024 complete. T021 Gate E was signed. T022/T023 deployed the private S3 origin in eu-north-1 and global CloudFront via GitHub OIDC. Stack fitwise-static-site is UPDATE_COMPLETE; distribution EY0IX2NYZEEG1; ACM certificate issued in us-east-1 as required by CloudFront. T024 added the Cloudflare apex CNAME; https://fitwise.stream returns 200 with apex canonical and redirects HTTP to HTTPS. Production routes/sitemap/robots, 404, security headers and direct S3 denial were verified. IndexNow deployment notification completed. GA4 G-J10W58E2ZL runs on the apex hostname. GSC/Bing/Yandex account property verification and optional GSC API credentials are operationally pending owner access. All implementation/deployment tasks T001-T024 are DONE; no T025 task card exists."
+  "notes": "T001-T024 complete; T025 is active for www hostname support. T021 Gate E was signed. T022/T023 deployed the private S3 origin in eu-north-1 and global CloudFront via GitHub OIDC. Stack fitwise-static-site is UPDATE_COMPLETE; distribution EY0IX2NYZEEG1; current ACM certificate covers only fitwise.stream. T024 added the Cloudflare apex CNAME; https://fitwise.stream returns 200 with apex canonical and redirects HTTP to HTTPS. Production routes/sitemap/robots, 404, security headers and direct S3 denial were verified. T025 local changes add a dual-SAN certificate workflow, CloudFront www alias and 301 redirect preserving path/query. Those changes are not published/deployed; www DNS and certificate validation remain owner operations. IndexNow deployment notification completed. GA4 G-J10W58E2ZL runs on the apex hostname. GSC/Bing/Yandex account property verification and optional GSC API credentials are operationally pending owner access."
 }

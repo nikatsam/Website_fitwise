@@ -9,7 +9,7 @@
 - Delivery: CloudFront OAC with SigV4, least-privilege `s3:GetObject` scoped to the distribution ARN, TLS 1.2 or later, security response headers, and a CloudFront Function that maps directory/extensionless paths to `index.html`. S3 REST-origin missing-key 403 responses are translated to the `/404.html` body with actual HTTP 404, without granting `s3:ListBucket`.
 - Production packaging excludes local-only `/dev/` preview routes. The local QA build still includes them; `npm run deploy:plan` identifies but omits those files. Any cleanup of dev keys in an existing bucket must be inventoried and approved separately.
 - Cache policy: HTML browser revalidation with bounded shared-cache TTL; fingerprinted `/_astro/` assets immutable for one year; images one day; crawl-control and other static files short-lived.
-- Certificate: ACM certificate is issued in `us-east-1`, covering `fitwise.stream`. The CloudFront distribution aliases the apex only; `www` is not configured.
+- Certificate: The currently deployed ACM certificate is issued in `us-east-1` and covers `fitwise.stream` only. T025 adds local configuration for a replacement certificate and the `www` CloudFront alias; live `www` support is not enabled yet.
 - Region/price: S3 and CloudFormation stack are in `eu-north-1`; CloudFront is global and uses `PriceClass_100`.
 - Tagging: taggable Fitwise resources and stacks carry both `project=fitwise` and `Project=FitWise`. CloudFront OAC/cache/response-policy subresources rejected tag operations and use the `fitwise-static-site` name prefix; the pre-existing shared OIDC provider is not retagged.
 
@@ -42,8 +42,9 @@ The production workflow `.github/workflows/deploy-production.yml` deploys only f
 ## Cloudflare DNS Steps
 
 1. The active record in Cloudflare's `fitwise.stream` zone is Type `CNAME`, Name `@`, Target `d1qzsj88vccaey.cloudfront.net`, Proxy status **DNS only** (grey cloud), TTL **Auto**. Cloudflare flattens this apex CNAME.
-2. Keep the existing ACM validation CNAME. Do not add `www`; neither the certificate nor the CloudFront aliases include it.
-3. `https://fitwise.stream/`, `/sitemap.xml`, `/robots.txt`, and a nonexistent path have been smoke tested after DNS propagation. If Cloudflare proxying is enabled later, use SSL/TLS **Full (strict)**.
+2. Keep the existing ACM validation CNAME. When the T025 ACM workflow is published and run, add both exact validation CNAMEs it prints, DNS only (grey cloud), TTL Auto; do not guess or synthesize validation records.
+3. After the dual-name ACM certificate is issued and the CloudFront deployment completes, add Type `CNAME`, Name `www`, Target `d1qzsj88vccaey.cloudfront.net`, Proxy status **DNS only**, TTL **Auto**. Do not enable this record before the distribution is configured with the alias and certificate.
+4. Verify `https://www.fitwise.stream/` and nested routes return 301 to the matching apex URL, including query strings. Recheck `https://fitwise.stream/`, `/sitemap.xml`, `/robots.txt`, and a nonexistent path. If Cloudflare proxying is enabled later, use SSL/TLS **Full (strict)**.
 
 ## Search and Analytics Setup
 
@@ -63,8 +64,8 @@ The production workflow `.github/workflows/deploy-production.yml` deploys only f
 
 ## Operational Guardrails
 
-- This runbook is not a credential store or claim that the domain is live. The T021 release audit has been signed off and `cloudDeploymentAllowed` is true.
-- The one-time `fitwise-github-oidc` IAM role stack has been bootstrapped using the authorized administrator context. The shared account OIDC provider was pre-existing and was not modified. Site bucket/distribution, ACM certificate, Cloudflare DNS, GA4, and webmaster properties are still pending.
+- This runbook is not a credential store or a claim that `www` is live. The T021 release audit has been signed off and `cloudDeploymentAllowed` is true. The apex hostname is live; T025 is local/in progress.
+- The one-time `fitwise-github-oidc` IAM role stack has been bootstrapped using the authorized administrator context. The shared account OIDC provider was pre-existing and was not modified. T025 certificate validation, GitHub deployment-variable update, distribution deployment, and `www` DNS record are pending.
 - Use the GitHub production workflows for subsequent ACM/site deployment; do not run a local S3 sync or direct site-stack deployment with the administrator profile.
 - The deploy workflow sends IndexNow URL changes, not sitemap files. IndexNow key material is public by design and the site hosts its matching root key file. Google does not consume IndexNow; Google sitemap API submission is optional and remains disabled until the owner configures GSC service-account JSON/property variables.
 - GA4 uses Measurement ID `G-J10W58E2ZL`; the layout emits the tag only when the browser hostname is exactly `fitwise.stream`, so localhost/CloudFront-default-domain previews do not send analytics. The CloudFront CSP permits Google tag/collection hosts. Review applicable privacy/consent requirements before launch; no consent banner or consent-mode gate exists in the site. Cloudflare DNS, Search Console verification, Bing/Yandex property ownership, and Google service-account authority remain owner-account operations.

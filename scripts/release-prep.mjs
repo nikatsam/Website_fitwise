@@ -104,8 +104,19 @@ export function validateInfrastructureTemplate(template) {
       errors.push('Every cache behavior must apply the directory-index viewer-request function.');
     }
   }
-  if (!siteDistribution.Aliases?.some((alias) => alias.Ref === 'ApexDomainName')) {
-    errors.push('Distribution must use the configured apex alias.');
+  if (
+    !siteDistribution.Aliases?.some((alias) => alias.Ref === 'ApexDomainName') ||
+    !siteDistribution.Aliases?.includes('www.fitwise.stream')
+  ) {
+    errors.push('Distribution must use the configured apex and www aliases.');
+  }
+  const directoryFunctionCode = directoryFunction.FunctionCode ?? '';
+  if (
+    !directoryFunctionCode.includes("host === 'www.fitwise.stream'") ||
+    !directoryFunctionCode.includes('statusCode: 301') ||
+    !directoryFunctionCode.includes('https://fitwise.stream')
+  ) {
+    errors.push('Viewer-request function must permanently redirect www to the apex.');
   }
   if (
     siteDistribution.ViewerCertificate?.MinimumProtocolVersion !== 'TLSv1.2_2021' ||

@@ -35,7 +35,7 @@ jobs:
           aws-region: us-east-1
           role-session-name: FitwiseAcmRequest
 
-      - name: Request or reuse apex certificate and print DNS validation record
+      - name: Request or reuse apex and www certificate and print DNS validation records
         id: certificate
         shell: bash
         run: |
@@ -43,14 +43,15 @@ jobs:
           certificate_arn="$(aws acm list-certificates \
             --region us-east-1 \
             --certificate-statuses PENDING_VALIDATION ISSUED \
-            --query "CertificateSummaryList[?DomainName=='fitwise.stream'].CertificateArn | [0]" \
+            --query "CertificateSummaryList[?DomainName=='fitwise.stream' && contains(not_null(SubjectAlternativeNameSummaries, \`[]\`), 'www.fitwise.stream')].CertificateArn | [0]" \
             --output text)"
           if [[ -z "$certificate_arn" || "$certificate_arn" == "None" ]]; then
             certificate_arn="$(aws acm request-certificate \
               --region us-east-1 \
               --domain-name fitwise.stream \
+              --subject-alternative-names www.fitwise.stream \
               --validation-method DNS \
-              --idempotency-token fitwiseacm20261006 \
+              --idempotency-token fitwiseacm20261007 \
               --tags Key=project,Value=fitwise Key=Project,Value=FitWise \
               --query CertificateArn \
               --output text)"
@@ -59,25 +60,25 @@ jobs:
           echo "Certificate ARN: $certificate_arn" >> "$GITHUB_STEP_SUMMARY"
 
           for attempt in {1..12}; do
-            record="$(aws acm describe-certificate \
+            records="$(aws acm describe-certificate \
               --region us-east-1 \
               --certificate-arn "$certificate_arn" \
-              --query "Certificate.DomainValidationOptions[?DomainName=='fitwise.stream'].ResourceRecord | [0]" \
+              --query "Certificate.DomainValidationOptions[?DomainName=='fitwise.stream' || DomainName=='www.fitwise.stream']" \
               --output json)"
-            if [[ "$record" != "null" && -n "$record" ]]; then
+            if jq -e '[.[] | select(.ResourceRecord != null) | .DomainName] | unique | length == 2' <<< "$records" >/dev/null; then
               break
             fi
             sleep 5
           done
-          if [[ "$record" == "null" || -z "$record" ]]; then
+          if ! jq -e '[.[] | select(.ResourceRecord != null) | .DomainName] | unique | length == 2' <<< "$records" >/dev/null; then
             echo "ACM has not returned the DNS validation record yet; inspect the certificate in ACM." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
-          echo '### Add this Cloudflare validation record' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Create the exact CNAME below in the fitwise.stream zone, DNS only (proxy disabled), TTL Auto. Do not change the apex record yet.' >> "$GITHUB_STEP_SUMMARY"
+          echo '### Add both Cloudflare validation records' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Create each exact CNAME below in the fitwise.stream zone, DNS only (proxy disabled), TTL Auto. Do not change the apex record yet.' >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
-          echo "$record" >> "$GITHUB_STEP_SUMMARY"
+          jq '[.[] | {DomainName, ResourceRecord}]' <<< "$records" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
 # This workflow only requests/reuses an ACM certificate and reports its
-# validation CNAME. It does not modify Cloudflare DNS or deploy the site.
+# validation CNAMEs. It does not modify Cloudflare DNS or deploy the site.

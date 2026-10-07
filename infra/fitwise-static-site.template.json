@@ -11,8 +11,8 @@
     "AcmCertificateArn": {
       "Type": "String",
       "AllowedPattern": "^arn:aws:acm:us-east-1:[0-9]{12}:certificate/[A-Fa-f0-9-]{36}$",
-      "ConstraintDescription": "Supply an issued ACM certificate ARN in us-east-1 covering ApexDomainName.",
-      "Description": "Existing, issued us-east-1 ACM certificate. Certificate creation/validation is a separate owner action."
+      "ConstraintDescription": "Supply an issued ACM certificate ARN in us-east-1 covering ApexDomainName and www.fitwise.stream.",
+      "Description": "Existing, issued us-east-1 ACM certificate covering apex and www. Certificate creation/validation is a separate owner action."
     }
   },
   "Resources": {
@@ -190,10 +190,10 @@
         "Name": { "Fn::Sub": "${AWS::StackName}-directory-index" },
         "AutoPublish": true,
         "FunctionConfig": {
-          "Comment": "Map static route paths to S3 index.html objects without Lambda.",
+          "Comment": "Redirect www to apex, then map static route paths to S3 index.html objects.",
           "Runtime": "cloudfront-js-2.0"
         },
-        "FunctionCode": "function handler(event) {\n  var request = event.request;\n  var uri = request.uri;\n  if (uri.charAt(uri.length - 1) === '/') {\n    request.uri = uri + 'index.html';\n  } else if (uri.split('/').pop().indexOf('.') === -1) {\n    request.uri = uri + '/index.html';\n  }\n  return request;\n}",
+        "FunctionCode": "function handler(event) {\n  var request = event.request;\n  var host = request.headers.host && request.headers.host.value;\n  if (host === 'www.fitwise.stream') {\n    var query = [];\n    var params = request.querystring || {};\n    Object.keys(params).forEach(function (key) {\n      var param = params[key];\n      if (param.multiValue) {\n        param.multiValue.forEach(function (item) { query.push(key + '=' + item.value); });\n      } else {\n        query.push(key + '=' + param.value);\n      }\n    });\n    var location = 'https://fitwise.stream' + request.uri + (query.length ? '?' + query.join('&') : '');\n    return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: location } } };\n  }\n  var uri = request.uri;\n  if (uri.charAt(uri.length - 1) === '/') {\n    request.uri = uri + 'index.html';\n  } else if (uri.split('/').pop().indexOf('.') === -1) {\n    request.uri = uri + '/index.html';\n  }\n  return request;\n}",
         "Tags": [
           { "Key": "project", "Value": "fitwise" },
           { "Key": "Project", "Value": "FitWise" }
@@ -206,7 +206,7 @@
         "DistributionConfig": {
           "Enabled": true,
           "Comment": "Fitwise static distribution; deploy only after the local release gate is signed.",
-          "Aliases": [{ "Ref": "ApexDomainName" }],
+          "Aliases": [{ "Ref": "ApexDomainName" }, "www.fitwise.stream"],
           "DefaultRootObject": "index.html",
           "HttpVersion": "http2and3",
           "IPV6Enabled": true,
