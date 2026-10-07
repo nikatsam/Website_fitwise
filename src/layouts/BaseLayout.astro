@@ -52,6 +52,20 @@ const canonicalUrl = canonicalPath ? absoluteCanonical(canonicalPath) : undefine
       <script type="application/ld+json" set:html={serializeJsonLd(record)} />
     ))}
     <script is:inline>
+      if (window.location.hostname === 'fitwise.stream') {
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+          window.dataLayer.push(arguments); // eslint-disable-line prefer-rest-params
+        }
+        gtag('js', new Date());
+        gtag('config', 'G-J10W58E2ZL');
+        const gaScript = document.createElement('script');
+        gaScript.async = true;
+        gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-J10W58E2ZL';
+        document.head.appendChild(gaScript);
+      }
+    </script>
+    <script is:inline>
       (function () {
         try {
           const stored = localStorage.getItem('fitwise-theme');

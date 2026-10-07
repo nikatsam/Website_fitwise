@@ -55,7 +55,13 @@ function checkPage(route, source, { heading, includes = [] }) {
 const home = await html('/');
 checkPage('/', home, {
   heading: 'Will it fit?',
-  includes: ['/workspace/', '/bedroom/', '/methodology/'],
+  includes: [
+    '/workspace/',
+    '/bedroom/',
+    '/methodology/',
+    'G-J10W58E2ZL',
+    'googletagmanager.com/gtag/js',
+  ],
 });
 
 const workspace = await html('/workspace/');

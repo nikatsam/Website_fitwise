@@ -23,7 +23,7 @@
               "Condition": {
                 "StringEquals": {
                   "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-                  "token.actions.githubusercontent.com:sub": "repo:nikatsam/Website_fitwise:environment:production"
+                  "token.actions.githubusercontent.com:sub": "repo:nikatsam@22520540/Website_fitwise@1407694634:environment:production"
                 }
               }
             }
@@ -201,8 +201,10 @@
                   "Resource": "*",
                   "Condition": {
                     "StringEquals": {
-                      "aws:RequestTag/project": "fitwise",
-                      "acm:DomainNames": "fitwise.stream"
+                      "aws:RequestTag/project": "fitwise"
+                    },
+                    "ForAllValues:StringEquals": {
+                      "acm:DomainNames": ["fitwise.stream"]
                     }
                   }
                 },
@@ -245,7 +247,7 @@
     },
     "RoleTrustSubject": {
       "Description": "Exact GitHub Actions OIDC subject allowed to assume this role.",
-      "Value": "repo:nikatsam/Website_fitwise:environment:production"
+      "Value": "repo:nikatsam@22520540/Website_fitwise@1407694634:environment:production"
     }
   }
 }

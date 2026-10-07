@@ -323,9 +323,11 @@ Paused mid-task at the user's request to document progress. Current state is saf
 ### 2026-10-06 — T022 GitHub OIDC bootstrap (IN PROGRESS)
 
 - Confirmed AWS account `754246170171`, default stack region `eu-north-1`, GitHub repository `nikatsam/Website_fitwise`, and existing account-wide GitHub OIDC provider. No existing Fitwise ACM certificate or production Cloudflare/GSC/GA4 credentials were present.
-- Bootstrapped the tagged (`project=fitwise`) `fitwise-github-oidc` CloudFormation role stack. Trust is restricted to the GitHub `production` environment on `main`; repository variables `AWS_ROLE_ARN` and `AWS_REGION` are set and the environment branch policy permits `main` only.
+- Bootstrapped and updated the tagged (`project=fitwise`) `fitwise-github-oidc` CloudFormation role stack. Its trust matches GitHub's immutable owner/repository subject IDs and is restricted to the `production` environment on `main`; repository variables `AWS_ROLE_ARN` and `AWS_REGION` are set and the environment branch policy permits `main` only.
 - No Fitwise S3 bucket, CloudFront distribution, certificate, Cloudflare DNS record, GA4 tag, or webmaster property has been created. OIDC deploy workflows and ACM request workflow are prepared but must be committed/pushed before running them.
-- Next: publish the reviewed OIDC workflows, run the certificate workflow, and provide its DNS-only CNAME to the owner for Cloudflare validation. Do not deploy CloudFront until the certificate is `ISSUED`.
+- Two certificate-workflow attempts failed before ACM creation because the initial trust did not match GitHub's immutable `sub` claim. The diagnostic logged only non-sensitive claims; the trust policy was corrected and AWS IAM simulation allows the tagged apex-certificate request. Retry the certificate workflow.
+- No FitWise certificate has been requested yet. After a successful workflow returns the validation CNAME, provide it for an owner-managed DNS-only Cloudflare record; deploy CloudFront only after ACM status is `ISSUED`.
+- After correcting the immutable subject and ACM multivalue condition, workflow `37518265620` successfully requested `arn:aws:acm:us-east-1:754246170171:certificate/0b912086-a718-4faf-b3d2-f3e8250a55e4` with `project=fitwise`. Status is PENDING_VALIDATION; Cloudflare CNAME is outstanding.
 - Lighthouse mobile on representative workspace/bedroom family answers and desktop workspace scores 100 Accessibility/Performance/Best Practices; SEO 66 reflects intentional noindex. Mobile fact rows visually checked after switching to stacked definition lists. Preview smoke confirms generated answers 200 and deferred P008 route 404.
 
 ### 2026-10-06 — T020 accessibility, performance and manual QA (DONE)

@@ -219,7 +219,7 @@ export function validateOidcDeployRoleTemplate(template) {
     !trust?.Principal?.Federated?.['Fn::Sub']?.includes('token.actions.githubusercontent.com') ||
     trustConditions['token.actions.githubusercontent.com:aud'] !== 'sts.amazonaws.com' ||
     trustConditions['token.actions.githubusercontent.com:sub'] !==
-      'repo:nikatsam/Website_fitwise:environment:production'
+      'repo:nikatsam@22520540/Website_fitwise@1407694634:environment:production'
   ) {
     errors.push('OIDC trust must be restricted to the Fitwise repository production environment.');
   }
@@ -272,7 +272,9 @@ export function validateOidcDeployRoleTemplate(template) {
       (statement) =>
         statement.Sid === 'RequestOnlyTaggedFitwiseApexCertificate' &&
         statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise' &&
-        statement.Condition?.StringEquals?.['acm:DomainNames'] === 'fitwise.stream',
+        statement.Condition?.['ForAllValues:StringEquals']?.['acm:DomainNames']?.includes(
+          'fitwise.stream',
+        ),
     )
   ) {
     errors.push('ACM request permission must be limited to the tagged fitwise.stream certificate.');
