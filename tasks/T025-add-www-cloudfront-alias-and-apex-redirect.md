@@ -11,10 +11,11 @@ the only canonical hostname.
 
 ## Steps
 
-- [ ] Update the ACM OIDC workflow to request/reuse a `us-east-1` certificate covering both apex and `www`, and report DNS validation CNAMEs for both names.
-- [ ] Add both aliases to CloudFront and redirect `www` requests at viewer-request before directory-index rewriting.
-- [ ] Run offline infrastructure and regression checks for apex rewrites, permanent `www` redirects, and query preservation.
-- [ ] Publish the workflow/template changes, request the certificate, and add its validation CNAMEs in Cloudflare as DNS-only records.
+- [x] Update and publish the ACM OIDC workflow to request/reuse a `us-east-1` certificate covering both apex and `www`, and report DNS validation CNAMEs for both names.
+- [x] Add both aliases to CloudFront and redirect `www` requests at viewer-request before directory-index rewriting.
+- [x] Run offline infrastructure and regression checks for apex rewrites, permanent `www` redirects, and query preservation.
+- [x] Publish the workflow/template changes, request the certificate, and capture its DNS validation records.
+- [ ] Add the pending `www` validation CNAME in Cloudflare as DNS-only, TTL Auto; the apex validation record is already successful.
 - [ ] After ACM issuance, set GitHub `ACM_CERTIFICATE_ARN` and deploy through the production workflow.
 - [ ] Add Cloudflare `www` CNAME to the CloudFront hostname (DNS only, TTL Auto) after the distribution deployment.
 - [ ] Verify live apex content/canonical metadata and `www` 301 responses for root, nested paths, and queries.

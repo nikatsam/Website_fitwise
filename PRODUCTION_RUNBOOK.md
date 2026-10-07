@@ -9,7 +9,7 @@
 - Delivery: CloudFront OAC with SigV4, least-privilege `s3:GetObject` scoped to the distribution ARN, TLS 1.2 or later, security response headers, and a CloudFront Function that maps directory/extensionless paths to `index.html`. S3 REST-origin missing-key 403 responses are translated to the `/404.html` body with actual HTTP 404, without granting `s3:ListBucket`.
 - Production packaging excludes local-only `/dev/` preview routes. The local QA build still includes them; `npm run deploy:plan` identifies but omits those files. Any cleanup of dev keys in an existing bucket must be inventoried and approved separately.
 - Cache policy: HTML browser revalidation with bounded shared-cache TTL; fingerprinted `/_astro/` assets immutable for one year; images one day; crawl-control and other static files short-lived.
-- Certificate: The currently deployed ACM certificate is issued in `us-east-1` and covers `fitwise.stream` only. T025 adds local configuration for a replacement certificate and the `www` CloudFront alias; live `www` support is not enabled yet.
+- Certificate: The currently deployed ACM certificate is issued in `us-east-1` and covers `fitwise.stream` only. T025 configuration is published; replacement certificate `d8916f6d-31f8-4696-b3fb-b6594c4b8df5` is pending DNS validation. Live `www` support is not enabled yet.
 - Region/price: S3 and CloudFormation stack are in `eu-north-1`; CloudFront is global and uses `PriceClass_100`.
 - Tagging: taggable Fitwise resources and stacks carry both `project=fitwise` and `Project=FitWise`. CloudFront OAC/cache/response-policy subresources rejected tag operations and use the `fitwise-static-site` name prefix; the pre-existing shared OIDC provider is not retagged.
 
@@ -42,7 +42,7 @@ The production workflow `.github/workflows/deploy-production.yml` deploys only f
 ## Cloudflare DNS Steps
 
 1. The active record in Cloudflare's `fitwise.stream` zone is Type `CNAME`, Name `@`, Target `d1qzsj88vccaey.cloudfront.net`, Proxy status **DNS only** (grey cloud), TTL **Auto**. Cloudflare flattens this apex CNAME.
-2. Keep the existing ACM validation CNAME. When the T025 ACM workflow is published and run, add both exact validation CNAMEs it prints, DNS only (grey cloud), TTL Auto; do not guess or synthesize validation records.
+2. Keep the existing apex ACM validation CNAME (`_1edc6822c121a20d6c3ff917e57f7239.fitwise.stream` -> `_9afed6ba1fe910ed23229218d83112f5.wzccmgtwzk.acm-validations.aws`). It already validates the apex. Add the pending `www` validation CNAME: Name `_4455b73eda5608f94f725596eba032f6.www`, Target `_653916f1eba3003dfa38003a65e83e09.wzccmgtwzk.acm-validations.aws`, Type `CNAME`, DNS only (grey cloud), TTL Auto. Cloudflare appends the `fitwise.stream` zone to the Name; do not add a separate `www` traffic record yet.
 3. After the dual-name ACM certificate is issued and the CloudFront deployment completes, add Type `CNAME`, Name `www`, Target `d1qzsj88vccaey.cloudfront.net`, Proxy status **DNS only**, TTL **Auto**. Do not enable this record before the distribution is configured with the alias and certificate.
 4. Verify `https://www.fitwise.stream/` and nested routes return 301 to the matching apex URL, including query strings. Recheck `https://fitwise.stream/`, `/sitemap.xml`, `/robots.txt`, and a nonexistent path. If Cloudflare proxying is enabled later, use SSL/TLS **Full (strict)**.
 
