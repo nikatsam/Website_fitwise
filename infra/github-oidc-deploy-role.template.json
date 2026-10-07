@@ -120,7 +120,9 @@
                   "Action": "cloudfront:CreateDistribution",
                   "Resource": "*",
                   "Condition": {
-                    "StringEquals": { "aws:RequestTag/project": "fitwise" }
+                    "StringEquals": {
+                      "aws:RequestTag/Project": "FitWise"
+                    }
                   }
                 },
                 {
@@ -141,7 +143,9 @@
                     "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/*"
                   },
                   "Condition": {
-                    "StringEquals": { "aws:ResourceTag/project": "fitwise" }
+                    "StringEquals": {
+                      "aws:ResourceTag/Project": "FitWise"
+                    }
                   }
                 },
                 {
@@ -152,7 +156,9 @@
                     "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/*"
                   },
                   "Condition": {
-                    "StringEquals": { "aws:RequestTag/project": "fitwise" }
+                    "StringEquals": {
+                      "aws:RequestTag/Project": "FitWise"
+                    }
                   }
                 },
                 {
@@ -210,7 +216,9 @@
                     "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:function/fitwise-static-site-*"
                   },
                   "Condition": {
-                    "StringEquals": { "aws:RequestTag/project": "fitwise" }
+                    "StringEquals": {
+                      "aws:RequestTag/Project": "FitWise"
+                    }
                   }
                 },
                 {
@@ -226,16 +234,16 @@
                   "Resource": "*"
                 },
                 {
-                  "Sid": "RequestOnlyTaggedFitwiseApexCertificate",
+                  "Sid": "RequestOnlyTaggedFitwiseCertificate",
                   "Effect": "Allow",
                   "Action": "acm:RequestCertificate",
                   "Resource": "*",
                   "Condition": {
                     "StringEquals": {
-                      "aws:RequestTag/project": "fitwise"
+                      "aws:RequestTag/Project": "FitWise"
                     },
                     "ForAllValues:StringEquals": {
-                      "acm:DomainNames": ["fitwise.stream"]
+                      "acm:DomainNames": ["fitwise.stream", "www.fitwise.stream"]
                     }
                   }
                 },
@@ -249,6 +257,12 @@
                   ],
                   "Resource": {
                     "Fn::Sub": "arn:${AWS::Partition}:acm:us-east-1:${AWS::AccountId}:certificate/*"
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "aws:ResourceTag/project": "fitwise",
+                      "aws:RequestTag/Project": "FitWise"
+                    }
                   }
                 },
                 {
@@ -267,7 +281,7 @@
             }
           }
         ],
-        "Tags": [{ "Key": "project", "Value": "fitwise" }]
+        "Tags": [{ "Key": "Project", "Value": "FitWise" }]
       }
     }
   },

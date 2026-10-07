@@ -77,6 +77,14 @@ describe('offline cloud release preparation', () => {
     expect(errors.some((error) => error.includes('redirect viewers to HTTPS'))).toBe(true);
   });
 
+  it('requires both Project tag spellings on taggable site resources', async () => {
+    const template = JSON.parse(await readFile(templatePath, 'utf8'));
+    template.Resources.SiteDistribution.Properties.Tags =
+      template.Resources.SiteDistribution.Properties.Tags.filter((tag) => tag.Key !== 'Project');
+    const errors = validateInfrastructureTemplate(template);
+    expect(errors.some((error) => error.includes('CloudFront distribution must carry'))).toBe(true);
+  });
+
   it('rejects broad bucket listing and an unsafe immutable-asset policy', async () => {
     const template = JSON.parse(await readFile(templatePath, 'utf8'));
     const statements =

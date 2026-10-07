@@ -61,6 +61,7 @@
         },
         "Tags": [
           { "Key": "project", "Value": "fitwise" },
+          { "Key": "Project", "Value": "FitWise" },
           { "Key": "Purpose", "Value": "StaticSiteOrigin" },
           { "Key": "ProvisioningStatus", "Value": "Deployed" }
         ]
@@ -193,7 +194,10 @@
           "Runtime": "cloudfront-js-2.0"
         },
         "FunctionCode": "function handler(event) {\n  var request = event.request;\n  var uri = request.uri;\n  if (uri.charAt(uri.length - 1) === '/') {\n    request.uri = uri + 'index.html';\n  } else if (uri.split('/').pop().indexOf('.') === -1) {\n    request.uri = uri + '/index.html';\n  }\n  return request;\n}",
-        "Tags": [{ "Key": "project", "Value": "fitwise" }]
+        "Tags": [
+          { "Key": "project", "Value": "fitwise" },
+          { "Key": "Project", "Value": "FitWise" }
+        ]
       }
     },
     "SiteDistribution": {
@@ -286,6 +290,7 @@
         },
         "Tags": [
           { "Key": "project", "Value": "fitwise" },
+          { "Key": "Project", "Value": "FitWise" },
           { "Key": "ProvisioningStatus", "Value": "Deployed" }
         ]
       }

@@ -51,7 +51,7 @@ jobs:
               --domain-name fitwise.stream \
               --validation-method DNS \
               --idempotency-token fitwiseacm20261006 \
-              --tags Key=project,Value=fitwise \
+              --tags Key=project,Value=fitwise Key=Project,Value=FitWise \
               --query CertificateArn \
               --output text)"
           fi

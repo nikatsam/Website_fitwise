@@ -11,7 +11,7 @@
 - Cache policy: HTML browser revalidation with bounded shared-cache TTL; fingerprinted `/_astro/` assets immutable for one year; images one day; crawl-control and other static files short-lived.
 - Certificate: ACM certificate is issued in `us-east-1`, covering `fitwise.stream`. The CloudFront distribution aliases the apex only; `www` is not configured.
 - Region/price: S3 and CloudFormation stack are in `eu-north-1`; CloudFront is global and uses `PriceClass_100`.
-- Tagging: taggable Fitwise resources and stacks use the exact AWS tag `project=fitwise`. CloudFront subresources whose CloudFormation schemas do not support tags use `fitwise-static-site` name prefixes; the shared account-wide OIDC provider is not retagged.
+- Tagging: taggable Fitwise resources and stacks carry both `project=fitwise` and `Project=FitWise`. CloudFront OAC/cache/response-policy subresources rejected tag operations and use the `fitwise-static-site` name prefix; the pre-existing shared OIDC provider is not retagged.
 
 ## Local Rehearsal (Safe)
 
@@ -26,8 +26,8 @@ The production workflow `.github/workflows/deploy-production.yml` deploys only f
 ## Live Deployment Record
 
 - GitHub Actions run `37672593182` created the private S3/CloudFront site in account `754246170171`; a follow-up tag-only run completed. Stack status is `UPDATE_COMPLETE` in `eu-north-1`.
-- S3 bucket: `fitwise-static-site-754246170171-eu-north-1`. It has Block Public Access enabled, SSE-S3, versioning, and `project=fitwise`.
-- CloudFront distribution: `EY0IX2NYZEEG1`; domain `d1qzsj88vccaey.cloudfront.net`; viewer alias `fitwise.stream`; TLS minimum `TLSv1.2_2021`; tag `project=fitwise`.
+- S3 bucket: `fitwise-static-site-754246170171-eu-north-1`. It has Block Public Access enabled, SSE-S3, versioning, and both project tags.
+- CloudFront distribution: `EY0IX2NYZEEG1`; domain `d1qzsj88vccaey.cloudfront.net`; viewer alias `fitwise.stream`; TLS minimum `TLSv1.2_2021`; both project tags.
 - The ACM apex certificate is `ISSUED` in `us-east-1`, which is required for a CloudFront custom-domain certificate. All regional site infrastructure is in `eu-north-1`; CloudFront is global.
 - The Cloudflare apex CNAME is now configured DNS-only and `fitwise.stream` resolves to CloudFront.
 

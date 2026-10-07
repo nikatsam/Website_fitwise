@@ -97,6 +97,7 @@ jobs:
           set -euo pipefail
           status="$(aws acm describe-certificate --region us-east-1 --certificate-arn "$ACM_CERTIFICATE_ARN" --query Certificate.Status --output text)"
           [[ "$status" == "ISSUED" ]] || { echo "ACM certificate status is $status, expected ISSUED."; exit 1; }
+          aws acm add-tags-to-certificate --region us-east-1 --certificate-arn "$ACM_CERTIFICATE_ARN" --tags Key=project,Value=fitwise Key=Project,Value=FitWise
 
       - name: Deploy private S3 and CloudFront stack
         shell: bash
@@ -110,7 +111,7 @@ jobs:
             --stack-name fitwise-static-site \
             --region "$AWS_REGION" \
             --parameter-overrides ApexDomainName=fitwise.stream "AcmCertificateArn=$ACM_CERTIFICATE_ARN" \
-            --tags project=fitwise
+            --tags project=fitwise Project=FitWise
 
       - name: Read stack outputs
         id: outputs

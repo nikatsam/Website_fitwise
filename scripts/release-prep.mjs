@@ -29,6 +29,18 @@ export function validateInfrastructureTemplate(template) {
   const directoryFunction = requireResource('DirectoryIndexFunction', 'AWS::CloudFront::Function');
   const distribution = requireResource('SiteDistribution', 'AWS::CloudFront::Distribution');
   const bucketPolicy = requireResource('PrivateOriginBucketPolicy', 'AWS::S3::BucketPolicy');
+  const hasProjectTags = (tags) =>
+    tags?.some((tag) => tag.Key === 'project' && tag.Value === 'fitwise') &&
+    tags?.some((tag) => tag.Key === 'Project' && tag.Value === 'FitWise');
+
+  if (!hasProjectTags(bucket.Tags))
+    errors.push('S3 bucket must carry project=fitwise and Project=FitWise tags.');
+  if (!hasProjectTags(distribution.Tags)) {
+    errors.push('CloudFront distribution must carry project=fitwise and Project=FitWise tags.');
+  }
+  if (!hasProjectTags(directoryFunction.Tags)) {
+    errors.push('CloudFront Function must carry project=fitwise and Project=FitWise tags.');
+  }
 
   const publicAccess = bucket.PublicAccessBlockConfiguration ?? {};
   for (const setting of [
@@ -226,8 +238,8 @@ export function validateOidcDeployRoleTemplate(template) {
   if (properties.MaxSessionDuration > 3600 || properties.MaxSessionDuration < 900) {
     errors.push('OIDC sessions must be limited to 15-60 minutes.');
   }
-  if (!properties.Tags?.some((tag) => tag.Key === 'project' && tag.Value === 'fitwise')) {
-    errors.push('OIDC deploy role must be tagged project=fitwise.');
+  if (!properties.Tags?.some((tag) => tag.Key === 'Project' && tag.Value === 'FitWise')) {
+    errors.push('OIDC deploy role must carry the requested Project=FitWise tag.');
   }
 
   const statements =
@@ -262,7 +274,7 @@ export function validateOidcDeployRoleTemplate(template) {
     !statements.some(
       (statement) =>
         statement.Sid === 'CreateOnlyTaggedFitwiseDistribution' &&
-        statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise',
+        statement.Condition?.StringEquals?.['aws:RequestTag/Project'] === 'FitWise',
     )
   ) {
     errors.push('CloudFront distribution creation must require project=fitwise.');
@@ -284,13 +296,13 @@ export function validateOidcDeployRoleTemplate(template) {
       (statement) =>
         statement.Sid === 'TagNewFitwiseDistributions' &&
         statement.Action === 'cloudfront:TagResource' &&
-        statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise',
+        statement.Condition?.StringEquals?.['aws:RequestTag/Project'] === 'FitWise',
     ) ||
     !statements.some(
       (statement) =>
         statement.Sid === 'TagNewFitwiseDirectoryFunctions' &&
         statement.Action === 'cloudfront:TagResource' &&
-        statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise',
+        statement.Condition?.StringEquals?.['aws:RequestTag/Project'] === 'FitWise',
     )
   ) {
     errors.push(
@@ -300,10 +312,13 @@ export function validateOidcDeployRoleTemplate(template) {
   if (
     !statements.some(
       (statement) =>
-        statement.Sid === 'RequestOnlyTaggedFitwiseApexCertificate' &&
-        statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise' &&
+        statement.Sid === 'RequestOnlyTaggedFitwiseCertificate' &&
+        statement.Condition?.StringEquals?.['aws:RequestTag/Project'] === 'FitWise' &&
         statement.Condition?.['ForAllValues:StringEquals']?.['acm:DomainNames']?.includes(
           'fitwise.stream',
+        ) &&
+        statement.Condition?.['ForAllValues:StringEquals']?.['acm:DomainNames']?.includes(
+          'www.fitwise.stream',
         ),
     )
   ) {
