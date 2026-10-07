@@ -132,6 +132,7 @@
                     "cloudfront:GetDistribution",
                     "cloudfront:GetDistributionConfig",
                     "cloudfront:GetInvalidation",
+                    "cloudfront:ListTagsForResource",
                     "cloudfront:TagResource",
                     "cloudfront:UntagResource",
                     "cloudfront:UpdateDistribution"
@@ -158,13 +159,19 @@
                   "Sid": "ManageFitwiseOriginAccessControls",
                   "Effect": "Allow",
                   "Action": [
-                    "cloudfront:CreateOriginAccessControl",
                     "cloudfront:GetOriginAccessControl",
+                    "cloudfront:ListTagsForResource",
                     "cloudfront:UpdateOriginAccessControl"
                   ],
                   "Resource": {
                     "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:origin-access-control/*"
                   }
+                },
+                {
+                  "Sid": "CreateFitwiseOriginAccessControl",
+                  "Effect": "Allow",
+                  "Action": "cloudfront:CreateOriginAccessControl",
+                  "Resource": "*"
                 },
                 {
                   "Sid": "ManageCloudFrontCacheAndResponsePolicies",
@@ -175,6 +182,7 @@
                     "cloudfront:UpdateCachePolicy",
                     "cloudfront:CreateResponseHeadersPolicy",
                     "cloudfront:GetResponseHeadersPolicy",
+                    "cloudfront:ListTagsForResource",
                     "cloudfront:UpdateResponseHeadersPolicy"
                   ],
                   "Resource": "*"
@@ -186,6 +194,7 @@
                     "cloudfront:CreateFunction",
                     "cloudfront:DescribeFunction",
                     "cloudfront:GetFunction",
+                    "cloudfront:ListTagsForResource",
                     "cloudfront:PublishFunction",
                     "cloudfront:UpdateFunction"
                   ],

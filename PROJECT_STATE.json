@@ -5,8 +5,10 @@
   "nextTask": "T022",
   "lastCompletedTask": "T021",
   "implementationProgressPct": 94,
-  "knownBlockers": [],
+  "knownBlockers": [
+    "The latest scoped ListTagsForResource OIDC role policy change is local/unpushed; commit and push it before retrying the production deployment workflow."
+  ],
   "lastVerificationCommand": "npm run verify",
   "cloudDeploymentAllowed": true,
-  "notes": "T001-T021 complete. T021 local Gate E is signed off; cloudDeploymentAllowed=true. The tagged fitwise-github-oidc role is bootstrapped in account 754246170171/eu-north-1, restricted to the GitHub production environment on main. The tagged apex ACM certificate is ISSUED and Cloudflare validation CNAME resolves. First site deployment 37667834671 rolled back because the OIDC role lacked CloudFront Function tag permission; the IAM role stack was updated with narrowly scoped tag-on-create access, retained helper resources/failed stack were cleaned, and IAM simulation allows the operation. No Fitwise S3 bucket or CloudFront distribution exists yet. Current code/IAM-template changes must be committed/pushed, then retry GitHub deployment. GA4 G-J10W58E2ZL is hostname-gated; consent configuration remains an owner review. Search Console service credentials/property are not configured. T022 is active."
+  "notes": "T001-T021 complete; cloudDeploymentAllowed=true. The tagged fitwise-github-oidc role is in account 754246170171/eu-north-1 and restricted to the repository production environment on main. The tagged apex ACM certificate is ISSUED and Cloudflare validation resolves. Two GitHub site-stack runs rolled back on CloudFront tag/tag-list permissions. Failed stacks and retained helper resources were removed; no S3 site bucket or CloudFront distribution remains. The OIDC role now simulates the tag operations as allowed, but the latest ListTagsForResource template fix is local/unpushed. Commit and push it before retrying. GA4 G-J10W58E2ZL is hostname-gated; privacy-consent review remains. Search Console service credentials/property are not configured. T022 is active."
 }

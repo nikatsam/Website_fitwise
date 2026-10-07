@@ -25,4 +25,12 @@
 - **Error:** CloudFormation could not create `DirectoryIndexFunction`: the OIDC role lacked `cloudfront:TagResource` for the required `project=fitwise` function tag.
 - **Impact:** The stack entered `ROLLBACK_COMPLETE`. No distribution was created and no site files were synchronized.
 - **Recovery:** Added narrowly scoped tag-on-create permissions for the Fitwise-tagged distribution/function and updated the OIDC role stack. IAM simulation now allows the exact tagged function action. Deleted the failed stack and the retained OAC/cache/header-policy artifacts by their recorded IDs; verified the stack record and S3 bucket are absent. The issued ACM certificate remains untouched.
-- **Status:** Code/IAM fix and cleanup complete; GitHub deployment retry is pending publication of the updated role template.
+- **Status:** The tag-on-create failure was resolved; see the second deployment event below.
+
+## 2026-10-07 — Second OIDC site stack rolled back on CloudFront tag read
+
+- **Workflow:** GitHub Actions run `37669968715` (`Deploy Fitwise static site`).
+- **Error:** CloudFormation could not resolve the directory Function ARN because the OIDC role lacked `cloudfront:ListTagsForResource`.
+- **Impact:** The stack rolled back again; CloudFront policy/OAC/function resources were retained. No distribution was created and no site files were synchronized.
+- **Recovery:** Added scoped tag-read permissions and updated the OIDC role stack. IAM simulation allows the Function tag read. Deleted the failed stack and exact retained helper resources; verified no failed stack, bucket, OAC, policies, or function remain.
+- **Status:** Permission fix and cleanup complete; GitHub retry is ready after publishing the updated role template.

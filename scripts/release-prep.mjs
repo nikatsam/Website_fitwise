@@ -270,6 +270,18 @@ export function validateOidcDeployRoleTemplate(template) {
   if (
     !statements.some(
       (statement) =>
+        statement.Sid === 'CreateFitwiseOriginAccessControl' &&
+        statement.Action === 'cloudfront:CreateOriginAccessControl' &&
+        statement.Resource === '*',
+    )
+  ) {
+    errors.push(
+      'CloudFront OAC creation must be explicitly authorized; IAM requires wildcard resource scope for this API.',
+    );
+  }
+  if (
+    !statements.some(
+      (statement) =>
         statement.Sid === 'TagNewFitwiseDistributions' &&
         statement.Action === 'cloudfront:TagResource' &&
         statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise',
