@@ -270,6 +270,24 @@ export function validateOidcDeployRoleTemplate(template) {
   if (
     !statements.some(
       (statement) =>
+        statement.Sid === 'TagNewFitwiseDistributions' &&
+        statement.Action === 'cloudfront:TagResource' &&
+        statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise',
+    ) ||
+    !statements.some(
+      (statement) =>
+        statement.Sid === 'TagNewFitwiseDirectoryFunctions' &&
+        statement.Action === 'cloudfront:TagResource' &&
+        statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise',
+    )
+  ) {
+    errors.push(
+      'CloudFront distribution and directory-function tagging must be limited to project=fitwise.',
+    );
+  }
+  if (
+    !statements.some(
+      (statement) =>
         statement.Sid === 'RequestOnlyTaggedFitwiseApexCertificate' &&
         statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise' &&
         statement.Condition?.['ForAllValues:StringEquals']?.['acm:DomainNames']?.includes(

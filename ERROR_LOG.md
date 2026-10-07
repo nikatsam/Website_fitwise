@@ -17,3 +17,12 @@
 - **Recovery:** The workflow diagnostic confirmed GitHub's immutable repository-ID subject. Updated the role trust and bootstrap stack. A later OIDC assumption succeeded but initially exposed an ACM multi-valued domain-condition mismatch; changed the policy to `ForAllValues:StringEquals`. `aws iam simulate-principal-policy` now allows the tagged `fitwise.stream` request.
 - **Resolution:** The next GitHub workflow successfully requested certificate `arn:aws:acm:us-east-1:754246170171:certificate/0b912086-a718-4faf-b3d2-f3e8250a55e4`, tagged `project=fitwise`. It is `PENDING_VALIDATION` until the owner adds its DNS CNAME. No site bucket or CloudFront distribution was created.
 - **Status:** OIDC/ACM permission issue resolved; ACM DNS validation pending.
+
+## 2026-10-07 — First OIDC site stack rolled back on CloudFront tag permission
+
+- **Severity:** High; first S3/CloudFront stack deployment did not complete.
+- **Workflow:** GitHub Actions run `37667834671` (`Deploy Fitwise static site`).
+- **Error:** CloudFormation could not create `DirectoryIndexFunction`: the OIDC role lacked `cloudfront:TagResource` for the required `project=fitwise` function tag.
+- **Impact:** The stack entered `ROLLBACK_COMPLETE`. No distribution was created and no site files were synchronized.
+- **Recovery:** Added narrowly scoped tag-on-create permissions for the Fitwise-tagged distribution/function and updated the OIDC role stack. IAM simulation now allows the exact tagged function action. Deleted the failed stack and the retained OAC/cache/header-policy artifacts by their recorded IDs; verified the stack record and S3 bucket are absent. The issued ACM certificate remains untouched.
+- **Status:** Code/IAM fix and cleanup complete; GitHub deployment retry is pending publication of the updated role template.

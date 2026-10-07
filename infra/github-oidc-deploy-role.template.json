@@ -144,6 +144,17 @@
                   }
                 },
                 {
+                  "Sid": "TagNewFitwiseDistributions",
+                  "Effect": "Allow",
+                  "Action": "cloudfront:TagResource",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/*"
+                  },
+                  "Condition": {
+                    "StringEquals": { "aws:RequestTag/project": "fitwise" }
+                  }
+                },
+                {
                   "Sid": "ManageFitwiseOriginAccessControls",
                   "Effect": "Allow",
                   "Action": [
@@ -180,6 +191,17 @@
                   ],
                   "Resource": {
                     "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:function/fitwise-static-site-*"
+                  }
+                },
+                {
+                  "Sid": "TagNewFitwiseDirectoryFunctions",
+                  "Effect": "Allow",
+                  "Action": "cloudfront:TagResource",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:function/fitwise-static-site-*"
+                  },
+                  "Condition": {
+                    "StringEquals": { "aws:RequestTag/project": "fitwise" }
                   }
                 },
                 {

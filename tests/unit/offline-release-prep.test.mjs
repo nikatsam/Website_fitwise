@@ -54,6 +54,17 @@ describe('offline cloud release preparation', () => {
     ] = '*';
     const errors = validateOidcDeployRoleTemplate(widened);
     expect(errors.some((error) => error.includes('production environment'))).toBe(true);
+
+    const untaggedFunctionRole = JSON.parse(await readFile(oidcTemplatePath, 'utf8'));
+    untaggedFunctionRole.Resources.FitwiseGitHubDeployRole.Properties.Policies[0].PolicyDocument.Statement =
+      untaggedFunctionRole.Resources.FitwiseGitHubDeployRole.Properties.Policies[0].PolicyDocument.Statement.filter(
+        (statement) => statement.Sid !== 'TagNewFitwiseDirectoryFunctions',
+      );
+    expect(
+      validateOidcDeployRoleTemplate(untaggedFunctionRole).some((error) =>
+        error.includes('tagging'),
+      ),
+    ).toBe(true);
   });
 
   it('rejects public bucket access and a non-HTTPS cache behavior', async () => {

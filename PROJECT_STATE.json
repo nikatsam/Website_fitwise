@@ -5,10 +5,8 @@
   "nextTask": "T022",
   "lastCompletedTask": "T021",
   "implementationProgressPct": 94,
-  "knownBlockers": [
-    "ACM certificate for fitwise.stream is PENDING_VALIDATION; the owner must add the DNS-only CNAME in Cloudflare before the OIDC production deploy workflow can create CloudFront/S3 resources."
-  ],
+  "knownBlockers": [],
   "lastVerificationCommand": "npm run verify",
   "cloudDeploymentAllowed": true,
-  "notes": "T001-T021 complete. T021 local Gate E passed and owner sign-off was confirmed through authenticated interaction; see SEO_RELEASE_AUDIT.md. cloudDeploymentAllowed is true. The tagged fitwise-github-oidc IAM role is bootstrapped in account 754246170171/eu-north-1 and trusts only the GitHub production environment for nikatsam/Website_fitwise on main. GitHub repository role/region variables and production environment are configured. GitHub workflow 37518265620 successfully requested ACM certificate arn:aws:acm:us-east-1:754246170171:certificate/0b912086-a718-4faf-b3d2-f3e8250a55e4 tagged project=fitwise; status is PENDING_VALIDATION. No S3 site bucket or CloudFront distribution is live. GA4 uses G-J10W58E2ZL only on the fitwise.stream hostname; review privacy/consent before launch. Waiting for owner-managed Cloudflare DNS validation CNAME before production deploy. Search Console service credentials/property are not configured. T022 is active."
+  "notes": "T001-T021 complete. T021 local Gate E is signed off; cloudDeploymentAllowed=true. The tagged fitwise-github-oidc role is bootstrapped in account 754246170171/eu-north-1, restricted to the GitHub production environment on main. The tagged apex ACM certificate is ISSUED and Cloudflare validation CNAME resolves. First site deployment 37667834671 rolled back because the OIDC role lacked CloudFront Function tag permission; the IAM role stack was updated with narrowly scoped tag-on-create access, retained helper resources/failed stack were cleaned, and IAM simulation allows the operation. No Fitwise S3 bucket or CloudFront distribution exists yet. Current code/IAM-template changes must be committed/pushed, then retry GitHub deployment. GA4 G-J10W58E2ZL is hostname-gated; consent configuration remains an owner review. Search Console service credentials/property are not configured. T022 is active."
 }
