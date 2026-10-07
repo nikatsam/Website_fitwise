@@ -15,13 +15,13 @@ Complete this task without expanding scope into later tasks.
 
 ## Acceptance criteria
 
-- [ ] Dry-run/local command path documented.
-- [ ] Production deployment can be repeated without manual file-by-file changes.
+- [x] Dry-run/local object and invalidation plan is documented and validated.
+- [x] GitHub Actions production workflow repeats build, CloudFormation apply, cache-metadata sync groups, and calculated invalidation without file-by-file edits.
 
 ## Required close-out
 
-- [ ] Run relevant automated checks.
-- [ ] Update `WORKLOG.md`.
-- [ ] Update `WORKLOG.json`.
-- [ ] Update `PROJECT_STATE.json`.
-- [ ] Record any architecture change in `DECISIONS.md`.
+- [x] Run relevant automated checks and complete one OIDC-backed production deployment.
+- [x] Update `WORKLOG.md`.
+- [x] Update `WORKLOG.json`.
+- [x] Update `PROJECT_STATE.json`.
+- [x] No architecture change required beyond ADR-011.

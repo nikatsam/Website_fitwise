@@ -1,7 +1,7 @@
-# SEO Release Audit — Local v1 Candidate
+# SEO Release Audit — FitWise v1
 
-Release ID / commit: `local-v1-2026-10-06` (uncommitted worktree)  
-Date: 2026-10-06  
+Release ID / commit: `a3170de9443219caa414ca5dcb8728183fe3258e`<br>
+Local gate date: 2026-10-06; production smoke date: 2026-10-07<br>
 Reviewer: **Project owner — sign-off confirmed through authenticated user interaction on 2026-10-06 17:32 UTC; personal display name was not supplied**
 
 > This audit reflects the current offline page-family coverage build and is signed off by the project owner. Production-only checks below remain unperformed and must be completed after deployment.
@@ -22,12 +22,16 @@ Reviewer: **Project owner — sign-off confirmed through authenticated user inte
 - [x] `npm run deploy:plan` reports 45 production objects, excludes the three `/dev/` previews, and makes no AWS calls.
 - [x] Mobile Workspace/Bedroom and desktop Workspace family pages score 100 for Accessibility and Performance in Lighthouse. SEO 66 is the expected noindex result; indexing remains an editorial decision.
 
-## Production-only checks (after separately authorized AWS deployment)
+## Production Checks — 2026-10-07
 
-- [ ] Apex HTTPS/host redirects, CDN rewrites, production route MIME/status, live 404/redirect behavior, WAF/cache headers, search-engine properties/submission, IndexNow, and live monitoring. **Not run. The T022 IAM OIDC role bootstrap exists; no Fitwise S3 bucket/CloudFront site stack, certificate request, Cloudflare DNS change, or public site endpoint has been created.**
+- [x] Site stack `fitwise-static-site` is `UPDATE_COMPLETE` in `eu-north-1`; bucket `fitwise-static-site-754246170171-eu-north-1` is private/tagged, and CloudFront distribution `EY0IX2NYZEEG1` is `Deployed` with alias `fitwise.stream`, TLS minimum `TLSv1.2_2021`, and tag `project=fitwise`.
+- [x] The issued apex ACM certificate is in `us-east-1`, as required by CloudFront. S3 Block Public Access, SSE-S3, versioning, OAC and the origin policy are active.
+- [x] CloudFront default host `d1qzsj88vccaey.cloudfront.net` returned 200 for Home, workspace/bedroom hubs, representative static answer pages, sitemap (`application/xml`), robots (`text/plain`), and the IndexNow key; HTTP returned 301 to HTTPS; an unknown route returned 404; direct S3 access returned 403.
+- [x] Live response headers include CSP, HSTS, nosniff, DENY framing, Referrer-Policy, and Permissions-Policy. The 4-URL indexable sitemap and route disposition policy remain intact.
+- [x] GitHub OIDC deployment runs `37672593182` and `37674732291` completed. IndexNow change notification completed; optional Search Console API submission was skipped because no service-account/property values are set.
+- [x] Cloudflare apex CNAME `@` -> `d1qzsj88vccaey.cloudfront.net` (DNS only, TTL Auto) resolves. `https://fitwise.stream/` returns 200 with the apex canonical; HTTP redirects to HTTPS. Host-gated GA4 is enabled on this hostname.
+- [x] Google Search Console, Bing Webmaster, and Yandex status is recorded as **operationally pending**; their account/property verification requires owner access. Search Console API resubmission remains disabled until its service account/property variables are configured.
 
-**Outcome:** LOCAL GATE E PASS — AWS phase authorized; no site deployment performed by this audit.
+**Outcome:** PASS — production site is live on the custom apex with HTTPS. Search-engine property verification is operationally pending owner access.
 
-**Evidence:** Local checks above, `QA_REPORT.md`, route-disposition manifest, and owner sign-off recorded in this session.
-
-**Remaining work:** T022-T024 provisioning, DNS/TLS, production smoke tests, and search-engine onboarding remain pending. `PROJECT_STATE.json` permits the AWS phase; this does not indicate resources are already deployed.
+**Evidence:** Workflow runs above, live HTTP checks, AWS stack/resource reads, `QA_REPORT.md`, route-disposition manifest, and Gate E sign-off.
