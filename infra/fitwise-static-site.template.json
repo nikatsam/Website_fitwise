@@ -62,7 +62,7 @@
         "Tags": [
           { "Key": "project", "Value": "fitwise" },
           { "Key": "Purpose", "Value": "StaticSiteOrigin" },
-          { "Key": "ProvisioningStatus", "Value": "DraftNotDeployed" }
+          { "Key": "ProvisioningStatus", "Value": "Deployed" }
         ]
       }
     },
@@ -286,7 +286,7 @@
         },
         "Tags": [
           { "Key": "project", "Value": "fitwise" },
-          { "Key": "ProvisioningStatus", "Value": "DraftNotDeployed" }
+          { "Key": "ProvisioningStatus", "Value": "Deployed" }
         ]
       }
     },
