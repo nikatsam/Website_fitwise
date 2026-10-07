@@ -52,9 +52,20 @@ jobs:
               --subject-alternative-names www.fitwise.stream \
               --validation-method DNS \
               --idempotency-token fitwiseacm20261007 \
-              --tags Key=project,Value=fitwise Key=Project,Value=FitWise \
+              --tags Key=project,Value=fitwise \
               --query CertificateArn \
               --output text)"
+          fi
+          has_project_tag="$(aws acm list-tags-for-certificate \
+            --region us-east-1 \
+            --certificate-arn "$certificate_arn" \
+            --query "length(Tags[?Key=='Project' && Value=='FitWise'])" \
+            --output text)"
+          if [[ "$has_project_tag" != "1" ]]; then
+            aws acm add-tags-to-certificate \
+              --region us-east-1 \
+              --certificate-arn "$certificate_arn" \
+              --tags Key=Project,Value=FitWise
           fi
           echo "certificate_arn=$certificate_arn" >> "$GITHUB_OUTPUT"
           echo "Certificate ARN: $certificate_arn" >> "$GITHUB_STEP_SUMMARY"

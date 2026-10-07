@@ -240,7 +240,7 @@
                   "Resource": "*",
                   "Condition": {
                     "StringEquals": {
-                      "aws:RequestTag/Project": "FitWise"
+                      "aws:RequestTag/project": "fitwise"
                     },
                     "ForAllValues:StringEquals": {
                       "acm:DomainNames": ["fitwise.stream", "www.fitwise.stream"]

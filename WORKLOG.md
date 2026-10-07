@@ -339,7 +339,8 @@ Paused mid-task at the user's request to document progress. Current state is saf
 
 ### 2026-10-07 — T025 www hostname support (IN PROGRESS)
 
-- Updated the ACM request workflow to require both `fitwise.stream` and `www.fitwise.stream`, request both SANs, and print DNS validation records for both hostnames. Existing OIDC policy already allows these domain names with the required `Project=FitWise` tag.
+- Updated the ACM request workflow to require both `fitwise.stream` and `www.fitwise.stream`, request both SANs, and print DNS validation records for both hostnames. It now requests with `project=fitwise` alone, then adds `Project=FitWise` separately.
+- The first dual-SAN request was denied while the workflow submitted both differently-cased tag keys in one request. Updated the OIDC role template to authorize the request by its single lowercase project tag while retaining the domain-name restrictions; the deployed IAM stack still needs this template update.
 - Added `www.fitwise.stream` to CloudFront and a viewer-request 301 redirect to the apex that preserves path, single-value queries, and multi-value queries. Added offline infrastructure and redirect regression checks.
 - Live rollout is not performed. The workflow/template edits must be published before the GitHub workflow can request the certificate; the owner must add the ACM validation CNAMEs in Cloudflare, wait for issuance, then configure GitHub `ACM_CERTIFICATE_ARN`, deploy, and add the DNS-only `www` CNAME.
 - `npm run verify` passes with 155 tests, type/lint/format, the 38-page build, SEO/link/route/content checks and offline infrastructure validation; both CloudFormation templates pass `sam validate --lint`.

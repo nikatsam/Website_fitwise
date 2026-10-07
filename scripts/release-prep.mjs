@@ -324,7 +324,7 @@ export function validateOidcDeployRoleTemplate(template) {
     !statements.some(
       (statement) =>
         statement.Sid === 'RequestOnlyTaggedFitwiseCertificate' &&
-        statement.Condition?.StringEquals?.['aws:RequestTag/Project'] === 'FitWise' &&
+        statement.Condition?.StringEquals?.['aws:RequestTag/project'] === 'fitwise' &&
         statement.Condition?.['ForAllValues:StringEquals']?.['acm:DomainNames']?.includes(
           'fitwise.stream',
         ) &&
