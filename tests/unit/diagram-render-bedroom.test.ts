@@ -8,11 +8,13 @@ const baseInput: BedroomDiagramInput = {
   paddingPx: 60,
   roomWidthMm: 3048,
   roomLengthMm: 3658,
-  bedRoomWidthMm: 1500,
-  bedRoomLengthMm: 2000,
+  bedFootprintWidthMm: 1500,
+  bedFootprintLengthMm: 2000,
+  orientation: 'portrait',
   sideClearanceMm: 300,
   footClearanceMm: 600,
   nightstandWidthsMm: [],
+  nightstandDepthMm: 350,
 };
 
 describe('renderBedroomDiagramMarkup', () => {
@@ -33,6 +35,24 @@ describe('renderBedroomDiagramMarkup', () => {
     const withTwo = renderBedroomDiagramMarkup({ ...baseInput, nightstandWidthsMm: [400, 400] });
     expect((withOne.match(/class="diagram-object"/g) ?? []).length).toBe(2);
     expect((withTwo.match(/class="diagram-object"/g) ?? []).length).toBe(3);
+  });
+
+  it('renders bedside tables and clearances along the rotated bed axes', () => {
+    const portrait = renderBedroomDiagramMarkup({
+      ...baseInput,
+      orientation: 'portrait',
+      nightstandWidthsMm: [460, 460],
+    });
+    const landscape = renderBedroomDiagramMarkup({
+      ...baseInput,
+      orientation: 'landscape',
+      nightstandWidthsMm: [460, 460],
+    });
+
+    expect((portrait.match(/class="diagram-object"/g) ?? []).length).toBe(3);
+    expect((landscape.match(/class="diagram-object"/g) ?? []).length).toBe(3);
+    expect(portrait).toContain('Room (portrait)');
+    expect(landscape).toContain('Room (landscape)');
   });
 
   it('renders side clearance zones only when sideClearanceMm is positive', () => {

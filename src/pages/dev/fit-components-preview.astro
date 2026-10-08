@@ -52,7 +52,7 @@ const scenarios = [
     {scenarios.map((scenario) => (
       <article class="preview__scenario">
         <h2>{scenario.title}</h2>
-        <FitSummary state={scenario.result.state} primary={scenario.rows[0]!} />
+        <FitSummary state={scenario.result.state} rows={scenario.rows} />
         <DimensionTable rows={scenario.rows} caption={`${scenario.title} dimension breakdown`} />
         <AssumptionList assumptions={scenario.result.assumptions} headingLevel={3} />
       </article>

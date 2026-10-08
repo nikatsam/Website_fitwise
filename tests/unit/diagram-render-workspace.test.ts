@@ -29,6 +29,17 @@ describe('renderWorkspaceDiagramMarkup', () => {
     expect(markup).not.toContain('Monitor 2');
   });
 
+  it('supports three and four-monitor rows within the planner limits', () => {
+    for (const count of [3, 4]) {
+      const markup = renderWorkspaceDiagramMarkup({ ...baseInput, monitorCount: count });
+      expect((markup.match(/class="diagram-object"/g) ?? []).length).toBe(count);
+      expect(markup).toContain(`Monitor ${count}`);
+    }
+    expect(() => renderWorkspaceDiagramMarkup({ ...baseInput, monitorCount: 5 })).toThrow(
+      RangeError,
+    );
+  });
+
   it('omits clearance zones entirely when sideMarginMm is 0', () => {
     const markup = renderWorkspaceDiagramMarkup({ ...baseInput, sideMarginMm: 0 });
     expect(markup).not.toContain('diagram-clearance');

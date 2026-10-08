@@ -12,6 +12,20 @@ export interface DimensionDisplayRow {
   recommendedFit: boolean;
 }
 
+/** Selects a representative failing row so summaries do not blame a fitting dimension. */
+export function selectSummaryDimension(
+  rows: DimensionDisplayRow[],
+): DimensionDisplayRow | undefined {
+  return rows.find((row) => !row.hardFit) ?? rows.find((row) => !row.recommendedFit) ?? rows[0];
+}
+
+export function getFailedDimensionRows(rows: DimensionDisplayRow[]) {
+  return {
+    hardFailures: rows.filter((row) => !row.hardFit),
+    recommendationFailures: rows.filter((row) => !row.recommendedFit),
+  };
+}
+
 /**
  * Zips the DimensionChecks fed into evaluateFit() with its FitResult to
  * produce UI-ready rows (required/recommended/available/margin), so display

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   deriveScreenDimensions,
+  MONITOR_ASPECT_RATIOS,
   resolveMonitorWidth,
   computeConfigurationWidth,
   buildWorkspaceWidthCheck,
+  buildWorkspaceDepthCheck,
   DERIVE_SCREEN_DIMS_FROM_DIAGONAL_ASPECT,
 } from '../../src/lib/geometry';
 import { evaluateFit } from '../../src/lib/fit';
@@ -32,6 +34,12 @@ describe('deriveScreenDimensions', () => {
       deriveScreenDimensions(Number.POSITIVE_INFINITY, { width: 16, height: 9 }),
     ).toThrow(RangeError);
     expect(() => deriveScreenDimensions(27, { width: Number.NaN, height: 9 })).toThrow(RangeError);
+  });
+
+  it('supports ultrawide aspect presets without treating panel width as full device width', () => {
+    const dimensions = deriveScreenDimensions(49, MONITOR_ASPECT_RATIOS['32:9']);
+    expect(dimensions.screenWidthMm.valueMm).toBeCloseTo(1198, 0);
+    expect(dimensions.screenWidthMm.kind).toBe('derived');
   });
 });
 
@@ -82,6 +90,10 @@ describe('computeConfigurationWidth — known fixtures', () => {
 
   it('computes three monitors with two gaps applied', () => {
     expect(computeConfigurationWidth({ widthsMm: [600, 600, 600], gapMm: 10 })).toBe(1820);
+  });
+
+  it('computes four-monitor configurations with three inter-monitor gaps', () => {
+    expect(computeConfigurationWidth({ widthsMm: [500, 500, 500, 500], gapMm: 12 })).toBe(2036);
   });
 
   it('rejects an empty monitor list, a non-positive width, or a negative gap', () => {
@@ -152,5 +164,42 @@ describe('workspace fit — known fixture end to end', () => {
     });
     const result = evaluateFit([check]);
     expect(result.state).toBe('does_not_fit');
+  });
+});
+
+describe('buildWorkspaceDepthCheck — user-selected zones', () => {
+  it('separates the monitor stand/rear cable footprint from a user-selected keyboard zone', () => {
+    const check = buildWorkspaceDepthCheck({
+      monitorStandDepthMm: 193.5,
+      rearClearanceMm: 20,
+      keyboardZoneMm: 300,
+      deskDepthMm: 600,
+    });
+    expect(check.minimumMm).toBe(213.5);
+    expect(check.recommendedMm).toBe(513.5);
+    expect(evaluateFit([check]).state).toBe('fits');
+  });
+
+  it('reports a tight selected depth envelope without claiming a universal clearance', () => {
+    const check = buildWorkspaceDepthCheck({
+      monitorStandDepthMm: 193.5,
+      rearClearanceMm: 20,
+      keyboardZoneMm: 350,
+      deskDepthMm: 550,
+    });
+    expect(evaluateFit([check]).state).toBe('tight');
+  });
+
+  it('rejects invalid device or user-specified depth zones', () => {
+    expect(() => buildWorkspaceDepthCheck({ monitorStandDepthMm: 0, deskDepthMm: 600 })).toThrow(
+      RangeError,
+    );
+    expect(() =>
+      buildWorkspaceDepthCheck({
+        monitorStandDepthMm: 193.5,
+        rearClearanceMm: -1,
+        deskDepthMm: 600,
+      }),
+    ).toThrow(RangeError);
   });
 });

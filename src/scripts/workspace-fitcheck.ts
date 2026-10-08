@@ -2,18 +2,31 @@ import {
   evaluateFit,
   toDimensionDisplayRows,
   FIT_STATE_BADGE_COPY,
+  selectSummaryDimension,
+  type DimensionDisplayRow,
   type FitState,
 } from '../lib/fit';
-import { buildWorkspaceWidthCheck, deriveScreenDimensions } from '../lib/geometry';
+import {
+  buildWorkspaceDepthCheck,
+  buildWorkspaceWidthCheck,
+  deriveScreenDimensions,
+  MAX_SIDE_BY_SIDE_MONITORS,
+  MONITOR_ASPECT_RATIOS,
+  type MonitorAspectRatioKey,
+} from '../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../lib/diagram';
 import { formatMetric, formatFeetInches } from '../lib/units';
 
 interface FormValues {
   deskWidthMm: number;
   deskDepthMm: number;
-  monitorCount: 1 | 2;
+  monitorCount: number;
   monitorDiagonalIn: number;
+  monitorAspectRatio: MonitorAspectRatioKey;
   monitorWidthOverrideMm: number | null;
+  monitorStandDepthMm: number;
+  rearCableClearanceMm: number;
+  keyboardZoneMm: number;
   gapMm: number;
   sideMarginMm: number;
 }
@@ -27,7 +40,10 @@ interface FieldSpec {
 
 const FIELDS: FieldSpec[] = [
   { id: 'desk-width', min: 1, required: true, errorId: 'desk-width-error' },
-  { id: 'desk-depth', min: 1, required: true },
+  { id: 'desk-depth', min: 1, required: true, errorId: 'desk-depth-error' },
+  { id: 'monitor-depth', min: 1, required: true, errorId: 'monitor-depth-error' },
+  { id: 'rear-cable-clearance', min: 0, required: true, errorId: 'rear-cable-clearance-error' },
+  { id: 'keyboard-zone', min: 0, required: true, errorId: 'keyboard-zone-error' },
   {
     id: 'monitor-width-override',
     min: 1,
@@ -38,7 +54,6 @@ const FIELDS: FieldSpec[] = [
   { id: 'side-margin', min: 0, required: true, errorId: 'side-margin-error' },
 ];
 
-const MONITOR_DEPTH_MM = 200;
 const DIAGRAM_ID = 'workspace-diagram';
 const VIEWPORT_WIDTH_PX = 640;
 const VIEWPORT_HEIGHT_PX = 360;
@@ -52,14 +67,18 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function renderDetailHtml(state: FitState, primaryLabel: string, marginMm: number): string {
+function renderDetailHtml(state: FitState, rows: DimensionDisplayRow[]): string {
+  const primary = selectSummaryDimension(rows);
+  if (!primary) return '';
   if (state === 'fits') {
-    return `Fits comfortably — approximately ${unitValueHtml(marginMm)} remains on ${escapeHtml(primaryLabel)}.`;
+    return `Fits the selected dimensions — approximately ${unitValueHtml(primary.marginMm)} remains on ${escapeHtml(primary.label)}.`;
   }
   if (state === 'tight') {
-    return `It fits physically, but the recommended clearance on ${escapeHtml(primaryLabel)} is not fully met.`;
+    const failures = rows.filter((row) => !row.recommendedFit).map((row) => escapeHtml(row.label));
+    return `The physical footprints fit, but selected clearance targets are short on ${failures.join(', ')}. See the table for margins.`;
   }
-  return `Does not fit — ${escapeHtml(primaryLabel)} is approximately ${unitValueHtml(Math.abs(marginMm))} over the available space.`;
+  const failures = rows.filter((row) => !row.hardFit).map((row) => escapeHtml(row.label));
+  return `Does not fit — available space is short for ${failures.join(', ')}. See the table for each dimension's margin.`;
 }
 
 function clearFieldError(field: FieldSpec): void {
@@ -114,6 +133,15 @@ function readAndValidateForm(): FormValues | null {
       case 'desk-depth':
         values.deskDepthMm = raw;
         break;
+      case 'monitor-depth':
+        values.monitorStandDepthMm = raw;
+        break;
+      case 'rear-cable-clearance':
+        values.rearCableClearanceMm = raw;
+        break;
+      case 'keyboard-zone':
+        values.keyboardZoneMm = raw;
+        break;
       case 'monitor-width-override':
         values.monitorWidthOverrideMm = raw;
         break;
@@ -128,8 +156,18 @@ function readAndValidateForm(): FormValues | null {
 
   const countSelect = document.getElementById('monitor-count') as HTMLSelectElement | null;
   const diagonalSelect = document.getElementById('monitor-diagonal') as HTMLSelectElement | null;
-  const monitorCount = countSelect?.value === '1' ? 1 : 2;
+  const aspectSelect = document.getElementById('monitor-aspect-ratio') as HTMLSelectElement | null;
+  const monitorCount = Number(countSelect?.value ?? '2');
   const monitorDiagonalIn = Number(diagonalSelect?.value ?? '27');
+  const aspectKey = (aspectSelect?.value ?? '16:9') as MonitorAspectRatioKey;
+  if (
+    !Number.isInteger(monitorCount) ||
+    monitorCount < 1 ||
+    monitorCount > MAX_SIDE_BY_SIDE_MONITORS ||
+    !Object.hasOwn(MONITOR_ASPECT_RATIOS, aspectKey)
+  ) {
+    return null;
+  }
 
   if (hasError) return null;
 
@@ -138,7 +176,11 @@ function readAndValidateForm(): FormValues | null {
     deskDepthMm: values.deskDepthMm!,
     monitorCount,
     monitorDiagonalIn,
+    monitorAspectRatio: aspectKey,
     monitorWidthOverrideMm: values.monitorWidthOverrideMm ?? null,
+    monitorStandDepthMm: values.monitorStandDepthMm!,
+    rearCableClearanceMm: values.rearCableClearanceMm!,
+    keyboardZoneMm: values.keyboardZoneMm!,
     gapMm: values.gapMm!,
     sideMarginMm: values.sideMarginMm!,
   };
@@ -163,9 +205,12 @@ function recompute(): void {
     monitorWidthMm = values.monitorWidthOverrideMm;
     widthAssumption = `Monitor width: using your custom ${monitorWidthMm} mm override.`;
   } else {
-    const derived = deriveScreenDimensions(values.monitorDiagonalIn, { width: 16, height: 9 });
+    const derived = deriveScreenDimensions(
+      values.monitorDiagonalIn,
+      MONITOR_ASPECT_RATIOS[values.monitorAspectRatio],
+    );
     monitorWidthMm = Math.round(derived.screenWidthMm.valueMm);
-    widthAssumption = `Monitor width: approximate screen-only width derived from a ${values.monitorDiagonalIn}" 16:9 diagonal; actual device is typically wider due to bezel. Enter an exact width below to override.`;
+    widthAssumption = `Monitor width: approximate screen-only width derived from a ${values.monitorDiagonalIn}" ${values.monitorAspectRatio} diagonal; actual device is typically wider due to bezel. Enter an exact overall width below to override.`;
   }
 
   const configurationWidthMm =
@@ -173,18 +218,30 @@ function recompute(): void {
 
   const assumptions = [
     widthAssumption,
-    `Monitor depth (incl. stand) assumed at ${MONITOR_DEPTH_MM} mm.`,
+    `Monitor stand/base depth: ${values.monitorStandDepthMm} mm; replace this initial example with the actual model depth.`,
+    `Rear cable/vent clearance: ${values.rearCableClearanceMm} mm. Zero means it is excluded.`,
+    `Keyboard/mouse zone: ${values.keyboardZoneMm} mm, selected by you. Zero means it is excluded.`,
+    'Eye-to-screen viewing distance is separate from desk surface depth and is not added to this envelope.',
     `Gap between monitors: ${values.gapMm} mm.`,
   ];
 
-  const check = buildWorkspaceWidthCheck({
+  const widthCheck = buildWorkspaceWidthCheck({
     configurationWidthMm,
     sideMarginRecommendedMm: values.sideMarginMm,
     deskWidthMm: values.deskWidthMm,
   });
-  const result = evaluateFit([check], assumptions);
-  const [row] = toDimensionDisplayRows([check], result);
-  if (!row) return;
+  const depthCheck = buildWorkspaceDepthCheck({
+    monitorStandDepthMm: values.monitorStandDepthMm,
+    rearClearanceMm: values.rearCableClearanceMm,
+    keyboardZoneMm: values.keyboardZoneMm,
+    deskDepthMm: values.deskDepthMm,
+  });
+  const checks = [widthCheck, depthCheck];
+  const result = evaluateFit(checks, assumptions);
+  const rows = toDimensionDisplayRows(checks, result);
+  if (rows.length === 0) return;
+  const summaryRow = selectSummaryDimension(rows);
+  if (!summaryRow) return;
 
   // Patch FitSummary.
   const summaryEl = document.getElementById('workspace-fitcheck-summary');
@@ -196,22 +253,24 @@ function recompute(): void {
     const detailEl = summaryEl.querySelector<HTMLElement>('[data-field="detail"]');
     if (iconEl) iconEl.textContent = copy.icon;
     if (labelEl) labelEl.textContent = copy.label;
-    if (detailEl) detailEl.innerHTML = renderDetailHtml(result.state, row.label, row.marginMm);
+    if (detailEl) detailEl.innerHTML = renderDetailHtml(result.state, rows);
   }
 
   // Patch DimensionTable.
   const tableId = 'workspace-fitcheck-table';
-  const tr = document.querySelector(`#${tableId} tbody tr[data-dimension="${row.dimension}"]`);
-  if (tr) {
-    tr.setAttribute('data-hard-fit', String(row.hardFit));
-    tr.setAttribute('data-recommended-fit', String(row.recommendedFit));
-    const signEl = tr.querySelector<HTMLElement>('[data-field="margin-sign"]');
-    if (signEl) signEl.textContent = row.marginMm < 0 ? '−' : '';
+  for (const row of rows) {
+    const tr = document.querySelector(`#${tableId} tbody tr[data-dimension="${row.dimension}"]`);
+    if (tr) {
+      tr.setAttribute('data-hard-fit', String(row.hardFit));
+      tr.setAttribute('data-recommended-fit', String(row.recommendedFit));
+      const signEl = tr.querySelector<HTMLElement>('[data-field="margin-sign"]');
+      if (signEl) signEl.textContent = row.marginMm < 0 ? '−' : '';
+    }
+    patchUnitValue(`${tableId}-${row.dimension}-required`, row.requiredMm);
+    patchUnitValue(`${tableId}-${row.dimension}-recommended`, row.recommendedMm);
+    patchUnitValue(`${tableId}-${row.dimension}-available`, row.availableMm);
+    patchUnitValue(`${tableId}-${row.dimension}-margin`, Math.abs(row.marginMm));
   }
-  patchUnitValue(`${tableId}-${row.dimension}-required`, row.requiredMm);
-  patchUnitValue(`${tableId}-${row.dimension}-recommended`, row.recommendedMm);
-  patchUnitValue(`${tableId}-${row.dimension}-available`, row.availableMm);
-  patchUnitValue(`${tableId}-${row.dimension}-margin`, Math.abs(row.marginMm));
 
   // Patch assumptions.
   const assumptionsList = document.querySelector(
@@ -235,7 +294,7 @@ function recompute(): void {
       deskWidthMm: values.deskWidthMm,
       deskDepthMm: values.deskDepthMm,
       monitorWidthMm,
-      monitorDepthMm: MONITOR_DEPTH_MM,
+      monitorDepthMm: values.monitorStandDepthMm,
       monitorCount: values.monitorCount,
       gapMm: values.gapMm,
       sideMarginMm: values.sideMarginMm,

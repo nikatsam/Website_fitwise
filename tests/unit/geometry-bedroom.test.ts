@@ -38,6 +38,21 @@ describe('computeBedFootprint', () => {
       computeBedFootprint(1500, 2000, { ...noAllowance, foot: Number.POSITIVE_INFINITY }),
     ).toThrow(RangeError);
   });
+
+  it('rejects more than two nightstands in the simplified bedroom footprint model', () => {
+    expect(() =>
+      buildBedRoomChecks({
+        mattressWidthMm: 1500,
+        mattressLengthMm: 2000,
+        frameAllowanceMm: noAllowance,
+        orientation: 'portrait',
+        roomWidthMm: 3000,
+        roomLengthMm: 4000,
+        nightstandWidthsMm: [400, 400, 400],
+        nightstandDepthMm: 350,
+      }),
+    ).toThrow(RangeError);
+  });
 });
 
 describe('applyOrientation — orientation swap', () => {
@@ -85,6 +100,82 @@ describe('buildBedRoomChecks — frame allowance', () => {
     expect(baseWidthMargin - framedWidthMargin).toBe(
       typicalAllowance.left + typicalAllowance.right,
     );
+  });
+});
+
+describe('buildBedRoomChecks — orientation-aware clearances and bedside tables', () => {
+  it('moves side clearance to room length and foot clearance to room width in landscape orientation', () => {
+    const checks = buildBedRoomChecks({
+      mattressWidthMm: 1500,
+      mattressLengthMm: 2000,
+      frameAllowanceMm: noAllowance,
+      orientation: 'landscape',
+      sideClearanceRecommendedMm: 400,
+      footClearanceRecommendedMm: 600,
+      roomWidthMm: 2700,
+      roomLengthMm: 3300,
+    });
+    expect(checks.find((check) => check.dimension === 'room_width')).toMatchObject({
+      minimumMm: 2000,
+      recommendedMm: 2600,
+    });
+    expect(checks.find((check) => check.dimension === 'room_length')).toMatchObject({
+      minimumMm: 1500,
+      recommendedMm: 2300,
+    });
+  });
+
+  it('accounts for measured nightstand width and depth in the physical object envelope', () => {
+    const checks = buildBedRoomChecks({
+      mattressWidthMm: 1500,
+      mattressLengthMm: 2000,
+      frameAllowanceMm: noAllowance,
+      orientation: 'portrait',
+      nightstandWidthsMm: [460, 460],
+      nightstandDepthMm: 350,
+      roomWidthMm: 3000,
+      roomLengthMm: 2400,
+    });
+    expect(checks.find((check) => check.dimension === 'room_width')?.minimumMm).toBe(2420);
+    expect(checks.find((check) => check.dimension === 'room_length')?.minimumMm).toBe(2000);
+  });
+});
+
+describe('buildBedRoomChecks — orientation-aware clearance and nightstands', () => {
+  it('applies side clearance along the bed width axis after a landscape rotation', () => {
+    const checks = buildBedRoomChecks({
+      mattressWidthMm: 1500,
+      mattressLengthMm: 2000,
+      frameAllowanceMm: noAllowance,
+      orientation: 'landscape',
+      sideClearanceRecommendedMm: 400,
+      footClearanceRecommendedMm: 600,
+      roomWidthMm: 2700,
+      roomLengthMm: 3300,
+    });
+    expect(checks.find((check) => check.dimension === 'room_width')).toMatchObject({
+      minimumMm: 2000,
+      recommendedMm: 2600,
+    });
+    expect(checks.find((check) => check.dimension === 'room_length')).toMatchObject({
+      minimumMm: 1500,
+      recommendedMm: 2300,
+    });
+  });
+
+  it('adds nightstand depth to the headboard-side object envelope and rotates it with the bed', () => {
+    const checks = buildBedRoomChecks({
+      mattressWidthMm: 1500,
+      mattressLengthMm: 2000,
+      frameAllowanceMm: noAllowance,
+      orientation: 'landscape',
+      nightstandWidthsMm: [460, 460],
+      nightstandDepthMm: 350,
+      roomWidthMm: 2500,
+      roomLengthMm: 2500,
+    });
+    expect(checks.find((check) => check.dimension === 'room_width')?.minimumMm).toBe(2000);
+    expect(checks.find((check) => check.dimension === 'room_length')?.minimumMm).toBe(2420);
   });
 });
 

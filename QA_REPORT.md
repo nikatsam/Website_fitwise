@@ -87,3 +87,12 @@
 - Search Console/Bing/Yandex account and index-coverage status cannot be checked because owner credentials are unavailable. A public DNS TXT record or IndexNow notification does not prove account verification or indexation.
 - T028 hreflang code/validators pass with `npm run verify` (170 tests, 43-page build, 42 internal-link routes, zero dataset warnings). Deployment run `37793826349` completed. Live US/UK page heads confirm `en-US`/`en-GB`, self-canonicals, reciprocal hreflang, matching Open Graph locales and matching WebPage/BreadcrumbList data; the sitemap remains four URLs.
 - Optional social enhancement: indexable pages have Open Graph/Twitter title and description but no dedicated `og:image`/`twitter:image`. This is not a crawl/indexing defect; add a crawlable 1200x630 social card if richer share previews are desired.
+
+## T029 FitCheck Expansion — 2026-10-08 (local verification)
+
+- Workspace planner supports up to four side-by-side monitors, 16:9/21:9/32:9 screen-width derivation, exact overall-width override, and a separate desk-depth envelope for stand, user-entered cable/vent space and user-selected keyboard/mouse space. Eye-to-screen viewing distance is not incorrectly added to the desk-surface depth.
+- Bedroom planner supports mattress-only and sourced UK MALM frame presets, bed/table footprints, optional PAX door-sweep and HEMNES drawer-pullout collision checks, and orientation-correct side/foot clearance and diagram axes.
+- Fit summaries now list all failing dimensions. Dynamic interaction rows appear only when enabled and require an actual measured obstacle gap.
+- `npm run verify` passes with 189 tests, a 43-page build, 42 validated internal-link routes and the four-URL sitemap. Headless mobile keyboard QA exercises monitor count/aspect/depth, bed orientation, bedside tables, wardrobe/drawer checks, and confirms dynamic rows stay in the mobile card layout without page overflow. Mobile Lighthouse scores 100 for performance/accessibility/best-practices; SEO score 66 is expected for the intentional noindex.
+- Final local Lighthouse LCP was 1.2 s (Workspace) and 1.1 s (Bedroom), CLS 0. Replaced far-offscreen skip-link positioning with a transform-based focus reveal after the mobile keyboard check exposed first-Tab focus loss.
+- T029 changes are local, not yet pushed/deployed. Indexability and sitemap membership were not changed.

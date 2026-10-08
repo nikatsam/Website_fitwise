@@ -5,32 +5,38 @@ import AssumptionList from '../fit/AssumptionList.astro';
 import UnitToggle from '../fit/UnitToggle.astro';
 import ScaleDiagram from '../diagram/ScaleDiagram.astro';
 import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
-import { buildBedRoomChecks, applyOrientation, computeBedFootprint } from '../../lib/geometry';
+import {
+  buildBedRoomChecks,
+  buildDoorSwingCheck,
+  buildDrawerPullOutCheck,
+  computeBedFootprint,
+} from '../../lib/geometry';
 import { renderBedroomDiagramMarkup } from '../../lib/diagram';
-
-/**
- * Bed size presets are widely-known nominal/typical market sizes (not a
- * specific sourced product), explicitly labelled as such in the assumptions
- * text below — consistent with how the workspace FitCheck labels its
- * diagonal-derived monitor width as an approximation (see T012 worklog).
- */
-const BED_PRESETS = {
-  'uk-double': { label: 'UK Double', market: 'UK', widthMm: 1350, lengthMm: 1900 },
-  'uk-king': { label: 'UK King', market: 'UK', widthMm: 1500, lengthMm: 2000 },
-  'us-queen': { label: 'US Queen', market: 'US', widthMm: 1530, lengthMm: 2030 },
-  'us-king': { label: 'US King', market: 'US', widthMm: 1930, lengthMm: 2030 },
-} as const;
-
-type BedPresetKey = keyof typeof BED_PRESETS;
+import {
+  BEDROOM_FIT_PRESETS,
+  DEFAULT_BEDROOM_FIT_PRESET_KEY,
+  HEMNES_BEDSIDE_PRESET,
+  HEMNES_DRAWER_PULL_OUT_MM,
+  PAX_DOOR_LEAF_WIDTH_MM,
+} from '../../lib/fitcheck/presets';
 
 const DEFAULTS = {
   roomWidthMm: 3000,
   roomLengthMm: 3600,
-  bedPreset: 'uk-king' as BedPresetKey,
+  bedPreset: DEFAULT_BEDROOM_FIT_PRESET_KEY,
   orientation: 'portrait' as const,
-  frameAllowanceMm: 50,
-  sideClearanceMm: 600,
-  footClearanceMm: 600,
+  sideClearanceMm: 609.6,
+  footClearanceMm: 609.6,
+  nightstandCount: 0,
+  nightstandWidthMm: HEMNES_BEDSIDE_PRESET.overallWidthMm.valueMm,
+  nightstandDepthMm: HEMNES_BEDSIDE_PRESET.overallDepthMm.valueMm,
+  includeWardrobeDoor: false,
+  wardrobeDoorLeafWidthMm: PAX_DOOR_LEAF_WIDTH_MM,
+  wardrobeDoorAngleDegrees: 90,
+  wardrobeObstacleGapMm: 0,
+  includeDresserDrawer: false,
+  dresserDrawerPullOutMm: HEMNES_DRAWER_PULL_OUT_MM,
+  dresserObstacleGapMm: 0,
 };
 
 const DIAGRAM_ID = 'bedroom-diagram';
@@ -38,38 +44,62 @@ const VIEWPORT_WIDTH_PX = 640;
 const VIEWPORT_HEIGHT_PX = 480;
 const DIAGRAM_PADDING_PX = 60;
 
-const preset = BED_PRESETS[DEFAULTS.bedPreset];
-const frameAllowance = {
-  left: DEFAULTS.frameAllowanceMm,
-  right: DEFAULTS.frameAllowanceMm,
-  head: DEFAULTS.frameAllowanceMm,
-  foot: DEFAULTS.frameAllowanceMm,
-};
+const preset = BEDROOM_FIT_PRESETS.find((item) => item.key === DEFAULTS.bedPreset)!;
+const frameAllowance = preset.frameAllowanceMm;
+const nightstandWidthsMm = Array.from(
+  { length: DEFAULTS.nightstandCount },
+  () => DEFAULTS.nightstandWidthMm,
+);
 
 const checks = buildBedRoomChecks({
-  mattressWidthMm: preset.widthMm,
-  mattressLengthMm: preset.lengthMm,
+  mattressWidthMm: preset.mattressWidthMm,
+  mattressLengthMm: preset.mattressLengthMm,
   frameAllowanceMm: frameAllowance,
   orientation: DEFAULTS.orientation,
   sideClearanceRecommendedMm: DEFAULTS.sideClearanceMm,
   footClearanceRecommendedMm: DEFAULTS.footClearanceMm,
   roomWidthMm: DEFAULTS.roomWidthMm,
   roomLengthMm: DEFAULTS.roomLengthMm,
+  nightstandWidthsMm,
+  nightstandDepthMm: DEFAULTS.nightstandCount > 0 ? DEFAULTS.nightstandDepthMm : 0,
 });
 
 const assumptions = [
-  `Bed size: ${preset.label} (${preset.market} market) — a typical nominal mattress size, not a specific product. Actual products vary slightly.`,
-  `Frame allowance: ${DEFAULTS.frameAllowanceMm} mm on every side (frame overhang beyond the mattress).`,
-  `Recommended clearance: ${DEFAULTS.sideClearanceMm} mm each side, ${DEFAULTS.footClearanceMm} mm at the foot of the bed. Adjust to taste.`,
+  `Bed preset: ${preset.label}. ${preset.note}`,
+  `Selected side-clearance target: ${DEFAULTS.sideClearanceMm} mm per side; selected FitWise foot allowance: ${DEFAULTS.footClearanceMm} mm. Adjust these to your room/use; the foot value is not a code minimum.`,
+  `Nightstands: ${DEFAULTS.nightstandCount}. The UK HEMNES example measures ${DEFAULTS.nightstandWidthMm} mm wide by ${DEFAULTS.nightstandDepthMm} mm deep; override the dimensions for your furniture. Tables are modeled flush beside the headboard with no inter-object gap.`,
+  'The scale diagram shows the bed and bedside-table footprints only. Optional wardrobe/drawer checks compare user-measured gaps and are not drawn to scale.',
 ];
 
-const result = evaluateFit(checks, assumptions);
-const rows = toDimensionDisplayRows(checks, result);
-const primaryRow = rows.find((r) => r.dimension === 'room_width') ?? rows[0]!;
+const interactionChecks = [
+  ...(DEFAULTS.includeWardrobeDoor
+    ? [
+        buildDoorSwingCheck({
+          doorLeafWidthMm: DEFAULTS.wardrobeDoorLeafWidthMm,
+          openingAngleDegrees: DEFAULTS.wardrobeDoorAngleDegrees,
+          obstacleGapMm: DEFAULTS.wardrobeObstacleGapMm,
+        }),
+      ]
+    : []),
+  ...(DEFAULTS.includeDresserDrawer
+    ? [
+        buildDrawerPullOutCheck({
+          drawerPullOutMm: DEFAULTS.dresserDrawerPullOutMm,
+          obstacleGapMm: DEFAULTS.dresserObstacleGapMm,
+        }),
+      ]
+    : []),
+];
+const allChecks = [...checks, ...interactionChecks];
 
-const footprint = computeBedFootprint(preset.widthMm, preset.lengthMm, frameAllowance);
-const oriented = applyOrientation(footprint, DEFAULTS.orientation);
+const result = evaluateFit(allChecks, assumptions);
+const rows = toDimensionDisplayRows(allChecks, result);
 
+const footprint = computeBedFootprint(
+  preset.mattressWidthMm,
+  preset.mattressLengthMm,
+  frameAllowance,
+);
 const diagramMarkup = renderBedroomDiagramMarkup({
   diagramId: DIAGRAM_ID,
   viewportWidthPx: VIEWPORT_WIDTH_PX,
@@ -77,14 +107,16 @@ const diagramMarkup = renderBedroomDiagramMarkup({
   paddingPx: DIAGRAM_PADDING_PX,
   roomWidthMm: DEFAULTS.roomWidthMm,
   roomLengthMm: DEFAULTS.roomLengthMm,
-  bedRoomWidthMm: oriented.roomWidthRequiredMm,
-  bedRoomLengthMm: oriented.roomLengthRequiredMm,
+  bedFootprintWidthMm: footprint.widthMm,
+  bedFootprintLengthMm: footprint.lengthMm,
+  orientation: DEFAULTS.orientation,
   sideClearanceMm: DEFAULTS.sideClearanceMm,
   footClearanceMm: DEFAULTS.footClearanceMm,
-  nightstandWidthsMm: [],
+  nightstandWidthsMm,
+  nightstandDepthMm: DEFAULTS.nightstandCount > 0 ? DEFAULTS.nightstandDepthMm : 0,
 });
 
-const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm room with a ${preset.label} bed (${preset.widthMm} by ${preset.lengthMm} mm mattress), ${DEFAULTS.sideClearanceMm} mm recommended side clearance, ${DEFAULTS.footClearanceMm} mm at the foot.`;
+const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm room with ${preset.label}, ${DEFAULTS.orientation} orientation, ${DEFAULTS.sideClearanceMm} mm selected side target, and ${DEFAULTS.nightstandCount} bedside tables.`;
 ---
 
 <div class="bedroom-fitcheck" data-bedroom-fitcheck data-diagram-id={DIAGRAM_ID}>
@@ -118,14 +150,18 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
     </div>
 
     <div class="field">
-      <label for="bed-preset">Bed size</label>
+      <label for="bed-preset">Bed and frame model</label>
       <select id="bed-preset" name="bedPreset">
-        {Object.entries(BED_PRESETS).map(([key, value]) => (
-          <option value={key} selected={key === DEFAULTS.bedPreset}>
-            {value.label} ({value.market})
+        {BEDROOM_FIT_PRESETS.map((bedPreset) => (
+          <option value={bedPreset.key} selected={bedPreset.key === DEFAULTS.bedPreset}>
+            {bedPreset.label}
           </option>
         ))}
       </select>
+      <p class="field__note">
+        Choose mattress-only or a named frame example. No generic frame overhang is silently
+        applied.
+      </p>
     </div>
 
     <div class="field">
@@ -142,21 +178,7 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
       <summary>More assumptions</summary>
 
       <div class="field">
-        <label for="frame-allowance">Frame allowance per side (mm)</label>
-        <input
-          type="number"
-          id="frame-allowance"
-          name="frameAllowanceMm"
-          min="0"
-          step="1"
-          value={DEFAULTS.frameAllowanceMm}
-          aria-describedby="frame-allowance-error"
-        />
-        <span class="field__error" id="frame-allowance-error" role="alert"></span>
-      </div>
-
-      <div class="field">
-        <label for="side-clearance">Recommended side clearance (mm)</label>
+        <label for="side-clearance">Selected side-clearance target (mm)</label>
         <input
           type="number"
           id="side-clearance"
@@ -170,7 +192,7 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
       </div>
 
       <div class="field">
-        <label for="foot-clearance">Recommended foot clearance (mm)</label>
+        <label for="foot-clearance">FitWise foot allowance (mm; assumption)</label>
         <input
           type="number"
           id="foot-clearance"
@@ -195,25 +217,128 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
       </div>
 
       <div class="field">
-        <label for="nightstand-width">Nightstand width each (mm)</label>
+        <label for="nightstand-width">Nightstand width each (mm; UK HEMNES example)</label>
         <input
           type="number"
           id="nightstand-width"
           name="nightstandWidthMm"
           min="1"
           step="1"
-          value="400"
+          value={DEFAULTS.nightstandWidthMm}
           aria-describedby="nightstand-width-error"
         />
         <span class="field__error" id="nightstand-width-error" role="alert"></span>
       </div>
+
+      <div class="field">
+        <label for="nightstand-depth">Nightstand depth each (mm; UK HEMNES example)</label>
+        <input
+          type="number"
+          id="nightstand-depth"
+          name="nightstandDepthMm"
+          min="1"
+          step="1"
+          value={DEFAULTS.nightstandDepthMm}
+          aria-describedby="nightstand-depth-error"
+        />
+        <span class="field__error" id="nightstand-depth-error" role="alert"></span>
+      </div>
+
+      <fieldset class="interaction-checks">
+        <legend>Optional furniture collision checks</legend>
+        <label class="interaction-checks__toggle">
+          <input type="checkbox" id="check-wardrobe-door" name="checkWardrobeDoor" />
+          Check a hinged wardrobe-door swing
+        </label>
+        <div data-wardrobe-fields hidden>
+          <div class="field">
+            <label for="wardrobe-door-width">Door leaf width (mm; US PAX/GRIMO example)</label>
+            <input
+              type="number"
+              id="wardrobe-door-width"
+              name="wardrobeDoorWidthMm"
+              min="1"
+              step="1"
+              value={DEFAULTS.wardrobeDoorLeafWidthMm}
+              aria-describedby="wardrobe-door-width-error"
+            />
+            <span class="field__error" id="wardrobe-door-width-error" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="wardrobe-door-angle">Door opening angle (degrees, 0–90)</label>
+            <input
+              type="number"
+              id="wardrobe-door-angle"
+              name="wardrobeDoorAngleDegrees"
+              min="0"
+              max="90"
+              step="1"
+              value={DEFAULTS.wardrobeDoorAngleDegrees}
+              aria-describedby="wardrobe-door-angle-error"
+            />
+            <span class="field__error" id="wardrobe-door-angle-error" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="wardrobe-obstacle-gap">
+              Measured gap from wardrobe face to bed/obstacle (mm)
+            </label>
+            <input
+              type="number"
+              id="wardrobe-obstacle-gap"
+              name="wardrobeObstacleGapMm"
+              min="0"
+              step="1"
+              aria-describedby="wardrobe-obstacle-gap-error"
+            />
+            <span class="field__error" id="wardrobe-obstacle-gap-error" role="alert"></span>
+          </div>
+        </div>
+
+        <label class="interaction-checks__toggle">
+          <input type="checkbox" id="check-dresser-drawer" name="checkDresserDrawer" />
+          Check a dresser drawer extension
+        </label>
+        <div data-dresser-fields hidden>
+          <div class="field">
+            <label for="dresser-drawer-pullout">Drawer pull-out (mm; UK HEMNES example)</label>
+            <input
+              type="number"
+              id="dresser-drawer-pullout"
+              name="dresserDrawerPullOutMm"
+              min="1"
+              step="1"
+              value={DEFAULTS.dresserDrawerPullOutMm}
+              aria-describedby="dresser-drawer-pullout-error"
+            />
+            <span class="field__error" id="dresser-drawer-pullout-error" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="dresser-obstacle-gap">
+              Measured gap from dresser front to bed/obstacle (mm)
+            </label>
+            <input
+              type="number"
+              id="dresser-obstacle-gap"
+              name="dresserObstacleGapMm"
+              min="0"
+              step="1"
+              aria-describedby="dresser-obstacle-gap-error"
+            />
+            <span class="field__error" id="dresser-obstacle-gap-error" role="alert"></span>
+          </div>
+        </div>
+        <p class="field__note">
+          These checks test door/drawer collision envelopes only. They do not add a standing or
+          walking allowance and are not drawn on the room diagram.
+        </p>
+      </fieldset>
     </details>
 
     <UnitToggle />
   </form>
 
   <div class="bedroom-fitcheck__result">
-    <FitSummary id="bedroom-fitcheck-summary" state={result.state} primary={primaryRow} />
+    <FitSummary id="bedroom-fitcheck-summary" state={result.state} rows={rows} />
 
     <ScaleDiagram
       id={DIAGRAM_ID}
@@ -227,7 +352,7 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
     <DimensionTable
       id="bedroom-fitcheck-table"
       rows={rows}
-      caption="Room width/length breakdown: required, recommended, available and margin"
+      caption="Room dimensions and selected furniture collision checks: required, selected, available and margin"
     />
 
     <AssumptionList id="bedroom-fitcheck-assumptions" assumptions={result.assumptions} />
@@ -287,6 +412,13 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
     min-height: 1.2em;
   }
 
+  .field__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    line-height: 1.4;
+  }
+
   .bedroom-fitcheck__advanced {
     display: grid;
     gap: var(--space-4);
@@ -297,6 +429,36 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
     font-weight: 600;
     font-size: var(--fs-sm);
     color: var(--color-text-primary);
+  }
+
+  .interaction-checks {
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+    margin: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .interaction-checks legend {
+    padding-inline: var(--space-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+  }
+
+  .interaction-checks__toggle {
+    display: flex;
+    align-items: start;
+    gap: var(--space-2);
+    color: var(--color-text-primary);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+  }
+
+  .interaction-checks [data-wardrobe-fields][hidden],
+  .interaction-checks [data-dresser-fields][hidden] {
+    display: none;
   }
 
   .bedroom-fitcheck__result {

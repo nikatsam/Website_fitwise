@@ -58,14 +58,14 @@ const { rows, caption, id } = Astro.props;
     font-size: var(--fs-sm);
   }
 
-  .dimension-table th,
-  .dimension-table td {
+  .dimension-table :global(th),
+  .dimension-table :global(td) {
     text-align: left;
     padding: var(--space-3);
     border-bottom: 1px solid var(--color-border);
   }
 
-  .dimension-table thead th {
+  .dimension-table :global(thead th) {
     color: var(--color-text-secondary);
     font-weight: 600;
     text-transform: uppercase;
@@ -73,18 +73,18 @@ const { rows, caption, id } = Astro.props;
     letter-spacing: 0.03em;
   }
 
-  .dimension-table tbody th {
+  .dimension-table :global(tbody th) {
     font-weight: 600;
   }
 
-  .dimension-table tr[data-hard-fit='false'] td,
-  .dimension-table tr[data-hard-fit='false'] th {
+  .dimension-table :global(tr[data-hard-fit='false'] td),
+  .dimension-table :global(tr[data-hard-fit='false'] th) {
     color: var(--color-state-no-fit-fg);
   }
 
   /* Mobile: stack each row as a labeled card instead of a horizontal table (specs/UX_UI.md §7). */
   @media (max-width: 40rem) {
-    .dimension-table thead {
+    .dimension-table :global(thead) {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -93,23 +93,23 @@ const { rows, caption, id } = Astro.props;
     }
 
     .dimension-table,
-    .dimension-table tbody,
-    .dimension-table tr,
-    .dimension-table td,
-    .dimension-table th {
+    .dimension-table :global(tbody),
+    .dimension-table :global(tr),
+    .dimension-table :global(td),
+    .dimension-table :global(th) {
       display: block;
       width: 100%;
     }
 
-    .dimension-table tr {
+    .dimension-table :global(tr) {
       margin-bottom: var(--space-3);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
       padding: var(--space-2) var(--space-3);
     }
 
-    .dimension-table td,
-    .dimension-table th {
+    .dimension-table :global(td),
+    .dimension-table :global(th) {
       border-bottom: none;
       display: flex;
       justify-content: space-between;
@@ -117,7 +117,7 @@ const { rows, caption, id } = Astro.props;
       padding: var(--space-1) 0;
     }
 
-    .dimension-table td::before {
+    .dimension-table :global(td::before) {
       content: attr(data-label);
       font-weight: 600;
       color: var(--color-text-secondary);

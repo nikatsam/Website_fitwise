@@ -5,20 +5,27 @@ import AssumptionList from '../fit/AssumptionList.astro';
 import UnitToggle from '../fit/UnitToggle.astro';
 import ScaleDiagram from '../diagram/ScaleDiagram.astro';
 import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
-import { buildWorkspaceWidthCheck, deriveScreenDimensions } from '../../lib/geometry';
+import {
+  buildWorkspaceDepthCheck,
+  buildWorkspaceWidthCheck,
+  deriveScreenDimensions,
+  MONITOR_ASPECT_RATIOS,
+} from '../../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../../lib/diagram';
 
 // Default, SSR-rendered scenario: this is the complete static answer a
 // visitor gets with JavaScript disabled (tasks/T012 acceptance criterion 1).
-// A fixed monitor-depth assumption stands in for stand/arm footprint, since
-// that is not yet a user-editable field in v1 (specs/ARCHITECTURE.md §4
-// notes stand footprint as an assumption, not a required input).
+// The initial stand depth is an editable example. Rear cable and keyboard
+// zones default to zero and are explicitly excluded until the visitor sets them.
 const DEFAULTS = {
   deskWidthMm: 1400,
   deskDepthMm: 700,
-  monitorCount: 2 as 1 | 2,
+  monitorCount: 2,
   monitorDiagonalIn: 27,
+  monitorAspectRatio: '16:9' as keyof typeof MONITOR_ASPECT_RATIOS,
   monitorDepthMm: 200,
+  rearCableClearanceMm: 0,
+  keyboardZoneMm: 0,
   gapMm: 20,
   sideMarginMm: 38,
 };
@@ -28,26 +35,39 @@ const VIEWPORT_WIDTH_PX = 640;
 const VIEWPORT_HEIGHT_PX = 360;
 const DIAGRAM_PADDING_PX = 60;
 
-const derivedScreen = deriveScreenDimensions(DEFAULTS.monitorDiagonalIn, { width: 16, height: 9 });
+const derivedScreen = deriveScreenDimensions(
+  DEFAULTS.monitorDiagonalIn,
+  MONITOR_ASPECT_RATIOS[DEFAULTS.monitorAspectRatio],
+);
 const monitorWidthMm = Math.round(derivedScreen.screenWidthMm.valueMm);
 
 const configurationWidthMm =
   monitorWidthMm * DEFAULTS.monitorCount + DEFAULTS.gapMm * (DEFAULTS.monitorCount - 1);
 
-const check = buildWorkspaceWidthCheck({
+const widthCheck = buildWorkspaceWidthCheck({
   configurationWidthMm,
   sideMarginRecommendedMm: DEFAULTS.sideMarginMm,
   deskWidthMm: DEFAULTS.deskWidthMm,
 });
+const depthCheck = buildWorkspaceDepthCheck({
+  monitorStandDepthMm: DEFAULTS.monitorDepthMm,
+  rearClearanceMm: DEFAULTS.rearCableClearanceMm,
+  keyboardZoneMm: DEFAULTS.keyboardZoneMm,
+  deskDepthMm: DEFAULTS.deskDepthMm,
+});
+const checks = [widthCheck, depthCheck];
 
 const assumptions = [
-  `Monitor width: approximate screen-only width derived from a ${DEFAULTS.monitorDiagonalIn}" 16:9 diagonal; actual device is typically wider due to bezel. Enter an exact width below to override.`,
-  `Monitor depth (incl. stand) assumed at ${DEFAULTS.monitorDepthMm} mm.`,
+  `Monitor width: approximate screen-only width derived from a ${DEFAULTS.monitorDiagonalIn}" ${DEFAULTS.monitorAspectRatio} diagonal; actual device is typically wider due to bezel. Enter an exact overall width below to override.`,
+  `Monitor stand/base depth: ${DEFAULTS.monitorDepthMm} mm initial example; replace it with the actual model's sourced depth.`,
+  `Rear cable/vent allowance: ${DEFAULTS.rearCableClearanceMm} mm. Zero means no rear allowance was included.`,
+  `Keyboard/mouse surface zone: ${DEFAULTS.keyboardZoneMm} mm, selected by the user. Zero means no front working zone was included.`,
+  'Eye-to-screen viewing distance is separate from the desktop-depth envelope and is not calculated as a desk surface measurement.',
   `Gap between monitors: ${DEFAULTS.gapMm} mm.`,
 ];
 
-const result = evaluateFit([check], assumptions);
-const rows = toDimensionDisplayRows([check], result);
+const result = evaluateFit(checks, assumptions);
+const rows = toDimensionDisplayRows(checks, result);
 
 const diagramMarkup = renderWorkspaceDiagramMarkup({
   diagramId: DIAGRAM_ID,
@@ -63,7 +83,7 @@ const diagramMarkup = renderWorkspaceDiagramMarkup({
   sideMarginMm: DEFAULTS.sideMarginMm,
 });
 
-const diagramSummary = `${DEFAULTS.deskWidthMm} mm wide desk with ${DEFAULTS.monitorCount} monitors (${monitorWidthMm} mm each), ${DEFAULTS.gapMm} mm gap, ${DEFAULTS.sideMarginMm} mm recommended clearance on each side.`;
+const diagramSummary = `${DEFAULTS.deskWidthMm} by ${DEFAULTS.deskDepthMm} mm desk with ${DEFAULTS.monitorCount} monitors (${monitorWidthMm} mm screen width each), ${DEFAULTS.gapMm} mm gap. Stand depth and user-selected cable/keyboard zones are checked separately in the results table.`;
 ---
 
 <div class="workspace-fitcheck" data-workspace-fitcheck data-diagram-id={DIAGRAM_ID}>
@@ -85,10 +105,11 @@ const diagramSummary = `${DEFAULTS.deskWidthMm} mm wide desk with ${DEFAULTS.mon
     <div class="field">
       <label for="monitor-count">Number of monitors</label>
       <select id="monitor-count" name="monitorCount">
-        <option value="1">1</option>
-        <option value="2" selected>
-          2
-        </option>
+        {[1, 2, 3, 4].map((count) => (
+          <option value={count} selected={count === DEFAULTS.monitorCount}>
+            {count}
+          </option>
+        ))}
       </select>
     </div>
 
@@ -100,6 +121,19 @@ const diagramSummary = `${DEFAULTS.deskWidthMm} mm wide desk with ${DEFAULTS.mon
           27"
         </option>
         <option value="32">32"</option>
+        <option value="34">34"</option>
+        <option value="49">49"</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="monitor-aspect-ratio">Screen aspect ratio</label>
+      <select id="monitor-aspect-ratio" name="monitorAspectRatio">
+        {Object.keys(MONITOR_ASPECT_RATIOS).map((ratio) => (
+          <option value={ratio} selected={ratio === DEFAULTS.monitorAspectRatio}>
+            {ratio}
+          </option>
+        ))}
       </select>
     </div>
 
@@ -115,11 +149,66 @@ const diagramSummary = `${DEFAULTS.deskWidthMm} mm wide desk with ${DEFAULTS.mon
           min="1"
           step="1"
           value={DEFAULTS.deskDepthMm}
+          aria-describedby="desk-depth-error"
         />
+        <span class="field__error" id="desk-depth-error" role="alert"></span>
       </div>
 
       <div class="field">
-        <label for="monitor-width-override">Exact monitor width override (mm, optional)</label>
+        <label for="monitor-depth">Monitor stand/base depth (mm; editable example)</label>
+        <input
+          type="number"
+          id="monitor-depth"
+          name="monitorStandDepthMm"
+          min="1"
+          step="1"
+          value={DEFAULTS.monitorDepthMm}
+          aria-describedby="monitor-depth-error"
+        />
+        <span class="field__error" id="monitor-depth-error" role="alert"></span>
+        <p class="field__note">
+          The 200 mm default is a FitWise placeholder, not a standard. Replace it with your model's
+          measured depth; see the{' '}
+          <a href="/workspace/desk-depth-for-monitor/">Samsung M7 stand-depth example</a>.
+        </p>
+      </div>
+
+      <div class="field">
+        <label for="rear-cable-clearance">Rear cable/vent allowance (mm; user-measured)</label>
+        <input
+          type="number"
+          id="rear-cable-clearance"
+          name="rearCableClearanceMm"
+          min="0"
+          step="1"
+          value={DEFAULTS.rearCableClearanceMm}
+          aria-describedby="rear-cable-clearance-error"
+        />
+        <span class="field__error" id="rear-cable-clearance-error" role="alert"></span>
+      </div>
+
+      <div class="field">
+        <label for="keyboard-zone">Keyboard/mouse surface zone (mm; user-selected)</label>
+        <input
+          type="number"
+          id="keyboard-zone"
+          name="keyboardZoneMm"
+          min="0"
+          step="1"
+          value={DEFAULTS.keyboardZoneMm}
+          aria-describedby="keyboard-zone-error"
+        />
+        <span class="field__error" id="keyboard-zone-error" role="alert"></span>
+        <p class="field__note">
+          Viewing distance is not added to desk depth. Enter the actual keyboard/cable areas you
+          want to reserve; zero means they are excluded.
+        </p>
+      </div>
+
+      <div class="field">
+        <label for="monitor-width-override">
+          Exact overall monitor width incl. bezel (mm, optional)
+        </label>
         <input
           type="number"
           id="monitor-width-override"
@@ -165,7 +254,7 @@ const diagramSummary = `${DEFAULTS.deskWidthMm} mm wide desk with ${DEFAULTS.mon
   </form>
 
   <div class="workspace-fitcheck__result">
-    <FitSummary id="workspace-fitcheck-summary" state={result.state} primary={rows[0]!} />
+    <FitSummary id="workspace-fitcheck-summary" state={result.state} rows={rows} />
 
     <ScaleDiagram
       id={DIAGRAM_ID}
@@ -179,7 +268,7 @@ const diagramSummary = `${DEFAULTS.deskWidthMm} mm wide desk with ${DEFAULTS.mon
     <DimensionTable
       id="workspace-fitcheck-table"
       rows={rows}
-      caption="Desk width breakdown: required, recommended, available and margin"
+      caption="Desk width and depth envelopes: required, selected, available and margin"
     />
 
     <AssumptionList id="workspace-fitcheck-assumptions" assumptions={result.assumptions} />
@@ -237,6 +326,13 @@ const diagramSummary = `${DEFAULTS.deskWidthMm} mm wide desk with ${DEFAULTS.mon
     font-size: var(--fs-sm);
     color: var(--color-state-no-fit-fg);
     min-height: 1.2em;
+  }
+
+  .field__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    line-height: 1.4;
   }
 
   .workspace-fitcheck__advanced {

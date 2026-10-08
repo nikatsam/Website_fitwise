@@ -20,43 +20,44 @@
 ### Current progress
 
 - Specification/development-pack progress: **100%**
-- Implementation progress: **100%**
-- Deployment progress: **100%**
-- Current active task: **None**
-- Next task: **Revisit GA4 privacy/consent if the owner later supplies notice/contact details**
+- Implementation progress: **97%**
+- Deployment progress: **97%**
+- Current active task: **T029 — expand Workspace and Bedroom FitCheck planners**
+- Next task: **Complete planner regression QA and record fit assumptions**
 
 ## Task tracker
 
-| ID   | Status  | Weight | Completed  | Verification / notes                                                                                             |
-| ---- | ------- | -----: | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| T001 | 🟩 DONE |     4% | 2026-10-06 | `npm install`, `npm run build`, `npm run dev` all verified; Astro 7 static output, no framework runtime          |
-| T002 | 🟩 DONE |     3% | 2026-10-06 | `npm run verify` passes (typecheck, lint, format:check, test, build)                                             |
-| T003 | 🟩 DONE |     3% | 2026-10-06 | `npm run verify` passes; dev-server smoke test of `/`, `/workspace/`, `/bedroom/`, `/methodology/`               |
-| T004 | 🟩 DONE |     5% | 2026-10-06 | `npm run verify` passes (7/7 tests incl. new fixture/type tests)                                                 |
-| T005 | 🟩 DONE |     5% | 2026-10-06 | `npm run verify` passes (18/18 tests); build-abort behavior manually verified with injected bad data             |
-| T006 | 🟩 DONE |     4% | 2026-10-06 | `npm run verify` passes (40/40 tests)                                                                            |
-| T007 | 🟩 DONE |     6% | 2026-10-06 | `npm run verify` passes (53/53 tests, incl. equality/±1mm boundary cases)                                        |
-| T008 | 🟩 DONE |     6% | 2026-10-06 | `npm run verify` passes (66/66 tests)                                                                            |
-| T009 | 🟩 DONE |     6% | 2026-10-06 | `npm run verify` passes (78/78 tests)                                                                            |
-| T010 | 🟩 DONE |     4% | 2026-10-06 | `npm run verify` passes (82/82 tests); manual dev-server check of all 3 states + keyboard/ARIA                   |
-| T011 | 🟩 DONE |     6% | 2026-10-06 | `npm run verify` passes (90/90 tests); manual dev-server check of the diagram preview page                       |
-| T012 | 🟩 DONE |     7% | 2026-10-06 | `npm run verify` passes (98/98 tests); dev-server HTML inspection of `/workspace/`                               |
-| T013 | 🟩 DONE |     7% | 2026-10-06 | `npm run verify` passes (105/105 tests); dev-server HTML inspection of `/bedroom/`                               |
-| T014 | 🟩 DONE |     6% | 2026-10-06 | `npm run verify` passes (110/110 tests); all 14 pages built, 7 representative family pages checked               |
-| T015 | 🟩 DONE |     4% | 2026-10-06 | Workspace seed data wired; validator passes; `npm run verify` passes (110 tests), 16 pages built                 |
-| T016 | 🟩 DONE |     4% | 2026-10-06 | US/UK bed references, US room scenarios, sourced clearances, 19 intents; `npm run verify` passes; 20 pages built |
-| T017 | 🟩 DONE |     3% | 2026-10-06 | SEO envelopes, canonicals, social tags and typed JSON-LD breadcrumbs; 115 tests pass                             |
-| T018 | 🟩 DONE |     2% | 2026-10-06 | Build sitemap/robots, offline SEO/link validators, redirect registry and deterministic local URL diff; 123 tests |
-| T019 | 🟩 DONE |     4% | 2026-10-06 | Clean `npm ci`, 130 tests, 20-page build, SEO/link and route smoke checks pass; numeric boundaries hardened      |
-| T020 | 🟩 DONE |     3% | 2026-10-06 | Lighthouse: a11y/performance 100; keyboard, mobile/desktop visual QA passed; fixed SVG and accessibility issues  |
-| T021 | 🟩 DONE |     2% | 2026-10-06 | Gate E passed; owner sign-off recorded; local release candidate approved                                         |
-| T022 | 🟩 DONE |     3% | 2026-10-07 | Private S3/CloudFront/OAC/ACM deployed through GitHub OIDC; project tags and security smoke verified             |
-| T023 | 🟩 DONE |     2% | 2026-10-07 | Repeatable OIDC deploy, cache sync, invalidation and IndexNow workflow passed                                    |
-| T024 | 🟩 DONE |     1% | 2026-10-07 | Cloudflare apex HTTPS/DNS and production smoke pass; GSC/Bing/Yandex remain owner-operationally-pending          |
-| T025 | 🟩 DONE |     1% | 2026-10-08 | Dual-name certificate, CloudFront alias/301, Cloudflare DNS, and live redirect verified                          |
-| T026 | 🟩 DONE |     4% | 2026-10-08 | Sourced desk/bed-fit content and internal SEO links deployed; 161 tests and live sitemap/content smoke passed    |
-| T027 | 🟩 DONE |     5% | 2026-10-08 | Audit fixes and measured furniture/monitor guides deployed; 169 tests and live noindex/sitemap checks passed     |
-| T028 | 🟩 DONE |     2% | 2026-10-08 | SEO metadata audit complete; reciprocal hreflang deployed/live-verified; four-URL sitemap retained               |
+| ID   | Status         | Weight | Completed  | Verification / notes                                                                                             |
+| ---- | -------------- | -----: | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| T001 | 🟩 DONE        |     4% | 2026-10-06 | `npm install`, `npm run build`, `npm run dev` all verified; Astro 7 static output, no framework runtime          |
+| T002 | 🟩 DONE        |     3% | 2026-10-06 | `npm run verify` passes (typecheck, lint, format:check, test, build)                                             |
+| T003 | 🟩 DONE        |     3% | 2026-10-06 | `npm run verify` passes; dev-server smoke test of `/`, `/workspace/`, `/bedroom/`, `/methodology/`               |
+| T004 | 🟩 DONE        |     5% | 2026-10-06 | `npm run verify` passes (7/7 tests incl. new fixture/type tests)                                                 |
+| T005 | 🟩 DONE        |     5% | 2026-10-06 | `npm run verify` passes (18/18 tests); build-abort behavior manually verified with injected bad data             |
+| T006 | 🟩 DONE        |     4% | 2026-10-06 | `npm run verify` passes (40/40 tests)                                                                            |
+| T007 | 🟩 DONE        |     6% | 2026-10-06 | `npm run verify` passes (53/53 tests, incl. equality/±1mm boundary cases)                                        |
+| T008 | 🟩 DONE        |     6% | 2026-10-06 | `npm run verify` passes (66/66 tests)                                                                            |
+| T009 | 🟩 DONE        |     6% | 2026-10-06 | `npm run verify` passes (78/78 tests)                                                                            |
+| T010 | 🟩 DONE        |     4% | 2026-10-06 | `npm run verify` passes (82/82 tests); manual dev-server check of all 3 states + keyboard/ARIA                   |
+| T011 | 🟩 DONE        |     6% | 2026-10-06 | `npm run verify` passes (90/90 tests); manual dev-server check of the diagram preview page                       |
+| T012 | 🟩 DONE        |     7% | 2026-10-06 | `npm run verify` passes (98/98 tests); dev-server HTML inspection of `/workspace/`                               |
+| T013 | 🟩 DONE        |     7% | 2026-10-06 | `npm run verify` passes (105/105 tests); dev-server HTML inspection of `/bedroom/`                               |
+| T014 | 🟩 DONE        |     6% | 2026-10-06 | `npm run verify` passes (110/110 tests); all 14 pages built, 7 representative family pages checked               |
+| T015 | 🟩 DONE        |     4% | 2026-10-06 | Workspace seed data wired; validator passes; `npm run verify` passes (110 tests), 16 pages built                 |
+| T016 | 🟩 DONE        |     4% | 2026-10-06 | US/UK bed references, US room scenarios, sourced clearances, 19 intents; `npm run verify` passes; 20 pages built |
+| T017 | 🟩 DONE        |     3% | 2026-10-06 | SEO envelopes, canonicals, social tags and typed JSON-LD breadcrumbs; 115 tests pass                             |
+| T018 | 🟩 DONE        |     2% | 2026-10-06 | Build sitemap/robots, offline SEO/link validators, redirect registry and deterministic local URL diff; 123 tests |
+| T019 | 🟩 DONE        |     4% | 2026-10-06 | Clean `npm ci`, 130 tests, 20-page build, SEO/link and route smoke checks pass; numeric boundaries hardened      |
+| T020 | 🟩 DONE        |     3% | 2026-10-06 | Lighthouse: a11y/performance 100; keyboard, mobile/desktop visual QA passed; fixed SVG and accessibility issues  |
+| T021 | 🟩 DONE        |     2% | 2026-10-06 | Gate E passed; owner sign-off recorded; local release candidate approved                                         |
+| T022 | 🟩 DONE        |     3% | 2026-10-07 | Private S3/CloudFront/OAC/ACM deployed through GitHub OIDC; project tags and security smoke verified             |
+| T023 | 🟩 DONE        |     2% | 2026-10-07 | Repeatable OIDC deploy, cache sync, invalidation and IndexNow workflow passed                                    |
+| T024 | 🟩 DONE        |     1% | 2026-10-07 | Cloudflare apex HTTPS/DNS and production smoke pass; GSC/Bing/Yandex remain owner-operationally-pending          |
+| T025 | 🟩 DONE        |     1% | 2026-10-08 | Dual-name certificate, CloudFront alias/301, Cloudflare DNS, and live redirect verified                          |
+| T026 | 🟩 DONE        |     4% | 2026-10-08 | Sourced desk/bed-fit content and internal SEO links deployed; 161 tests and live sitemap/content smoke passed    |
+| T027 | 🟩 DONE        |     5% | 2026-10-08 | Audit fixes and measured furniture/monitor guides deployed; 169 tests and live noindex/sitemap checks passed     |
+| T028 | 🟩 DONE        |     2% | 2026-10-08 | SEO metadata audit complete; reciprocal hreflang deployed/live-verified; four-URL sitemap retained               |
+| T029 | 🟦 IN PROGRESS |     4% | —          | Expanded planner inputs/collision checks pass 189 tests, keyboard QA and mobile Lighthouse; local only           |
 
 ## Session log
 
@@ -373,6 +374,16 @@ Paused mid-task at the user's request to document progress. Current state is saf
 - The US and UK bed-size reference pages now have reciprocal `en-US`/`en-GB` hreflang, self-reference, canonical targets and matching Open Graph locales. Noindex routes remain excluded from canonicals/hreflang/structured breadcrumb data and the sitemap remains four URLs.
 - Search Console query/index coverage remains owner-unverified; no indexability changes were made. Bing results were broad/ambiguous and DuckDuckGo automated retrieval was challenged.
 - `npm run verify` passes with 170 tests; SEO validation checks hreflang reciprocity and canonical targets. Commit `fc6b108` was deployed by workflow `37793826349`; public US/UK page heads and the four-URL sitemap were verified.
+- The owner chose to keep GA4 active; the missing privacy/consent notice remains an explicitly deferred future defect.
+
+### 2026-10-08 — T029 FitCheck planner expansion (IN PROGRESS)
+
+- Workspace planner now supports up to four monitors, 16:9/21:9/32:9 screen estimates, exact overall-width overrides, and a separate depth envelope for monitor stand, user-measured rear cable/vent gap, and user-selected keyboard/mouse zone. Eye-to-screen distance remains separate from desk surface depth.
+- Bedroom planner now offers mattress-only and named UK MALM frame presets, measured bedside-table width/depth, optional measured PAX/GRIMO door-sweep and HEMNES drawer-pullout checks, and room-axis-correct side/foot clearances/diagrams for portrait and landscape orientation.
+- Fit summaries now identify all failed dimensions instead of attributing a failure to a single primary width. Mobile keyboard QA exercises monitor count/aspect/depth, bed orientation, nightstands, door and drawer checks.
+- `npm run verify` passes with 189 tests; full page/SEO/build checks pass. Mobile keyboard QA covers planner controls and dynamic result rows. Workspace/Bedroom mobile Lighthouse scores are 100 for performance/accessibility/best-practices, with LCP 1.2/1.1 s and CLS 0; expected SEO 66 reflects noindex.
+- Changed skip-link hiding from far-offscreen positioning to a transform-based focus reveal so the first Tab reaches it in mobile browser emulation.
+- T029 is local and not pushed/deployed. It does not alter the four-URL sitemap or indexability gate.
 - The owner chose to keep GA4 active; the missing privacy notice/consent gate remains a known future defect, not a resolved compliance item.
 
 ### 2026-10-06 — T020 accessibility, performance and manual QA (DONE)

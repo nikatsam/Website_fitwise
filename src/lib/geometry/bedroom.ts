@@ -83,6 +83,8 @@ export interface BedRoomChecksInput {
   footClearanceRecommendedMm?: Millimetres;
   /** Width of each nightstand placed beside the bed (0–2 entries); added to the hard width footprint. */
   nightstandWidthsMm?: Millimetres[];
+  /** Depth of each nightstand at the headboard; included in the physical length envelope. */
+  nightstandDepthMm?: Millimetres;
 }
 
 /**
@@ -108,15 +110,21 @@ export function buildBedRoomChecks(input: BedRoomChecksInput): DimensionCheck[] 
   );
 
   const nightstandExtraMm = (input.nightstandWidthsMm ?? []).reduce((sum, w) => sum + w, 0);
+  const nightstandDepthMm = input.nightstandDepthMm ?? 0;
   if (
+    (input.nightstandWidthsMm ?? []).length > 2 ||
     (input.nightstandWidthsMm ?? []).some((width) => !Number.isFinite(width) || !(width > 0)) ||
-    !Number.isFinite(nightstandExtraMm)
+    !Number.isFinite(nightstandExtraMm) ||
+    !Number.isFinite(nightstandDepthMm) ||
+    nightstandDepthMm < 0
   ) {
-    throw new RangeError('Nightstand widths must be finite and > 0.');
+    throw new RangeError(
+      'Use zero to two finite, positive nightstand widths and a finite non-negative depth.',
+    );
   }
   const footprintWithNightstands: BedFootprint = {
     widthMm: baseFootprint.widthMm + nightstandExtraMm,
-    lengthMm: baseFootprint.lengthMm,
+    lengthMm: Math.max(baseFootprint.lengthMm, nightstandDepthMm),
   };
 
   const oriented = applyOrientation(footprintWithNightstands, input.orientation);
@@ -130,10 +138,12 @@ export function buildBedRoomChecks(input: BedRoomChecksInput): DimensionCheck[] 
   ) {
     throw new RangeError('Recommended clearances must be finite and non-negative.');
   }
-  if (
-    !Number.isFinite(oriented.roomWidthRequiredMm + sideClearance * 2) ||
-    !Number.isFinite(oriented.roomLengthRequiredMm + footClearance)
-  ) {
+  const sideAxisIsRoomWidth = input.orientation === 'portrait';
+  const recommendedRoomWidthMm =
+    oriented.roomWidthRequiredMm + (sideAxisIsRoomWidth ? sideClearance * 2 : footClearance);
+  const recommendedRoomLengthMm =
+    oriented.roomLengthRequiredMm + (sideAxisIsRoomWidth ? footClearance : sideClearance * 2);
+  if (!Number.isFinite(recommendedRoomWidthMm) || !Number.isFinite(recommendedRoomLengthMm)) {
     throw new RangeError('Recommended bedroom dimensions must be finite.');
   }
 
@@ -142,14 +152,14 @@ export function buildBedRoomChecks(input: BedRoomChecksInput): DimensionCheck[] 
       dimension: 'room_width',
       label: 'room width',
       minimumMm: oriented.roomWidthRequiredMm,
-      recommendedMm: oriented.roomWidthRequiredMm + sideClearance * 2,
+      recommendedMm: recommendedRoomWidthMm,
       availableMm: input.roomWidthMm,
     },
     {
       dimension: 'room_length',
       label: 'room length',
       minimumMm: oriented.roomLengthRequiredMm,
-      recommendedMm: oriented.roomLengthRequiredMm + footClearance,
+      recommendedMm: recommendedRoomLengthMm,
       availableMm: input.roomLengthMm,
     },
   ];

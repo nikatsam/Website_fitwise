@@ -12,6 +12,15 @@ import { inchesToMm } from '../units';
 
 export const DERIVE_SCREEN_DIMS_FROM_DIAGONAL_ASPECT = 'derive-screen-dims-from-diagonal-aspect';
 
+export const MONITOR_ASPECT_RATIOS = {
+  '16:9': { width: 16, height: 9 },
+  '21:9': { width: 21, height: 9 },
+  '32:9': { width: 32, height: 9 },
+} as const satisfies Record<string, AspectRatio>;
+
+export type MonitorAspectRatioKey = keyof typeof MONITOR_ASPECT_RATIOS;
+export const MAX_SIDE_BY_SIDE_MONITORS = 4;
+
 export interface DerivedScreenDimensions {
   screenWidthMm: Measurement;
   screenHeightMm: Measurement;
@@ -126,6 +135,16 @@ export interface WorkspaceWidthCheckInput {
   deskWidthMm: Millimetres;
 }
 
+export interface WorkspaceDepthCheckInput {
+  /** Monitor base/stand footprint depth; use an exact model value when known. */
+  monitorStandDepthMm: Millimetres;
+  /** User-measured cable/plug/vent gap behind the base. */
+  rearClearanceMm?: Millimetres;
+  /** User-selected keyboard/mouse surface zone in front of the base. */
+  keyboardZoneMm?: Millimetres;
+  deskDepthMm: Millimetres;
+}
+
 /**
  * Builds a single 'width' DimensionCheck ready for src/lib/fit's
  * evaluateFit(): the hard minimum is the bare configuration footprint, the
@@ -152,5 +171,43 @@ export function buildWorkspaceWidthCheck(input: WorkspaceWidthCheckInput): Dimen
     minimumMm: input.configurationWidthMm,
     recommendedMm,
     availableMm: input.deskWidthMm,
+  };
+}
+
+/**
+ * Builds a desk-depth check from a physical stand footprint and user-selected
+ * rear/keyboard zones. Zero zones mean those areas are intentionally excluded;
+ * this helper does not set ergonomic clearances or viewing distance.
+ */
+export function buildWorkspaceDepthCheck(input: WorkspaceDepthCheckInput): DimensionCheck {
+  const rearClearanceMm = input.rearClearanceMm ?? 0;
+  const keyboardZoneMm = input.keyboardZoneMm ?? 0;
+  if (
+    !Number.isFinite(input.monitorStandDepthMm) ||
+    !(input.monitorStandDepthMm > 0) ||
+    !Number.isFinite(input.deskDepthMm) ||
+    !(input.deskDepthMm > 0) ||
+    !Number.isFinite(rearClearanceMm) ||
+    rearClearanceMm < 0 ||
+    !Number.isFinite(keyboardZoneMm) ||
+    keyboardZoneMm < 0
+  ) {
+    throw new RangeError(
+      'Monitor stand, desk depth and selected depth zones must be finite and non-negative.',
+    );
+  }
+
+  const minimumMm = input.monitorStandDepthMm + rearClearanceMm;
+  const recommendedMm = minimumMm + keyboardZoneMm;
+  if (!Number.isFinite(recommendedMm)) {
+    throw new RangeError('Selected desk-depth envelope must be finite.');
+  }
+
+  return {
+    dimension: 'desk_depth',
+    label: 'desk depth envelope',
+    minimumMm,
+    recommendedMm,
+    availableMm: input.deskDepthMm,
   };
 }

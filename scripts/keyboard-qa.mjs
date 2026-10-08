@@ -162,15 +162,30 @@ async function typeDigits(value) {
 }
 
 async function tabUntil(selector, maxTabs = 24) {
+  const visited = [];
   for (let i = 0; i < maxTabs; i += 1) {
     if (await evaluate(`document.activeElement.matches(${JSON.stringify(selector)})`)) return;
     await press('Tab', 'Tab', 9);
+    visited.push(
+      await evaluate('({ tag: document.activeElement?.tagName, id: document.activeElement?.id })'),
+    );
   }
-  throw new Error(`Keyboard tab order did not reach '${selector}' within ${maxTabs} tabs.`);
+  const active = await evaluate(
+    '({ tag: document.activeElement?.tagName, id: document.activeElement?.id, name: document.activeElement?.getAttribute("name"), bedroomOpen: document.querySelector(".bedroom-fitcheck__advanced")?.open, workspaceOpen: document.querySelector(".workspace-fitcheck__advanced")?.open })',
+  );
+  throw new Error(
+    `Keyboard tab order did not reach '${selector}' within ${maxTabs} tabs; active=${JSON.stringify(active)}; recent=${JSON.stringify(visited.slice(-8))}.`,
+  );
 }
 
 async function smokePage(pathname, scope) {
   const url = new URL(pathname, baseUrl).href;
+  await cdp('Emulation.setDeviceMetricsOverride', {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: true,
+  });
   await cdp('Page.navigate', { url });
   const deadline = Date.now() + 15_000;
   while (Date.now() < deadline) {
@@ -183,9 +198,12 @@ async function smokePage(pathname, scope) {
   );
 
   await press('Tab', 'Tab', 9);
+  const firstTabFocus = await evaluate(
+    '({ tag: document.activeElement?.tagName, id: document.activeElement?.id, className: document.activeElement?.className, text: document.activeElement?.textContent?.trim().slice(0,80) })',
+  );
   assert(
     await evaluate('document.activeElement.matches(".skip-link")'),
-    `${pathname}: the first Tab should focus the skip link.`,
+    `${pathname}: the first Tab should focus the skip link; got ${JSON.stringify(firstTabFocus)}.`,
   );
   await press('Enter', 'Enter', 13);
   assert(
@@ -203,6 +221,41 @@ async function smokePage(pathname, scope) {
   );
   assert(themeBefore !== themeAfter, `${pathname}: Space did not toggle the theme button.`);
 
+  if (pathname === '/workspace/') {
+    await tabUntil('#monitor-count');
+    await press('End', 'End', 35);
+    assert(
+      (await evaluate('document.querySelector("#monitor-count").value')) === '4',
+      `${pathname}: keyboard could not select four monitors.`,
+    );
+    await tabUntil('#monitor-aspect-ratio');
+    await press('End', 'End', 35);
+    assert(
+      (await evaluate('document.querySelector("#monitor-aspect-ratio").value')) === '32:9',
+      `${pathname}: keyboard could not select a 32:9 aspect ratio.`,
+    );
+    assert(
+      (await evaluate(
+        'document.querySelectorAll("[data-diagram-id=workspace-diagram] .diagram-object").length',
+      )) === 4,
+      `${pathname}: monitor-count selection did not update the diagram.`,
+    );
+  }
+
+  if (pathname === '/bedroom/') {
+    await tabUntil('#bed-preset');
+    assert(
+      (await evaluate('document.querySelector("#bed-preset").value')) === 'ent-bed-uk-king-frame',
+      `${pathname}: the default bed preset is not the sourced UK King frame.`,
+    );
+    await tabUntil('#orientation');
+    await press('End', 'End', 35);
+    assert(
+      (await evaluate('document.querySelector("#orientation").value')) === 'landscape',
+      `${pathname}: keyboard could not change bed orientation.`,
+    );
+  }
+
   const selector = `.${scope}__advanced > summary`;
   await tabUntil(selector);
   await press(' ', 'Space', 32);
@@ -215,6 +268,81 @@ async function smokePage(pathname, scope) {
     !(await evaluate(`document.querySelector(${JSON.stringify(selector)}).parentElement.open`)),
     `${pathname}: Space did not collapse the assumptions disclosure.`,
   );
+
+  // Reopen advanced controls to exercise the new depth/furniture inputs.
+  await press(' ', 'Space', 32);
+
+  if (pathname === '/workspace/') {
+    await tabUntil('#monitor-depth', 40);
+    await selectAll();
+    await typeDigits('2000');
+    await press('Tab', 'Tab', 9);
+    const detail = await evaluate(
+      'document.querySelector("#workspace-fitcheck-summary [data-field=detail]").textContent',
+    );
+    assert(
+      detail.includes('desk width') && detail.includes('desk depth envelope'),
+      `${pathname}: result summary omitted a failing desk-depth constraint.`,
+    );
+  }
+
+  if (pathname === '/bedroom/') {
+    await tabUntil('#nightstand-count');
+    await press('End', 'End', 35);
+    assert(
+      (await evaluate('document.querySelector("#nightstand-count").value')) === '2',
+      `${pathname}: keyboard could not select two bedside tables.`,
+    );
+    assert(
+      (await evaluate(
+        'document.querySelectorAll("[data-diagram-id=bedroom-diagram] .diagram-object").length',
+      )) === 3,
+      `${pathname}: table-count selection did not update the scaled diagram.`,
+    );
+
+    await tabUntil('#check-wardrobe-door');
+    await press(' ', 'Space', 32);
+    assert(
+      !(await evaluate('document.querySelector("[data-wardrobe-fields]").hidden')),
+      `${pathname}: enabling the door-sweep check did not reveal its inputs.`,
+    );
+    await tabUntil('#wardrobe-obstacle-gap');
+    await typeDigits('500');
+    await press('Tab', 'Tab', 9);
+    assert(
+      (await evaluate(
+        'document.querySelector("#bedroom-fitcheck-table tr[data-dimension=wardrobe_door_sweep]").getAttribute("data-hard-fit")',
+      )) === 'true',
+      `${pathname}: door sweep did not compare against the entered gap.`,
+    );
+    const mobileTable = await evaluate(
+      '({ cellDisplay: getComputedStyle(document.querySelector("#bedroom-fitcheck-table tr[data-dimension=wardrobe_door_sweep] td")).display, pageWidth: document.documentElement.scrollWidth, viewport: window.innerWidth })',
+    );
+    assert(
+      mobileTable.cellDisplay === 'flex',
+      `${pathname}: dynamically added furniture rows do not use the mobile table-card layout.`,
+    );
+    assert(
+      mobileTable.pageWidth <= mobileTable.viewport + 1,
+      `${pathname}: furniture rows cause horizontal overflow on mobile.`,
+    );
+
+    await tabUntil('#check-dresser-drawer');
+    await press(' ', 'Space', 32);
+    assert(
+      !(await evaluate('document.querySelector("[data-dresser-fields]").hidden')),
+      `${pathname}: enabling the drawer check did not reveal its inputs.`,
+    );
+    await tabUntil('#dresser-obstacle-gap');
+    await typeDigits('300');
+    await press('Tab', 'Tab', 9);
+    assert(
+      (await evaluate(
+        'document.querySelector("#bedroom-fitcheck-table tr[data-dimension=dresser_drawer_pullout]").getAttribute("data-hard-fit")',
+      )) === 'true',
+      `${pathname}: drawer pull-out did not compare against the entered gap.`,
+    );
+  }
 
   await tabUntil('[data-unit-toggle]');
   const unitsBefore = await evaluate(
@@ -299,5 +427,5 @@ try {
       cleanup.on('exit', resolve);
     });
   }
-  await rm(profile, { recursive: true, force: true });
+  await rm(profile, { recursive: true, force: true, maxRetries: 12, retryDelay: 250 });
 }

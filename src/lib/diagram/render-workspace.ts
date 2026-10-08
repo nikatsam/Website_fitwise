@@ -11,7 +11,7 @@ export interface WorkspaceDiagramInput {
   /** Physical width used per monitor (already resolved: override or derived screen width). */
   monitorWidthMm: number;
   monitorDepthMm: number;
-  monitorCount: 1 | 2;
+  monitorCount: number;
   gapMm: number;
   sideMarginMm: number;
 }
@@ -57,6 +57,10 @@ export function renderWorkspaceDiagramMarkup(input: WorkspaceDiagramInput): stri
     gapMm,
     sideMarginMm,
   } = input;
+
+  if (!Number.isInteger(monitorCount) || monitorCount < 1 || monitorCount > 4) {
+    throw new RangeError('monitorCount must be an integer from 1 to 4.');
+  }
 
   const scale = computeScale(
     viewportWidthPx - paddingPx * 2,

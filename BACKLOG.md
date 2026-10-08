@@ -32,11 +32,12 @@ Work only on the first unblocked incomplete task unless an explicit blocker requ
 | T026 | Content/SEO    | Upgrade fit guides and strengthen internal navigation   |     4% | T025           |
 | T027 | Content/QA     | Resolve audit findings and add sourced furniture guides |     5% | T026           |
 | T028 | SEO/QA         | Audit metadata, hreflang, sitemap and robots            |     2% | T027           |
+| T029 | Product/QA     | Expand Workspace and Bedroom FitCheck planners          |     4% | T028           |
 
-Total implementation weight: 112%.
+Total implementation weight: 116%.
 
 Detailed task cards are in `tasks/`.
 
 ## v0.2.0 SEO task expansion (weights unchanged)
 
-T004/T005/T014 implement publication-envelope fields, T017 metadata and structured data, T018 deterministic sitemap/robots/redirect & `validate:seo`, T019 negative/positive SEO tests, T021 offline SEO release gate, T024 live edge SEO smoke and engine setup runbook. T025 adds the post-release `www` hostname; T026 upgrades sourced fit answers and internal navigation; T027 adds measured furniture examples; T028 audits live SEO metadata and adds market-specific hreflang. Search-engine query data and privacy-controller details remain owner inputs.
+T004/T005/T014 implement publication-envelope fields, T017 metadata and structured data, T018 deterministic sitemap/robots/redirect & `validate:seo`, T019 negative/positive SEO tests, T021 offline SEO release gate, T024 live edge SEO smoke and engine setup runbook. T025 adds the post-release `www` hostname; T026 upgrades sourced fit answers and internal navigation; T027 adds measured furniture examples; T028 audits live SEO metadata and adds market-specific hreflang; T029 expands interactive Workspace/Bedroom planners. Search-engine query data and privacy-controller details remain owner inputs.

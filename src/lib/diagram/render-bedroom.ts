@@ -1,5 +1,6 @@
-import { computeScale, mmToPx, labelFontSizePx } from './scale';
-import { formatMetric, formatFeetInches } from '../units';
+import type { BedOrientation } from '../geometry';
+import { computeScale, labelFontSizePx, mmToPx } from './scale';
+import { formatFeetInches, formatMetric } from '../units';
 
 export interface BedroomDiagramInput {
   diagramId: string;
@@ -8,21 +9,39 @@ export interface BedroomDiagramInput {
   paddingPx: number;
   roomWidthMm: number;
   roomLengthMm: number;
-  /** Bed footprint WIDTH as oriented onto the room (room_width axis). */
-  bedRoomWidthMm: number;
-  /** Bed footprint LENGTH as oriented onto the room (room_length axis). */
-  bedRoomLengthMm: number;
+  /** Physical bed/frame footprint before adding bedside tables. */
+  bedFootprintWidthMm: number;
+  bedFootprintLengthMm: number;
+  orientation: BedOrientation;
   sideClearanceMm: number;
   footClearanceMm: number;
+  /** One width per bedside table, in bed-width-axis order. */
   nightstandWidthsMm: number[];
+  nightstandDepthMm: number;
+}
+
+function escapeXml(value: string): string {
+  return value.replace(/[<>&"']/g, (char) => {
+    switch (char) {
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '&':
+        return '&amp;';
+      case '"':
+        return '&quot;';
+      default:
+        return '&#39;';
+    }
+  });
 }
 
 /**
- * Builds the dynamic inner SVG markup for the bedroom FitCheck (room outline,
- * bed footprint, optional nightstands, side/foot clearance zones, a width
- * dimension arrow) as a plain string — the bedroom counterpart of
- * src/lib/diagram/render-workspace.ts, used both for the build-time default
- * answer and the browser's live recompute so they can never drift apart.
+ * Draws the bed/frame and measured bedside-table rectangles on the room axes.
+ * In landscape orientation, both the bed and the tables rotate with the bed's
+ * width axis; clearance bands follow the side/foot axes rather than fixed SVG
+ * directions. Tables align with the headboard and have no inter-object gap.
  */
 export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
   const {
@@ -32,12 +51,39 @@ export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
     paddingPx,
     roomWidthMm,
     roomLengthMm,
-    bedRoomWidthMm,
-    bedRoomLengthMm,
+    bedFootprintWidthMm,
+    bedFootprintLengthMm,
+    orientation,
     sideClearanceMm,
     footClearanceMm,
     nightstandWidthsMm,
+    nightstandDepthMm,
   } = input;
+
+  if (orientation !== 'portrait' && orientation !== 'landscape') {
+    throw new RangeError(`Unsupported bed orientation '${orientation}'.`);
+  }
+  if (
+    !Number.isFinite(roomWidthMm) ||
+    !Number.isFinite(roomLengthMm) ||
+    !Number.isFinite(bedFootprintWidthMm) ||
+    !Number.isFinite(bedFootprintLengthMm) ||
+    roomWidthMm <= 0 ||
+    roomLengthMm <= 0 ||
+    bedFootprintWidthMm <= 0 ||
+    bedFootprintLengthMm <= 0 ||
+    !Number.isFinite(sideClearanceMm) ||
+    sideClearanceMm < 0 ||
+    !Number.isFinite(footClearanceMm) ||
+    footClearanceMm < 0 ||
+    !Number.isFinite(nightstandDepthMm) ||
+    nightstandDepthMm < 0 ||
+    nightstandWidthsMm.length > 2 ||
+    nightstandWidthsMm.some((width) => !Number.isFinite(width) || width <= 0) ||
+    (nightstandWidthsMm.length > 0 && nightstandDepthMm <= 0)
+  ) {
+    throw new RangeError('Bedroom diagram dimensions or bedside-table measurements are invalid.');
+  }
 
   const scale = computeScale(
     viewportWidthPx - paddingPx * 2,
@@ -56,76 +102,98 @@ export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
   const roomW = mmToPx(roomWidthMm, scale);
   const roomH = mmToPx(roomLengthMm, scale);
 
-  // nightstandWidthsMm[0] sits left of the bed, [1] sits right, matching
-  // src/lib/geometry/bedroom.ts's assumption that nightstand width is added
-  // to the hard width footprint (buildBedRoomChecks' footprintWithNightstands).
-  const nightstandTotalMm = nightstandWidthsMm.reduce((sum, w) => sum + w, 0);
-  const leftNightstandWidthMm = nightstandWidthsMm[0] ?? 0;
-  const rightNightstandWidthMm = nightstandWidthsMm[1] ?? 0;
-  const bedOnlyWidthMm = bedRoomWidthMm - nightstandTotalMm;
+  const leftTableWidth = nightstandWidthsMm[0] ?? 0;
+  const rightTableWidth = nightstandWidthsMm[1] ?? 0;
+  const allTableWidth = leftTableWidth + rightTableWidth;
+  const physicalTableDepth = nightstandWidthsMm.length > 0 ? nightstandDepthMm : 0;
 
-  const groupStartXMm = originXMm + (roomWidthMm - bedRoomWidthMm) / 2;
-  const bedStartXMm = groupStartXMm + leftNightstandWidthMm;
+  const objectWidthMm =
+    orientation === 'portrait'
+      ? bedFootprintWidthMm + allTableWidth
+      : Math.max(bedFootprintLengthMm, physicalTableDepth);
+  const objectLengthMm =
+    orientation === 'portrait'
+      ? Math.max(bedFootprintLengthMm, physicalTableDepth)
+      : bedFootprintWidthMm + allTableWidth;
+  const groupX = originXMm + (roomWidthMm - objectWidthMm) / 2;
+  const groupY = originYMm + (roomLengthMm - objectLengthMm) / 2;
 
-  const bedX = mmToPx(bedStartXMm, scale);
-  const bedY = mmToPx(originYMm, scale);
-  const bedW = mmToPx(bedOnlyWidthMm, scale);
-  const bedH = mmToPx(bedRoomLengthMm, scale);
+  const bedWidthMm = orientation === 'portrait' ? bedFootprintWidthMm : bedFootprintLengthMm;
+  const bedLengthMm = orientation === 'portrait' ? bedFootprintLengthMm : bedFootprintWidthMm;
+  const bedXmm = groupX + (orientation === 'portrait' ? leftTableWidth : 0);
+  const bedYmm = groupY + (orientation === 'landscape' ? leftTableWidth : 0);
+  const bedX = mmToPx(bedXmm, scale);
+  const bedY = mmToPx(bedYmm, scale);
+  const bedW = mmToPx(bedWidthMm, scale);
+  const bedH = mmToPx(bedLengthMm, scale);
 
   const bedGroup = `
     <g class="diagram-object">
+      <title>Bed and frame footprint</title>
       <rect x="${bedX}" y="${bedY}" width="${bedW}" height="${bedH}" class="diagram-object__rect" vector-effect="non-scaling-stroke" />
       <text x="${bedX + bedW / 2}" y="${bedY + bedH / 2}" class="diagram-object__label" font-size="${bedFontSize}" text-anchor="middle" dominant-baseline="middle">Bed</text>
     </g>`;
 
-  const nightstandHeightMm = Math.min(
-    bedRoomLengthMm * 0.25,
-    Math.max(leftNightstandWidthMm, rightNightstandWidthMm),
-  );
   const nightstandGroups: string[] = [];
-  if (leftNightstandWidthMm > 0) {
-    const x = mmToPx(groupStartXMm, scale);
-    const w = mmToPx(leftNightstandWidthMm, scale);
-    const h = mmToPx(nightstandHeightMm, scale);
+  const addNightstand = (
+    xMm: number,
+    yMm: number,
+    widthMm: number,
+    depthMm: number,
+    index: number,
+  ) => {
+    const width = mmToPx(widthMm, scale);
+    const height = mmToPx(depthMm, scale);
+    const x = mmToPx(xMm, scale);
+    const y = mmToPx(yMm, scale);
     nightstandGroups.push(`
       <g class="diagram-object">
-        <rect x="${x}" y="${bedY}" width="${w}" height="${h}" class="diagram-object__rect" vector-effect="non-scaling-stroke" />
+        <title>Bedside table ${index + 1} measured footprint</title>
+        <rect x="${x}" y="${y}" width="${width}" height="${height}" class="diagram-object__rect" vector-effect="non-scaling-stroke" />
       </g>`);
-  }
-  if (rightNightstandWidthMm > 0) {
-    const x = mmToPx(bedStartXMm + bedOnlyWidthMm, scale);
-    const w = mmToPx(rightNightstandWidthMm, scale);
-    const h = mmToPx(nightstandHeightMm, scale);
-    nightstandGroups.push(`
-      <g class="diagram-object">
-        <rect x="${x}" y="${bedY}" width="${w}" height="${h}" class="diagram-object__rect" vector-effect="non-scaling-stroke" />
-      </g>`);
-  }
+  };
 
-  const sideClearanceY = mmToPx(originYMm, scale);
-  const sideClearanceH = mmToPx(bedRoomLengthMm, scale);
-  const leftClearanceX = mmToPx(groupStartXMm - sideClearanceMm, scale);
-  const rightClearanceX = mmToPx(groupStartXMm + bedRoomWidthMm, scale);
-  const clearanceW = mmToPx(sideClearanceMm, scale);
+  if (orientation === 'portrait') {
+    if (leftTableWidth > 0) addNightstand(groupX, groupY, leftTableWidth, physicalTableDepth, 0);
+    if (rightTableWidth > 0) {
+      addNightstand(bedXmm + bedFootprintWidthMm, groupY, rightTableWidth, physicalTableDepth, 1);
+    }
+  } else {
+    if (leftTableWidth > 0) addNightstand(groupX, groupY, physicalTableDepth, leftTableWidth, 0);
+    if (rightTableWidth > 0) {
+      addNightstand(groupX, bedYmm + bedFootprintWidthMm, physicalTableDepth, rightTableWidth, 1);
+    }
+  }
 
   const sideClearanceZones =
     sideClearanceMm > 0
-      ? `
+      ? orientation === 'portrait'
+        ? `
       <g class="diagram-clearance">
-        <rect x="${leftClearanceX}" y="${sideClearanceY}" width="${clearanceW}" height="${sideClearanceH}" class="diagram-clearance__rect" vector-effect="non-scaling-stroke" />
+        <rect x="${mmToPx(groupX - sideClearanceMm, scale)}" y="${mmToPx(groupY, scale)}" width="${mmToPx(sideClearanceMm, scale)}" height="${mmToPx(objectLengthMm, scale)}" class="diagram-clearance__rect" vector-effect="non-scaling-stroke" />
       </g>
       <g class="diagram-clearance">
-        <rect x="${rightClearanceX}" y="${sideClearanceY}" width="${clearanceW}" height="${sideClearanceH}" class="diagram-clearance__rect" vector-effect="non-scaling-stroke" />
+        <rect x="${mmToPx(groupX + objectWidthMm, scale)}" y="${mmToPx(groupY, scale)}" width="${mmToPx(sideClearanceMm, scale)}" height="${mmToPx(objectLengthMm, scale)}" class="diagram-clearance__rect" vector-effect="non-scaling-stroke" />
+      </g>`
+        : `
+      <g class="diagram-clearance">
+        <rect x="${mmToPx(groupX, scale)}" y="${mmToPx(groupY - sideClearanceMm, scale)}" width="${mmToPx(objectWidthMm, scale)}" height="${mmToPx(sideClearanceMm, scale)}" class="diagram-clearance__rect" vector-effect="non-scaling-stroke" />
+      </g>
+      <g class="diagram-clearance">
+        <rect x="${mmToPx(groupX, scale)}" y="${mmToPx(groupY + objectLengthMm, scale)}" width="${mmToPx(objectWidthMm, scale)}" height="${mmToPx(sideClearanceMm, scale)}" class="diagram-clearance__rect" vector-effect="non-scaling-stroke" />
       </g>`
       : '';
 
-  const footClearanceY = mmToPx(originYMm + bedRoomLengthMm, scale);
-  const footClearanceH = mmToPx(footClearanceMm, scale);
   const footClearanceZone =
     footClearanceMm > 0
-      ? `
+      ? orientation === 'portrait'
+        ? `
       <g class="diagram-clearance">
-        <rect x="${bedX}" y="${footClearanceY}" width="${bedW}" height="${footClearanceH}" class="diagram-clearance__rect" vector-effect="non-scaling-stroke" />
+        <rect x="${bedX}" y="${mmToPx(bedYmm + bedFootprintLengthMm, scale)}" width="${mmToPx(bedFootprintWidthMm, scale)}" height="${mmToPx(footClearanceMm, scale)}" class="diagram-clearance__rect" vector-effect="non-scaling-stroke" />
+      </g>`
+        : `
+      <g class="diagram-clearance">
+        <rect x="${mmToPx(bedXmm + bedFootprintLengthMm, scale)}" y="${bedY}" width="${mmToPx(footClearanceMm, scale)}" height="${mmToPx(bedFootprintWidthMm, scale)}" class="diagram-clearance__rect" vector-effect="non-scaling-stroke" />
       </g>`
       : '';
 
@@ -141,7 +209,7 @@ export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
   return `
     <g class="diagram-space">
       <rect x="${roomX}" y="${roomY}" width="${roomW}" height="${roomH}" class="diagram-space__rect" vector-effect="non-scaling-stroke" />
-      <text x="${roomX + 6}" y="${roomY + roomFontSize + 4}" class="diagram-space__label" font-size="${roomFontSize}">Room</text>
+      <text x="${roomX + 6}" y="${roomY + roomFontSize + 4}" class="diagram-space__label" font-size="${roomFontSize}">${escapeXml(`Room (${orientation})`)}</text>
     </g>
     ${sideClearanceZones}
     ${footClearanceZone}

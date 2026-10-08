@@ -1,18 +1,23 @@
 ---
 import type { FitState, DimensionDisplayRow } from '../../lib/fit';
-import { FIT_STATE_BADGE_COPY } from '../../lib/fit';
+import {
+  FIT_STATE_BADGE_COPY,
+  getFailedDimensionRows,
+  selectSummaryDimension,
+} from '../../lib/fit';
 import UnitValue from './UnitValue.astro';
 
 interface Props {
   state: FitState;
-  /** The dimension most relevant to the headline sentence (e.g. desk width, room width). */
-  primary: DimensionDisplayRow;
+  rows: DimensionDisplayRow[];
   /** Stable root id so client scripts can update this summary in place (e.g. T012 FitCheck). */
   id?: string;
 }
 
-const { state, primary, id } = Astro.props;
+const { state, rows, id } = Astro.props;
 const { icon, label } = FIT_STATE_BADGE_COPY[state];
+const primary = selectSummaryDimension(rows);
+const { hardFailures, recommendationFailures } = getFailedDimensionRows(rows);
 ---
 
 <div class="fit-summary" data-fit-state={state} id={id}>
@@ -26,19 +31,23 @@ const { icon, label } = FIT_STATE_BADGE_COPY[state];
   </p>
 
   <p class="fit-summary__detail" data-field="detail" aria-live="polite" aria-atomic="true">
-    {state === 'fits' && (
+    {state === 'fits' && primary && (
       <>
-        Fits comfortably — approximately <UnitValue mm={primary.marginMm} /> remains on{' '}
+        Fits the selected dimensions — approximately <UnitValue mm={primary.marginMm} /> remains on{' '}
         {primary.label}.
       </>
     )}
     {state === 'tight' && (
-      <>It fits physically, but the recommended clearance on {primary.label} is not fully met.</>
+      <>
+        The physical footprints fit, but selected clearance targets are short on{' '}
+        {recommendationFailures.map((row) => row.label).join(', ')}. See the table for margins.
+      </>
     )}
     {state === 'does_not_fit' && (
       <>
-        Does not fit — {primary.label} is approximately{' '}
-        <UnitValue mm={Math.abs(primary.marginMm)} /> over the available space.
+        Does not fit — the available space is short for{' '}
+        {hardFailures.map((row) => row.label).join(', ')}. See the table for each dimension's
+        margin.
       </>
     )}
   </p>

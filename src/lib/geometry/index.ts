@@ -4,6 +4,11 @@ export {
   resolveMonitorWidth,
   computeConfigurationWidth,
   buildWorkspaceWidthCheck,
+  buildWorkspaceDepthCheck,
+  MONITOR_ASPECT_RATIOS,
+  MAX_SIDE_BY_SIDE_MONITORS,
+  type MonitorAspectRatioKey,
+  type WorkspaceDepthCheckInput,
   type DerivedScreenDimensions,
   type MonitorWidthBasis,
   type ResolvedMonitorWidth,
@@ -20,3 +25,8 @@ export {
   type OrientedFootprint,
   type BedRoomChecksInput,
 } from './bedroom';
+export {
+  calculateDoorSwingProjection,
+  buildDoorSwingCheck,
+  buildDrawerPullOutCheck,
+} from './room-interactions';

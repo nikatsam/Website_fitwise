@@ -13,7 +13,6 @@ interface Props {
   h1: string;
   intro: string;
   state: FitState;
-  primary: DimensionDisplayRow;
   rows: DimensionDisplayRow[];
   diagramId: string;
   diagramWidthPx: number;
@@ -29,7 +28,6 @@ const {
   h1,
   intro,
   state,
-  primary,
   rows,
   diagramId,
   diagramWidthPx,
@@ -45,7 +43,6 @@ const {
   <p>{intro}</p>
   <FitResultSection
     state={state}
-    primary={primary}
     rows={rows}
     diagramId={diagramId}
     diagramWidthPx={diagramWidthPx}

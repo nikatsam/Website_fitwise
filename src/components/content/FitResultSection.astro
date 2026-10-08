@@ -7,7 +7,6 @@ import ScaleDiagram from '../diagram/ScaleDiagram.astro';
 
 interface Props {
   state: FitState;
-  primary: DimensionDisplayRow;
   rows: DimensionDisplayRow[];
   diagramId: string;
   diagramWidthPx: number;
@@ -20,7 +19,6 @@ interface Props {
 
 const {
   state,
-  primary,
   rows,
   diagramId,
   diagramWidthPx,
@@ -32,7 +30,7 @@ const {
 } = Astro.props;
 ---
 
-<FitSummary state={state} primary={primary} />
+<FitSummary state={state} rows={rows} />
 
 <ScaleDiagram
   id={diagramId}
