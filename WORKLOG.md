@@ -362,7 +362,7 @@ Paused mid-task at the user's request to document progress. Current state is saf
 ### 2026-10-08 — T027 audit fixes and furniture examples (IN PROGRESS)
 
 - Corrected P026/P031 titles to distinguish US Full, UK Standard Double and US Queen. Replaced the inaccessible OSHA distance citation with CCOHS guidance; the bed-foot allowance is explicitly a FitWise assumption, separate from the sourced side clearance.
-- Added sourced noindex static guides for Aeron Size B chair footprint, Samsung M7 stand/body depth, PAX/GRIMO door sweep, HEMNES drawer extension and two HEMNES bedside-table footprint examples. UK MALM frame overhang now uses sourced outer-frame dimensions.
+- Added sourced noindex static guides for Aeron Size B chair footprint, Samsung M7 stand/body depth, a standalone US PAX/GRIMO door-sweep example, HEMNES drawer extension and two HEMNES bedside-table footprint examples. UK MALM frame overhang now uses sourced outer-frame dimensions; fractional-inch dimensions are converted and rounded to whole mm.
 - All new examples distinguish physical footprints from movement/standing/walking clearance; no universal minimum is asserted. P038 and draft room-size pages remain unbuilt; sitemap remains four URLs.
 - `npm run verify` passes with 169 tests, 43-page build, 42 route/link checks, four canonical sitemap URLs and zero dataset warnings. Live FitCheck keyboard QA passes; mobile Lighthouse lab scores are 100 for performance/accessibility/best practices on sampled pages. New noindex pages return Lighthouse SEO 66 only for the intended crawlability block.
 - Bing result checks were broad/ambiguous, DuckDuckGo automated retrieval was challenged, and GSC credentials/query data are unavailable. No page was promoted to indexable.

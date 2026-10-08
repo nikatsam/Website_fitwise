@@ -50,9 +50,9 @@ describe('source-backed planning examples', () => {
 
     expect(sweep?.valueMm).toBe(495);
     expect(sweep?.note).toContain('Geometric estimate');
-    expect(result.intro).toContain('not a recommended walking aisle');
     expect(result.intro).toContain('US-market IKEA PAX/GRIMO');
     expect(result.intro).not.toContain('MALM');
+    expect(result.intro).toContain('not a recommended walking aisle');
     expect(wardrobe?.category === 'furniture' ? wardrobe.overallWidthMm.valueMm : null).toBe(1000);
   });
 

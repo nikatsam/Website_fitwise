@@ -39,7 +39,6 @@ export const bedroomClearanceRules: ClearanceRule[] = [
       valueMm: 24 * 25.4,
       kind: 'recommended',
       sourceId: internalConvention,
-      note: 'FitWise planning assumption of 24 inches at the foot; not a foot-specific source recommendation.',
     },
     sourceIds: [internalConvention],
     notes:

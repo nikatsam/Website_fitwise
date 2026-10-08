@@ -74,6 +74,11 @@ describe('data-backed page-family answers', () => {
     );
     expect(answer.intro).toContain('FitWise-assumed 24-inch foot allowance');
     expect(
+      answer.sections[0]?.assumptions?.filter((assumption) =>
+        assumption.includes('FitWise modeling assumption: 24 inches at the foot'),
+      ),
+    ).toHaveLength(1);
+    expect(
       answer.sections[0]?.facts.some((fact) => fact.label === 'Mattress-only physical width'),
     ).toBe(true);
   });
