@@ -153,7 +153,7 @@ export const pageIntents: PageIntent[] = [
     family: 'clearance',
     cluster: 'workspace',
     primaryQuery: 'desk depth for monitor',
-    entityIds: [],
+    entityIds: ['ent-display-32in-16x9', 'ent-desk-1400'],
     status: 'published',
     justification: 'Depth/ergonomics adjacency with distinct intent.',
   },
@@ -183,9 +183,10 @@ export const pageIntents: PageIntent[] = [
     family: 'clearance',
     cluster: 'workspace',
     primaryQuery: 'desk chair clearance',
-    entityIds: [],
+    entityIds: ['ent-furniture-aeron-size-b'],
     status: 'published',
-    justification: 'Extends from desktop to whole workspace footprint.',
+    justification:
+      'Extends from desktop to a manufacturer-measured chair footprint and user-selected movement area.',
   },
   {
     id: 'pi-p019-monitor-size-chart',

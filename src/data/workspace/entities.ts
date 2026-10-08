@@ -1,4 +1,4 @@
-import type { DisplayEntity, DeskEntity } from '../../types';
+import type { DisplayEntity, DeskEntity, FurnitureEntity } from '../../types';
 import { deriveScreenDimensions } from '../../lib/geometry';
 
 const SIXTEEN_NINE = { width: 16, height: 9 } as const;
@@ -48,7 +48,9 @@ export const displayEntities: DisplayEntity[] = [
     aspectRatio: SIXTEEN_NINE,
     screenWidthMm: screen32.screenWidthMm,
     screenHeightMm: screen32.screenHeightMm,
-    overallWidthMm: { valueMm: 716.1, kind: 'typical', sourceId: 'src-samsung-m7-32in' },
+    overallWidthMm: { valueMm: 716.1, kind: 'exact', sourceId: 'src-samsung-m7-32in' },
+    overallDepthMm: { valueMm: 41.8, kind: 'exact', sourceId: 'src-samsung-m7-32in' },
+    standDepthMm: { valueMm: 193.5, kind: 'exact', sourceId: 'src-samsung-m7-stand-spec' },
   },
   {
     id: 'ent-display-34in-ultrawide',
@@ -108,5 +110,44 @@ export const deskEntities: DeskEntity[] = [
     status: 'published',
     widthMm: { valueMm: 1600, kind: 'nominal', sourceId: 'src-ikea-lagkapten-desk' },
     depthMm: { valueMm: 800, kind: 'nominal', sourceId: 'src-ikea-lagkapten-desk' },
+  },
+];
+
+export const officeFurnitureEntities: FurnitureEntity[] = [
+  {
+    id: 'ent-furniture-aeron-size-b',
+    slug: 'aeron-size-b-chair',
+    name: 'Herman Miller Aeron Size B, fully adjustable arms',
+    category: 'furniture',
+    furnitureType: 'office-chair',
+    market: 'global',
+    status: 'published',
+    overallWidthMm: {
+      valueMm: Math.round(30.4 * 25.4),
+      kind: 'derived',
+      derivationId: 'inches-to-mm-rounded',
+      sourceId: 'src-herman-miller-aeron-size-b',
+      note: 'Maximum manufacturer-listed Size B width (30.4 in), converted to millimeters and rounded to the nearest millimeter.',
+    },
+    overallDepthMm: {
+      valueMm: Math.round(28.3 * 25.4),
+      kind: 'derived',
+      derivationId: 'inches-to-mm-rounded',
+      sourceId: 'src-herman-miller-aeron-size-b',
+      note: 'Maximum manufacturer-listed Size B depth (28.3 in), converted to millimeters and rounded to the nearest millimeter.',
+    },
+    overallHeightMm: {
+      valueMm: Math.round(41.1 * 25.4),
+      kind: 'derived',
+      derivationId: 'inches-to-mm-rounded',
+      sourceId: 'src-herman-miller-aeron-size-b',
+      note: 'Maximum manufacturer-listed Size B height (41.1 in), converted to millimeters and rounded to the nearest millimeter.',
+    },
+    seatDepthMm: {
+      valueMm: Math.round(17 * 25.4),
+      kind: 'derived',
+      derivationId: 'inches-to-mm-rounded',
+      sourceId: 'src-herman-miller-aeron-size-b',
+    },
   },
 ];

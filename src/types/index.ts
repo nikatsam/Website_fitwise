@@ -10,6 +10,8 @@ export type {
   BedEntity,
   BedMarket,
   FrameAllowance,
+  FurnitureEntity,
+  FurnitureExampleType,
   RoomScenario,
   Entity,
 } from './entity';

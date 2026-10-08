@@ -59,8 +59,21 @@ describe('SEO static outputs', () => {
       'https://fitwise.stream/bedroom/uk-bed-size-dimensions/',
     ]);
     expect(urls).not.toContain('https://fitwise.stream/workspace/what-fits-on-a-140cm-desk/');
+    expect(urls).not.toContain('https://fitwise.stream/workspace/desk-chair-clearance/');
+    expect(urls).not.toContain('https://fitwise.stream/workspace/desk-depth-for-monitor/');
     expect(urls).not.toContain('https://fitwise.stream/bedroom/minimum-room-size-for-queen-bed/');
     expect(urls).not.toContain('https://fitwise.stream/bedroom/minimum-room-size-for-king-bed/');
+    expect(urls).not.toContain('https://fitwise.stream/bedroom/space-between-bed-and-wardrobe/');
+    expect(urls).not.toContain('https://fitwise.stream/bedroom/bed-and-dresser-clearance/');
+    expect(urls).not.toContain(
+      'https://fitwise.stream/bedroom/king-bed-two-nightstands-room-size/',
+    );
+    expect(urls).not.toContain(
+      'https://fitwise.stream/bedroom/queen-bed-two-nightstands-room-size/',
+    );
+    expect(urls).not.toContain('https://fitwise.stream/workspace/desk-chair-clearance/');
+    expect(urls).not.toContain('https://fitwise.stream/bedroom/space-between-bed-and-wardrobe/');
+    expect(urls).not.toContain('https://fitwise.stream/bedroom/bed-and-dresser-clearance/');
     expect(entries.find((entry) => entry.url.endsWith('/us-bed-size-dimensions/'))?.lastmod).toBe(
       '2026-10-08',
     );

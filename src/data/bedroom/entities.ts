@@ -1,4 +1,4 @@
-import type { BedEntity, RoomScenario } from '../../types';
+import type { BedEntity, FurnitureEntity, RoomScenario } from '../../types';
 import { feetToMm } from '../../lib/units';
 
 const usSourceId = 'src-sleep-foundation-us-mattress-sizes';
@@ -50,6 +50,33 @@ export const bedEntities: BedEntity[] = [
     market: 'UK',
     mattressWidthMm: { valueMm: 1350, kind: 'nominal', sourceId: ukDoubleSourceId },
     mattressLengthMm: { valueMm: 1900, kind: 'nominal', sourceId: ukDoubleSourceId },
+    frameModelName: 'IKEA MALM Standard Double frame',
+    defaultFrameAllowanceMm: {
+      left: {
+        valueMm: 75,
+        kind: 'derived',
+        derivationId: 'frame-outer-minus-mattress-split',
+        note: 'Half of the sourced 1500 mm frame-width minus 1350 mm mattress-width difference.',
+      },
+      right: {
+        valueMm: 75,
+        kind: 'derived',
+        derivationId: 'frame-outer-minus-mattress-split',
+        note: 'Half of the sourced 1500 mm frame-width minus 1350 mm mattress-width difference.',
+      },
+      head: {
+        valueMm: 45,
+        kind: 'derived',
+        derivationId: 'frame-outer-minus-mattress-split',
+        note: 'Half of the sourced 1990 mm frame-length minus 1900 mm mattress-length difference.',
+      },
+      foot: {
+        valueMm: 45,
+        kind: 'derived',
+        derivationId: 'frame-outer-minus-mattress-split',
+        note: 'Half of the sourced 1990 mm frame-length minus 1900 mm mattress-length difference.',
+      },
+    },
   },
   {
     id: 'ent-bed-uk-king',
@@ -61,6 +88,33 @@ export const bedEntities: BedEntity[] = [
     market: 'UK',
     mattressWidthMm: { valueMm: 1500, kind: 'nominal', sourceId: ukKingSourceId },
     mattressLengthMm: { valueMm: 2000, kind: 'nominal', sourceId: ukKingSourceId },
+    frameModelName: 'IKEA MALM Standard King frame',
+    defaultFrameAllowanceMm: {
+      left: {
+        valueMm: 80,
+        kind: 'derived',
+        derivationId: 'frame-outer-minus-mattress-split',
+        note: 'Half of the sourced 1660 mm frame-width minus 1500 mm mattress-width difference.',
+      },
+      right: {
+        valueMm: 80,
+        kind: 'derived',
+        derivationId: 'frame-outer-minus-mattress-split',
+        note: 'Half of the sourced 1660 mm frame-width minus 1500 mm mattress-width difference.',
+      },
+      head: {
+        valueMm: 45,
+        kind: 'derived',
+        derivationId: 'frame-outer-minus-mattress-split',
+        note: 'Half of the sourced 2090 mm frame-length minus 2000 mm mattress-length difference.',
+      },
+      foot: {
+        valueMm: 45,
+        kind: 'derived',
+        derivationId: 'frame-outer-minus-mattress-split',
+        note: 'Half of the sourced 2090 mm frame-length minus 2000 mm mattress-length difference.',
+      },
+    },
   },
   {
     id: 'ent-bed-uk-super-king',
@@ -77,6 +131,73 @@ export const bedEntities: BedEntity[] = [
       note: 'IKEA UK lists this optional MALM mattress-size variant separately from Standard King.',
     },
     mattressLengthMm: { valueMm: 2000, kind: 'nominal', sourceId: ukKingSourceId },
+  },
+];
+
+export const bedroomFurnitureEntities: FurnitureEntity[] = [
+  {
+    id: 'ent-furniture-hemnes-bedside-46x35',
+    slug: 'hemnes-bedside-table-46x35',
+    name: 'IKEA HEMNES bedside table 46 x 35 cm',
+    category: 'furniture',
+    furnitureType: 'bedside-table',
+    market: 'UK',
+    status: 'published',
+    overallWidthMm: { valueMm: 460, kind: 'exact', sourceId: 'src-ikea-uk-hemnes-bedside' },
+    overallDepthMm: { valueMm: 350, kind: 'exact', sourceId: 'src-ikea-uk-hemnes-bedside' },
+    overallHeightMm: { valueMm: 700, kind: 'exact', sourceId: 'src-ikea-uk-hemnes-bedside' },
+  },
+  {
+    id: 'ent-furniture-pax-grimo-wardrobe',
+    slug: 'pax-grimo-two-door-wardrobe',
+    name: 'IKEA PAX / GRIMO two-door wardrobe',
+    category: 'furniture',
+    furnitureType: 'wardrobe',
+    market: 'US',
+    status: 'published',
+    overallWidthMm: {
+      valueMm: Math.round((39 + 3 / 8) * 25.4),
+      kind: 'derived',
+      derivationId: 'inches-to-mm-rounded',
+      sourceId: 'src-ikea-pax-grimo-wardrobe',
+    },
+    overallDepthMm: {
+      valueMm: Math.round((23 + 5 / 8) * 25.4),
+      kind: 'derived',
+      derivationId: 'inches-to-mm-rounded',
+      sourceId: 'src-ikea-pax-grimo-wardrobe',
+    },
+    overallHeightMm: {
+      valueMm: Math.round((79 + 1 / 4) * 25.4),
+      kind: 'derived',
+      derivationId: 'inches-to-mm-rounded',
+      sourceId: 'src-ikea-pax-grimo-wardrobe',
+    },
+    doorLeafWidthMm: {
+      valueMm: Math.round(19.5 * 25.4),
+      kind: 'derived',
+      derivationId: 'inches-to-mm-rounded',
+      sourceId: 'src-ikea-pax-grimo-wardrobe',
+      note: 'One hinged leaf width; a 90-degree outward sweep is approximately this distance.',
+    },
+  },
+  {
+    id: 'ent-furniture-hemnes-8-drawer-dresser',
+    slug: 'hemnes-eight-drawer-chest',
+    name: 'IKEA HEMNES chest of 8 drawers 160 x 50 cm',
+    category: 'furniture',
+    furnitureType: 'dresser',
+    market: 'UK',
+    status: 'published',
+    overallWidthMm: { valueMm: 1600, kind: 'exact', sourceId: 'src-ikea-uk-hemnes-8-drawer' },
+    overallDepthMm: { valueMm: 500, kind: 'exact', sourceId: 'src-ikea-uk-hemnes-8-drawer' },
+    overallHeightMm: { valueMm: 960, kind: 'exact', sourceId: 'src-ikea-uk-hemnes-8-drawer' },
+    drawerPulloutMm: {
+      valueMm: 294,
+      kind: 'exact',
+      sourceId: 'src-ikea-uk-hemnes-8-drawer',
+      note: 'Manufacturer-listed pull-out distance; not a standing/walking allowance.',
+    },
   },
 ];
 

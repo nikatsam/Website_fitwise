@@ -1,9 +1,9 @@
 import type { Dataset } from '../lib/validation/dataset';
 import { clearanceRules } from './workspace/clearance-rules';
-import { deskEntities, displayEntities } from './workspace/entities';
+import { deskEntities, displayEntities, officeFurnitureEntities } from './workspace/entities';
 import { pageIntents } from './workspace/page-intents';
 import { sources } from './sources';
-import { bedEntities, roomScenarios } from './bedroom/entities';
+import { bedEntities, bedroomFurnitureEntities, roomScenarios } from './bedroom/entities';
 import { bedroomClearanceRules } from './bedroom/clearance-rules';
 import { bedroomPageIntents } from './bedroom/page-intents';
 import { seoPublications } from './seo-publications';
@@ -16,7 +16,14 @@ import { buildFamilySeoPublications } from './family-seo-publications';
  */
 const dataWithoutSeo = {
   sources,
-  entities: [...displayEntities, ...deskEntities, ...bedEntities, ...roomScenarios],
+  entities: [
+    ...displayEntities,
+    ...deskEntities,
+    ...officeFurnitureEntities,
+    ...bedEntities,
+    ...bedroomFurnitureEntities,
+    ...roomScenarios,
+  ],
   clearanceRules: [...clearanceRules, ...bedroomClearanceRules],
   relationships: [],
   pageIntents: [...pageIntents, ...bedroomPageIntents],

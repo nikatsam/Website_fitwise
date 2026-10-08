@@ -1,0 +1,40 @@
+---
+import { dataset } from '../../data';
+import { buildFurniturePlanningAnswer } from '../../lib/content/build-planning-example';
+import { buildBreadcrumb, buildContentNavigationLinks } from '../../lib/content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FamilyFactsTemplate from './templates/FamilyFactsTemplate.astro';
+
+interface Props {
+  pageIntentId: string;
+}
+
+const { pageIntentId } = Astro.props;
+const pageIntent = dataset.pageIntents.find((intent) => intent.id === pageIntentId);
+const publication = dataset.seoPublications.find((item) => item.pageIntentId === pageIntentId);
+if (!pageIntent || !publication || publication.indexable) {
+  throw new Error(
+    `Sourced planning page '${pageIntentId}' must have a published noindex envelope.`,
+  );
+}
+
+const answer = buildFurniturePlanningAnswer(pageIntent, dataset);
+const breadcrumb = buildBreadcrumb(pageIntent.route, pageIntent.cluster);
+const relatedPages = buildContentNavigationLinks(
+  pageIntent.id,
+  dataset.pageIntents,
+  dataset.seoPublications,
+  dataset.routeDispositions,
+);
+---
+
+<BaseLayout title={publication.title} description={publication.description} noindex>
+  <FamilyFactsTemplate
+    breadcrumb={breadcrumb}
+    h1={publication.h1}
+    intro={answer.intro}
+    sections={answer.sections}
+    sources={answer.sources}
+    relatedPages={relatedPages}
+  />
+</BaseLayout>

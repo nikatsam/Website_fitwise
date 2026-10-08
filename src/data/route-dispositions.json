@@ -118,8 +118,8 @@
     "pageIntentId": "pi-p018-desk-chair-clearance",
     "route": "/workspace/desk-chair-clearance/",
     "intentStatus": "published",
-    "disposition": "deferred",
-    "reason": "No sourced chair footprint, movement envelope, or desk-to-chair configuration exists in the current model."
+    "disposition": "generated",
+    "renderer": "static"
   },
   {
     "pageIntentId": "pi-p019-monitor-size-chart",
@@ -229,29 +229,29 @@
     "pageIntentId": "pi-p034-space-bed-wardrobe",
     "route": "/bedroom/space-between-bed-and-wardrobe/",
     "intentStatus": "published",
-    "disposition": "deferred",
-    "reason": "The current model has a walking-aisle planning convention but lacks a sourced wardrobe depth, door swing, or open-door geometry; 900 mm alone would not answer this intent."
+    "disposition": "generated",
+    "renderer": "static"
   },
   {
     "pageIntentId": "pi-p035-bed-dresser-clearance",
     "route": "/bedroom/bed-and-dresser-clearance/",
     "intentStatus": "published",
-    "disposition": "deferred",
-    "reason": "The current model has a walking-aisle planning convention but lacks sourced dresser depth and drawer-extension geometry."
+    "disposition": "generated",
+    "renderer": "static"
   },
   {
     "pageIntentId": "pi-p036-king-bed-nightstands-room",
     "route": "/bedroom/king-bed-two-nightstands-room-size/",
     "intentStatus": "published",
-    "disposition": "deferred",
-    "reason": "No sourced nightstand dimensions or verified configuration inputs exist."
+    "disposition": "generated",
+    "renderer": "static"
   },
   {
     "pageIntentId": "pi-p037-queen-bed-nightstands-room",
     "route": "/bedroom/queen-bed-two-nightstands-room-size/",
     "intentStatus": "published",
-    "disposition": "deferred",
-    "reason": "No sourced nightstand dimensions or verified configuration inputs exist."
+    "disposition": "generated",
+    "renderer": "static"
   },
   {
     "pageIntentId": "pi-p038-bed-dresser-wardrobe-layout",

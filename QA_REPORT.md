@@ -29,3 +29,51 @@
 - Mobile screenshots were visually checked after replacing narrow key/value tables with stacked definition-list rows. Values and labels are now readable without two-column compression. Production preview returned 200 for generated sample routes and 404 for the explicitly deferred laptop route.
 - The 49-inch display's cited 1195.8 mm field is now modeled/rendered as active panel width, not outer device width. Fit calculations use derived screen-only width with an explicit bezel/stand caveat; the pages stay noindex.
 - `npm run verify` passes with 149 tests, dataset validation at zero errors/warnings, SEO/link/content/route/infra checks, and the 38-page build. Screen-reader testing remains unavailable; Lighthouse/keyboard QA is not a substitute for a human screen-reader review.
+
+## Production Site Audit - 2026-10-08
+
+### Scope and Evidence
+
+- Audited the live apex and `www`, representative workspace/bedroom hubs, the 140 cm desk guide, market-specific bed references, Queen/King fit pages, the King-vs-Queen comparison, `robots.txt`, `sitemap.xml`, and a true missing route.
+- `npm run verify` passes with 161 tests; 38 HTML pages build, dataset validation reports zero errors/warnings, and SEO, internal-link, route, content and infrastructure validators pass.
+- `npm run qa:keyboard -- https://fitwise.stream` passes on the live Workspace and Bedroom FitCheck flows.
+- Live HTTP checks: apex and sampled pages 200; sitemap 200 `application/xml`; robots 200 `text/plain`; an unknown route 404; `www` 301 to apex with path/query preserved.
+- Live metadata checks found one H1 per sampled page. Indexable samples have one canonical and breadcrumb schema; noindex samples have no canonical or breadcrumb JSON-LD. The sitemap has four indexable URLs; noindex guides are absent as intended.
+- Public DNS returns the `www` CloudFront CNAME and the Google verification TXT. The TXT's presence does not prove that the Search Console property is verified in the owner's account.
+- Citation spot checks: IKEA desk listings, John Lewis Samsung M7 specs, IKEA UK double/king listings, Sleep Foundation mattress/clearance guidance, Samsung 49-inch and LG 34-inch references responded successfully (LG redirects to its current product path). The OSHA monitor page returned HTTP 403 to this audit environment; this may be access filtering rather than a dead page.
+
+### Findings and Fixes to Track
+
+- **F-01 - High, privacy/analytics owner decision:** GA4 loads unconditionally on the apex hostname; the site footer has no privacy/cookie notice or consent control. This is a potential consent/compliance gap for EU/UK visitors, not a legal determination. Obtain owner/legal requirements, then add the appropriate notice/consent behavior and document analytics handling. No tracking behavior was changed during this audit.
+- **F-02 - Medium, misleading Double-bed title:** `/bedroom/minimum-room-size-for-double-bed/` still titles itself “Minimum Room Size For Double Bed” while its body says its calculated clear-space dimensions are planning estimates, not code minimums, and compares US Full with UK Standard Double. Change title/H1/description to explicitly name both markets and frame the values as recommended planning space. The page is currently noindex.
+- **F-03 - Medium, ambiguous comparison title:** `/bedroom/double-vs-queen-room-space/` is headed “Double vs queen room size” but compares US Full (sometimes called Double) with US Queen only. Make the US market explicit in the H1/title and retain the distinction from UK Double. The page is currently noindex.
+- **F-04 - Medium, source accessibility:** the OSHA monitor-distance citation at `src-osha-monitor-viewing-distance` returned 403 from this audit network. Verify it in a normal browser; if readers are also blocked, replace it with an accessible official source while retaining the same sourced range.
+- **F-05 - Low, clearance provenance:** the 24-inch foot-of-bed planning value is extrapolated from the Sleep Foundation's general “around each side” clearance wording. Keep it explicitly labeled as a Fitwise modeling assumption or add a source that specifically supports foot clearance.
+- **F-06 - Low, stale operations documentation (resolved):** the runbook still described the www Cloudflare record as pending. `PRODUCTION_RUNBOOK.md` and `ERROR_LOG.md` now record the live dual-host state and its resolution.
+
+### SEO and Coverage Limits
+
+- Technical crawl signals pass for the sampled pages. Only four URLs are intentionally indexable; the upgraded desk/bed-fit guides remain `noindex` pending the project's search-demand/SERP evidence gate. This is a deliberate publication limit, not a robots/sitemap defect.
+- No current Google Search Console, Bing Webmaster or Yandex index coverage/performance data was available. IndexNow delivery succeeded, but it does not guarantee crawling or indexing.
+- A fresh Lighthouse run was unavailable because the CLI is not installed. The Lighthouse figures above are dated local-preview measurements from 2026-10-06 and do not measure the latest content; field Core Web Vitals and a human screen-reader pass remain unverified.
+
+### Content Opportunities
+
+- First resolve F-02/F-03 so the existing Double comparison content is accurately titled before any future indexability review.
+- Develop the deferred chair/desk-clearance guide (`P018`) only after sourcing actual chair footprints, desk height, stand/seat geometry and a defensible behind-chair movement allowance.
+- Add bed-frame, nightstand, wardrobe-door and dresser-drawer interactions (`P034`-`P037`) using specific measured examples; current Queen/King recommendations intentionally exclude those dimensions.
+- Extend monitor-fit content with model-specific stand depth, cable/arm placement and viewing-distance scenarios. Avoid turning screen-only estimates into full-device claims.
+- Use verified Search Console queries and SERP observations before adding the draft 9x10 room, 49-inch-only or other near-duplicate URLs; do not expand the sitemap solely to increase URL count.
+
+## T027 Follow-Up Audit — 2026-10-08 (local verification)
+
+- `npm run verify` passes with 169 tests. The build now has 43 HTML pages, 42 HTML routes pass the internal-link validator, dataset validation has zero errors/warnings, and the sitemap/canonical set remains four URLs.
+- New static noindex guides cover a measured Aeron chair footprint with no invented pull-back standard; Samsung M7 stand/body depth with CCOHS viewing guidance; IKEA PAX/GRIMO hinged-door sweep; HEMNES dresser drawer extension; and two bedside-table footprint sums. P038 and other draft room-size intents remain unbuilt.
+- The wardrobe page now uses one US-market PAX/GRIMO product example only; it does not present a US wardrobe paired with a UK bed as a matched room setup. Imperial product dimensions are converted and rounded to whole millimeters.
+- Double-bed page titles now distinguish US Full from UK Standard Double; the Double-vs-Queen title identifies the US market. UK MALM frame dimensions are derived from sourced frame/mattress dimensions. Foot clearance is now explicitly a FitWise assumption, separate from sourced side clearance.
+- The blocked OSHA citation was replaced with accessible CCOHS guidance that does not claim a universal distance. Manufacturer references support the product dimensions; the Herman Miller specs page contains an unrelated placeholder line, but its published dimension table was readable.
+- Lighthouse mobile lab samples (local production preview): Home and an indexable US bed reference scored 100 in performance/accessibility/best-practices/SEO. Desk, chair, and wardrobe pages scored 100 for performance/accessibility/best-practices; their SEO category scored 66 because the pages are deliberately noindex (`is-crawlable`), not because of missing canonical/sitemap configuration. LCP was about 0.9 s and CLS 0 in these runs. These are lab scores, not field Core Web Vitals.
+- Keyboard QA passed on both FitCheck clusters. Manual screen-reader testing remains outstanding.
+- F-02, F-03, F-04 and F-05 are corrected in the local build. F-01 remains open by owner decision: GA4 stays active, and the missing privacy notice/consent control is recorded as a future defect. No consent or GA4 behavior was changed; the owner explicitly deferred this item.
+- Search Console credentials/query data are unavailable. Bing result checks were ambiguous or broad and provided no volume evidence; DuckDuckGo automated searches were challenged. No noindex page was promoted and no draft room-size URL was added to the sitemap.
+- This T027 content update is validated locally but has not yet been committed, deployed or live-smoke-tested.

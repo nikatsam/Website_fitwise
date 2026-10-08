@@ -41,3 +41,9 @@
 - **Validation:** Live CloudFront smoke passed; direct S3 returned 403, unknown path returned 404, and routes/sitemap/robots were served with expected types/headers.
 - **Remaining operational item:** `fitwise.stream` apex DNS still awaits the Cloudflare CNAME; tracked under T024, not an application deployment failure.
 - **Status:** Deployment issue resolved; T024 custom-domain/owner account checks remain open.
+
+## 2026-10-08 — Production status reconciliation
+
+- **Finding:** The T024 record above correctly describes the 2026-10-07 state, but its unresolved apex-DNS wording became stale after T025.
+- **Resolution:** ACM dual-name certificate validation succeeded; both apex and `www` Cloudflare CNAMEs now resolve to CloudFront, and public `www` HTTPS returns a path/query-preserving 301 to the apex. T025/T026 deployments are complete.
+- **Current remaining owner actions:** Confirm Google Search Console ownership in the account and review analytics privacy/consent requirements. These do not block site operation.

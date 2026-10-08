@@ -38,6 +38,8 @@ export type ValidationRule =
   | 'non-positive-dimension'
   | 'missing-derivation'
   | 'missing-bed-market'
+  | 'missing-door-leaf-measurement'
+  | 'missing-drawer-pullout-measurement'
   | 'invalid-relationship-endpoint'
   | 'duplicate-seo-publication'
   | 'duplicate-seo-title'
@@ -287,7 +289,7 @@ export function validateDataset(dataset: Dataset): ValidationResult {
         sourceIds,
         errors,
       );
-      if (!entity.market) {
+      if (!['US', 'UK', 'EU', 'AU', 'other'].includes(entity.market)) {
         errors.push({
           level: 'error',
           rule: 'missing-bed-market',
@@ -311,6 +313,34 @@ export function validateDataset(dataset: Dataset): ValidationResult {
       }
     }
 
+    if (entity.category === 'furniture') {
+      for (const field of ['overallWidthMm', 'overallDepthMm', 'overallHeightMm'] as const) {
+        validateMeasurement(entity[field], `${label} ${field}`, entity.id, sourceIds, errors);
+      }
+      for (const field of ['seatDepthMm', 'doorLeafWidthMm', 'drawerPulloutMm'] as const) {
+        const value = entity[field];
+        if (value !== undefined) {
+          validateMeasurement(value, `${label} ${field}`, entity.id, sourceIds, errors);
+        }
+      }
+      if (entity.furnitureType === 'wardrobe' && !entity.doorLeafWidthMm) {
+        errors.push({
+          level: 'error',
+          rule: 'missing-door-leaf-measurement',
+          recordId: entity.id,
+          message: `${label}: wardrobe examples need a sourced hinged-door width.`,
+        });
+      }
+      if (entity.furnitureType === 'dresser' && !entity.drawerPulloutMm) {
+        errors.push({
+          level: 'error',
+          rule: 'missing-drawer-pullout-measurement',
+          recordId: entity.id,
+          message: `${label}: dresser examples need a sourced drawer-pullout measurement.`,
+        });
+      }
+    }
+
     if (entity.category === 'room') {
       validateMeasurement(entity.widthMm, `${label} widthMm`, entity.id, sourceIds, errors);
       validateMeasurement(entity.lengthMm, `${label} lengthMm`, entity.id, sourceIds, errors);
@@ -322,6 +352,7 @@ export function validateDataset(dataset: Dataset): ValidationResult {
         'screenHeightMm',
         'overallWidthMm',
         'overallHeightMm',
+        'overallDepthMm',
         'standDepthMm',
         'standWidthMm',
       ] as const) {

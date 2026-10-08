@@ -53,3 +53,12 @@ Traffic projections in strategy conversations are **scenario models**, not offic
 Audit and update critical dataset entries when physical standards/manufacturer specs change; keep provenance and `significantlyModifiedOn` honest. Remove dead/duplicated/outdated pages with proper redirects. Avoid broad AI-generated topical sprawl and pseudo-expert claims. Link to sources where practical; original geometric calculation and visual evidence should be the defining value.
 
 **Official policy:** https://developers.google.com/search/docs/fundamentals/creating-helpful-content
+
+### Search Evidence Snapshot — 2026-10-08
+
+- Search Console query/impression data was unavailable: no `GSC_SITE_PROPERTY` or Search Console API secret is configured for the repository, and no owner account session was available.
+- Bing SERP checks for `desk chair clearance behind desk office chair dimensions` returned mostly general desk-retailer category pages rather than measured chair-movement guidance.
+- Bing SERP checks for `space between bed and wardrobe hinged door clearance` were ambiguous and returned unrelated “space” results; no reliable numeric standard was established.
+- Bing SERP checks for `monitor stand depth desk viewing distance screen size` returned general monitor retail pages, not a sourced combined stand/viewing/cable model.
+- DuckDuckGo automated SERP retrieval presented a human-verification challenge for repeat queries. No search-volume figures were recorded or inferred.
+- These observations inform content differentiation only; they do not satisfy the Search Console evidence gate. The desk/room/furniture guides added from existing published PageIntents remain `noindex`, and draft room-size PageIntents remain drafts and outside the sitemap until query evidence is available.

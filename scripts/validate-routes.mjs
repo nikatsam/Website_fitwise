@@ -127,27 +127,75 @@ const dedicatedPages = [
     ],
   },
   {
+    route: '/workspace/desk-depth-for-monitor/',
+    heading: 'Monitor stand depth, viewing distance and desk depth',
+    includes: [
+      'Samsung Smart Monitor M7',
+      '193.5 mm',
+      'does not establish a comfortable viewing distance',
+    ],
+  },
+  {
+    route: '/workspace/desk-chair-clearance/',
+    heading: 'Desk chair clearance: measured footprint and movement zone',
+    includes: ['Aeron Size B', '772 mm', 'no universal numeric movement clearance'],
+  },
+  {
     route: '/bedroom/minimum-room-size-for-king-bed/',
     heading: 'King mattress room-space estimates: US vs UK',
     includes: [
-      'US King: about 3.15 m (10 ft 4 in) wide',
-      'UK Standard King: about 2.72 m (8 ft 11 in) wide',
+      'US King mattress-only: about 3.15 m (10 ft 4 in) wide',
+      'UK Standard King in IKEA MALM Standard King frame: about 2.88 m (9 ft 5 in) wide',
       'not a building-code minimum',
     ],
   },
   {
     route: '/bedroom/minimum-room-size-for-queen-bed/',
     heading: 'US Queen mattress: clear-space planning estimate',
-    includes: ['US Queen: about 2.74 m (9 ft) wide', 'excludes unmeasured frame overhang'],
+    includes: [
+      'US Queen mattress-only: about 2.74 m (9 ft) wide',
+      'Only entries naming a frame include that specific sourced model',
+      'FitWise-assumed 24-inch foot allowance',
+    ],
+  },
+  {
+    route: '/bedroom/minimum-room-size-for-double-bed/',
+    heading: 'US Full vs UK Standard Double: room-space estimates',
+    includes: ['US Full', 'UK Standard Double', 'not a building-code minimum'],
   },
   {
     route: '/bedroom/king-vs-queen-room-space/',
     heading: 'US King vs Queen: compare mattress and room-space dimensions',
     includes: [
-      'US King: recommended clear rectangle about 3.15 m (10 ft 4 in)',
-      'US Queen: recommended clear rectangle about 2.74 m (9 ft)',
+      'US King mattress-only: recommended clear rectangle about 3.15 m (10 ft 4 in)',
+      'US Queen mattress-only: recommended clear rectangle about 2.74 m (9 ft)',
       'not code minimums',
     ],
+  },
+  {
+    route: '/bedroom/double-vs-queen-room-space/',
+    heading: 'US Full (often called Double) vs US Queen: room-space estimates',
+    includes: ['US Full', 'US Queen', 'not code minimums'],
+  },
+  {
+    route: '/bedroom/space-between-bed-and-wardrobe/',
+    heading: 'Wardrobe door swing: measured PAX/GRIMO example',
+    includes: ['495 mm', 'not a paired bed/wardrobe room plan', 'not a recommended walking aisle'],
+  },
+  {
+    route: '/bedroom/bed-and-dresser-clearance/',
+    heading: 'Bed-to-dresser clearance: measured drawer-extension example',
+    includes: ['294 mm', 'not a standing or walking allowance'],
+  },
+  {
+    route: '/bedroom/king-bed-two-nightstands-room-size/',
+    heading: 'US King bed with two bedside tables: footprint example',
+    includes: ['2850.4 mm', 'not a room-size recommendation'],
+  },
+  {
+    route: '/bedroom/queen-bed-two-nightstands-room-size/',
+    heading: 'US Queen bed with two bedside tables: footprint example',
+    includes: ['2444 mm', 'not a room-size recommendation'],
   },
   {
     route: '/bedroom/what-bed-fits-in-10x10-room/',

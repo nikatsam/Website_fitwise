@@ -17,16 +17,32 @@ const EDITORIAL_OVERRIDES: Record<string, Partial<SeoPublication>> = {
   'pi-p025-room-for-queen-bed': {
     title: 'US Queen Mattress Clear-Space Planning Estimate — Fitwise.stream',
     description:
-      'Estimate a mattress-only clear-space rectangle for a nominal US Queen using cited side and foot allowances. This is not a complete room layout or building-code minimum.',
+      'Estimate a mattress-only clear-space rectangle for a nominal US Queen using a sourced side allowance and an explicit FitWise foot allowance. This is not a complete room layout or building-code minimum.',
     h1: 'US Queen mattress: clear-space planning estimate',
     significantlyModifiedOn: '2026-10-08',
     relatedPageIds: ['pi-p039-us-bed-size-dimensions'],
+  },
+  'pi-p026-room-for-double-bed': {
+    title: 'US Full vs UK Double Mattress Room-Space Estimates — Fitwise.stream',
+    description:
+      'Compare US Full (sometimes called Double) and UK Standard Double mattress footprints with modeled clear-space estimates. These are not code minimums.',
+    h1: 'US Full vs UK Standard Double: room-space estimates',
+    significantlyModifiedOn: '2026-10-08',
+    relatedPageIds: ['pi-p039-us-bed-size-dimensions', 'pi-p040-uk-bed-size-dimensions'],
   },
   'pi-p030-king-vs-queen-room-space': {
     title: 'US King vs Queen Bed: Room-Space Comparison — Fitwise.stream',
     description:
       'Compare nominal US King and Queen mattress footprints and recommended clear-space rectangles. Estimates exclude frames, furniture and circulation; they are not legal minimums.',
     h1: 'US King vs Queen: compare mattress and room-space dimensions',
+    significantlyModifiedOn: '2026-10-08',
+    relatedPageIds: ['pi-p039-us-bed-size-dimensions'],
+  },
+  'pi-p031-double-vs-queen-room-space': {
+    title: 'US Full (Double) vs US Queen Room-Space Comparison — Fitwise.stream',
+    description:
+      'Compare US Full (sometimes called Double) and US Queen mattress footprints and modeled room-space estimates. US sizes only; not code minimums.',
+    h1: 'US Full (often called Double) vs US Queen: room-space estimates',
     significantlyModifiedOn: '2026-10-08',
     relatedPageIds: ['pi-p039-us-bed-size-dimensions'],
   },

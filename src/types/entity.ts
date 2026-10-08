@@ -31,6 +31,7 @@ export interface DisplayEntity extends EntityBase {
   activeWidthMm?: Measurement;
   overallWidthMm?: Measurement;
   overallHeightMm?: Measurement;
+  overallDepthMm?: Measurement;
   standDepthMm?: Measurement;
   standWidthMm?: Measurement;
 }
@@ -57,7 +58,23 @@ export interface BedEntity extends EntityBase {
   mattressWidthMm: Measurement;
   mattressLengthMm: Measurement;
   defaultFrameAllowanceMm?: FrameAllowance;
+  frameModelName?: string;
   market: BedMarket;
+}
+
+export type FurnitureExampleType = 'office-chair' | 'bedside-table' | 'wardrobe' | 'dresser';
+
+/** Measured product examples; these are footprints, not universal room-clearance standards. */
+export interface FurnitureEntity extends EntityBase {
+  category: 'furniture';
+  furnitureType: FurnitureExampleType;
+  market: BedMarket | 'global';
+  overallWidthMm: Measurement;
+  overallDepthMm: Measurement;
+  overallHeightMm: Measurement;
+  seatDepthMm?: Measurement;
+  doorLeafWidthMm?: Measurement;
+  drawerPulloutMm?: Measurement;
 }
 
 export interface RoomScenario extends EntityBase {
@@ -67,4 +84,4 @@ export interface RoomScenario extends EntityBase {
   ceilingHeightMm?: Measurement;
 }
 
-export type Entity = DisplayEntity | DeskEntity | BedEntity | RoomScenario;
+export type Entity = DisplayEntity | DeskEntity | BedEntity | FurnitureEntity | RoomScenario;

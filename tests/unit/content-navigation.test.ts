@@ -35,4 +35,25 @@ describe('curated content navigation', () => {
     expect(kingLinks.map((link) => link.href)).toContain('/bedroom/what-bed-fits-in-10x10-room/');
     expect(usBedLinks.map((link) => link.href)).toContain('/bedroom/uk-bed-size-dimensions/');
   });
+
+  it('links new source-backed furniture guides only to published built routes', () => {
+    const chairLinks = buildContentNavigationLinks(
+      'pi-p018-desk-chair-clearance',
+      dataset.pageIntents,
+      dataset.seoPublications,
+      dataset.routeDispositions,
+    );
+    const dresserLinks = buildContentNavigationLinks(
+      'pi-p035-bed-dresser-clearance',
+      dataset.pageIntents,
+      dataset.seoPublications,
+      dataset.routeDispositions,
+    );
+
+    expect(chairLinks.map((link) => link.href)).toContain('/workspace/desk-depth-for-monitor/');
+    expect(dresserLinks.map((link) => link.href)).toContain(
+      '/bedroom/space-between-bed-and-wardrobe/',
+    );
+    expect(dresserLinks.every((link) => link.description.trim())).toBe(true);
+  });
 });

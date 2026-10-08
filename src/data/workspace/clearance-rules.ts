@@ -21,21 +21,9 @@ export const clearanceRules: ClearanceRule[] = [
     context: 'workspace',
     targetCategory: 'desk',
     dimension: 'front',
-    minimumMm: {
-      valueMm: 300,
-      kind: 'typical',
-      sourceId: 'src-fitwise-internal-convention',
-      note: 'Typical monitor stand/arm footprint estimate.',
-    },
-    recommendedMm: {
-      valueMm: 800,
-      kind: 'recommended',
-      sourceId: 'src-osha-monitor-viewing-distance',
-      note: 'Stand footprint (300 mm) plus OSHA-cited minimum comfortable eye-to-screen viewing distance (500 mm).',
-    },
-    sourceIds: ['src-fitwise-internal-convention', 'src-osha-monitor-viewing-distance'],
+    sourceIds: ['src-fitwise-internal-convention', 'src-ccohs-monitor-positioning'],
     notes:
-      'Minimum covers the stand footprint only. Recommended adds the OSHA-cited lower bound of comfortable viewing distance (20 in / ~500 mm); the OSHA range extends to 40 in / ~1000 mm for larger/preferred distances.',
+      'No universal total desk-depth minimum is asserted. Show model-specific stand footprint separately from viewing distance, cable/plug space and the user-selected keyboard/mouse zone. CCOHS states that viewing-distance guidance varies and should be adjusted to the person/task.',
   },
   {
     id: 'clr-monitor-gap',

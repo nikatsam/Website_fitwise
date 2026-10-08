@@ -348,6 +348,10 @@ function formatPlanningDimension(valueMm: number): string {
   return `${(valueMm / 1000).toFixed(2)} m (${imperial})`;
 }
 
+function bedDisplayName(name: string): string {
+  return name.replace(/ mattress(?: \(.*\))?$/i, '');
+}
+
 function bedObjectAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
   const beds = intent.entityIds.map((id) => bedEntity(dataset, id));
   if (beds.length === 0)
@@ -355,11 +359,12 @@ function bedObjectAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
   const rules = bedSourceRules(dataset);
   const bedPlans = beds.map((bed) => ({ bed, plan: bedRoomPlan(bed, dataset) }));
   const planningAnswers = bedPlans.map(({ bed, plan }) => {
-    const name = bed.name.replace(/ mattress$/i, '');
-    return `${name}: about ${formatPlanningDimension(plan.recommendedWidthMm)} wide by ${formatPlanningDimension(plan.recommendedLengthMm)} long`;
+    const name = bedDisplayName(bed.name);
+    const model = bed.frameModelName ? `${name} in ${bed.frameModelName}` : `${name} mattress-only`;
+    return `${model}: about ${formatPlanningDimension(plan.recommendedWidthMm)} wide by ${formatPlanningDimension(plan.recommendedLengthMm)} long`;
   });
   return {
-    intro: `Planning estimate, not a building-code minimum: ${planningAnswers.join('; ')}. The model adds the cited approximately 24-inch side and foot clearances to each market-specific mattress footprint. It excludes unmeasured frame overhang, nightstands, wardrobe or dresser access, doors and circulation; measure the actual frame and room before buying.`,
+    intro: `Planning estimate, not a building-code minimum: ${planningAnswers.join('; ')}. The model applies the source-backed approximately 24-inch side allowance and a separate FitWise-assumed 24-inch foot allowance to each market-specific mattress footprint. Only entries naming a frame include that specific sourced model; other entries are mattress-only. Nightstands, wardrobe/dresser access, doors and circulation are excluded; measure the actual setup before buying.`,
     sections: bedPlans.map(({ bed, plan }) => {
       const footprintLabel = bed.defaultFrameAllowanceMm
         ? 'Mattress/frame physical width'
@@ -373,14 +378,28 @@ function bedObjectAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
           { label: 'Market', valueText: bed.market },
           { label: 'Mattress width', valueMm: bed.mattressWidthMm.valueMm },
           { label: 'Mattress length', valueMm: bed.mattressLengthMm.valueMm },
-          { label: footprintLabel, valueMm: plan.minimumWidthMm },
+          {
+            label: footprintLabel,
+            valueMm: plan.minimumWidthMm,
+            note: bed.frameModelName
+              ? `Using ${bed.frameModelName}.`
+              : 'Mattress-only footprint; frame not measured.',
+          },
           { label: 'Recommended clear room width', valueMm: plan.recommendedWidthMm },
-          { label: lengthLabel, valueMm: plan.minimumLengthMm },
+          {
+            label: lengthLabel,
+            valueMm: plan.minimumLengthMm,
+            note: bed.frameModelName
+              ? `Using ${bed.frameModelName}.`
+              : 'Mattress-only footprint; frame not measured.',
+          },
           { label: 'Recommended clear room length', valueMm: plan.recommendedLengthMm },
         ],
         assumptions: [
           'Portrait layout: bed width runs across the room and the headboard is against a wall.',
-          'No sourced outer frame overhang is available for these bed entities; this is mattress-only geometry.',
+          bed.frameModelName
+            ? `Frame overhang is derived from the published dimensions of ${bed.frameModelName}; other frames differ.`
+            : 'No outer frame was sourced for this market example; this is mattress-only geometry.',
           ...rules.map(ruleAssumption),
         ],
       };
@@ -520,6 +539,24 @@ function comparisonAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
           { label: 'Market', valueText: entity.market },
           { label: 'Mattress width', valueMm: entity.mattressWidthMm.valueMm },
           { label: 'Mattress length', valueMm: entity.mattressLengthMm.valueMm },
+          {
+            label: entity.frameModelName
+              ? 'Listed frame physical width'
+              : 'Mattress-only physical width',
+            valueMm: plan.minimumWidthMm,
+            note: entity.frameModelName
+              ? `Using ${entity.frameModelName}.`
+              : 'Frame dimensions not measured.',
+          },
+          {
+            label: entity.frameModelName
+              ? 'Listed frame physical length'
+              : 'Mattress-only physical length',
+            valueMm: plan.minimumLengthMm,
+            note: entity.frameModelName
+              ? `Using ${entity.frameModelName}.`
+              : 'Frame dimensions not measured.',
+          },
           { label: 'Recommended clear room width', valueMm: plan.recommendedWidthMm },
           { label: 'Recommended clear room length', valueMm: plan.recommendedLengthMm },
         ],
@@ -536,12 +573,15 @@ function comparisonAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
     ? `${bedEntities
         .map((bed) => {
           const plan = bedRoomPlan(bed, dataset);
-          const marketName = bed.name.replace(/ mattress$/i, '');
+          const bedName = bedDisplayName(bed.name);
+          const marketName = bed.frameModelName
+            ? `${bedName} in ${bed.frameModelName}`
+            : `${bedName} mattress-only`;
           return `${marketName}: recommended clear rectangle about ${formatPlanningDimension(plan.recommendedWidthMm)} wide by ${formatPlanningDimension(plan.recommendedLengthMm)} long`;
         })
         .join(
           '; ',
-        )}. These are market-specific planning estimates, not code minimums; frame overhang, furniture, doors and circulation are excluded.`
+        )}. These are market-specific planning estimates, not code minimums; only named frame examples include a frame, and furniture, doors and circulation remain excluded.`
     : `${intent.primaryQuery}: compare the listed physical dimensions and their market/source basis.${entities.some((entity) => entity.category === 'display') ? ' Screen-panel dimensions are distinguished from outer-device widths where provided.' : ''}`;
   return {
     intro,

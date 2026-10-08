@@ -38,11 +38,12 @@ export const bedroomClearanceRules: ClearanceRule[] = [
     recommendedMm: {
       valueMm: 24 * 25.4,
       kind: 'recommended',
-      sourceId: sleepFoundationClearance,
-      note: 'About 24 inches, consistent with the source guidance to leave space around each side of the bed.',
+      sourceId: internalConvention,
+      note: 'FitWise planning assumption of 24 inches at the foot; not a foot-specific source recommendation.',
     },
-    sourceIds: [sleepFoundationClearance, internalConvention],
-    notes: 'Comfort guidance only; the geometry engine treats the headboard as against a wall.',
+    sourceIds: [internalConvention],
+    notes:
+      'FitWise modeling assumption: 24 inches at the foot. Sleep Foundation discusses space around each side; applying that figure at the foot is an extrapolation, not direct source guidance or a code minimum. The geometry engine treats the headboard as against a wall.',
   },
   {
     id: 'clr-bed-furniture-access',
