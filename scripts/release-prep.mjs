@@ -294,7 +294,8 @@ export function validateOidcDeployRoleTemplate(template) {
     !statements.some(
       (statement) =>
         statement.Sid === 'ManageAndInvalidateTaggedFitwiseDistributions' &&
-        statement.Action?.includes('cloudfront:AssociateAlias'),
+        statement.Action?.includes('cloudfront:AssociateAlias') &&
+        statement.Condition?.StringEquals?.['aws:ResourceTag/project'] === 'fitwise',
     )
   ) {
     errors.push(

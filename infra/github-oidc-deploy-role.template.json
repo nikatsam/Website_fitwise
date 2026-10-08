@@ -145,7 +145,7 @@
                   },
                   "Condition": {
                     "StringEquals": {
-                      "aws:ResourceTag/Project": "FitWise"
+                      "aws:ResourceTag/project": "fitwise"
                     }
                   }
                 },
