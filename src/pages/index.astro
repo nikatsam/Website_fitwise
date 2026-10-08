@@ -48,15 +48,50 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </section>
 
   <section class="wrapper section">
-    <h2>Workspace FitChecks</h2>
-    <p>Dual-monitor desk sizing, clearances and configuration guides are coming online first.</p>
+    <h2>Workspace planning</h2>
+    <p>Compare desk and monitor dimensions, then check fit assumptions before choosing a setup.</p>
     <a href="/workspace/">Browse workspace pages →</a>
+    <nav class="reference-links" aria-label="Workspace sizing guides">
+      <h3>Workspace sizing guides</h3>
+      <ul>
+        <li>
+          <a href="/workspace/monitor-size-chart/">Monitor physical size chart</a>
+        </li>
+        <li>
+          <a href="/workspace/what-fits-on-a-140cm-desk/">What fits on a 140 cm desk?</a>
+        </li>
+        <li>
+          <a href="/workspace/desk-size-for-two-27-inch-monitors/">
+            Desk width for two 27-inch monitors
+          </a>
+        </li>
+      </ul>
+    </nav>
   </section>
 
   <section class="wrapper section">
-    <h2>Bedroom FitChecks</h2>
-    <p>Bed-to-room fit, clearance and comparison pages are next.</p>
+    <h2>Bedroom planning</h2>
+    <p>Compare US and UK mattress sizes and see how recommended clearances change the room plan.</p>
     <a href="/bedroom/">Browse bedroom pages →</a>
+    <nav class="reference-links" aria-label="Bed size and room guides">
+      <h3>Bed size and room guides</h3>
+      <ul>
+        <li>
+          <a href="/bedroom/us-bed-size-dimensions/">US bed size dimensions</a>
+        </li>
+        <li>
+          <a href="/bedroom/uk-bed-size-dimensions/">UK bed size dimensions</a>
+        </li>
+        <li>
+          <a href="/bedroom/minimum-room-size-for-queen-bed/">Room space for a US Queen mattress</a>
+        </li>
+        <li>
+          <a href="/bedroom/minimum-room-size-for-king-bed/">
+            Room space for a King mattress, US and UK
+          </a>
+        </li>
+      </ul>
+    </nav>
   </section>
 
   <section class="wrapper section">
@@ -170,6 +205,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   .section h2 {
     margin-bottom: var(--space-2);
+  }
+
+  .reference-links {
+    margin-top: var(--space-4);
+  }
+
+  .reference-links ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {

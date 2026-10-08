@@ -36,8 +36,15 @@ Reviewer: **Project owner — sign-off confirmed through authenticated user inte
 
 **Evidence:** Workflow runs above, live HTTP checks, AWS stack/resource reads, `QA_REPORT.md`, route-disposition manifest, and Gate E sign-off.
 
-## Follow-up — T025 www hostname (in progress)
+## T025 www hostname (complete)
 
 - Commits through `c55cf63` publish the dual-name ACM workflow, CloudFront alias, permanent redirect, and scoped role fixes. Deployment run `37744144860` completed; distribution `EY0IX2NYZEEG1` is `Deployed` with both aliases.
 - ACM certificate `arn:aws:acm:us-east-1:754246170171:certificate/d8916f6d-31f8-4696-b3fb-b6594c4b8df5` is `ISSUED`; both validations are `SUCCESS`. A direct edge test returned `301 Location: https://fitwise.stream/workspace/what-fits-on-a-140cm-desk?units=imperial`; the apex returned `200`.
-- Live DNS acceptance remains pending the owner-managed Cloudflare `www` CNAME (`www` -> `d1qzsj88vccaey.cloudfront.net`, DNS only, TTL Auto) and a DNS-resolved HTTPS redirect smoke check.
+- Owner-managed Cloudflare `www` CNAME (`www` -> `d1qzsj88vccaey.cloudfront.net`, DNS only, TTL Auto) is present. Public HTTPS returned the same 301 with path/query preserved.
+
+## Follow-up — T026 content and internal SEO upgrades (in progress)
+
+- Updated the 140 cm desk matrix and US Queen/US-UK King room-fit answer copy with sourced inputs, transparent calculations and explicit exclusions.
+- Added curated navigation on Home, cluster hubs, desk/bed fit pages and indexable US/UK bed reference pages. Updated material sitemap `lastmod` values for the indexable references.
+- Noindex routes remain absent from the four-URL sitemap and continue to omit canonical and breadcrumb JSON-LD output. Their visibility in search remains gated on documented demand/SERP evidence.
+- `npm run verify` passes with 160 unit tests and SEO/link/route validation. T026 is not yet pushed or deployed.

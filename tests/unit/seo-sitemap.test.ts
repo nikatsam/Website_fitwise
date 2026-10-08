@@ -5,6 +5,7 @@ import {
   publishedSitemapEntries,
 } from '../../src/lib/seo/sitemap';
 import { pageIntents, seoPublications } from '../fixtures/valid/sample-dataset';
+import { dataset as productionDataset } from '../../src/data';
 
 describe('SEO static outputs', () => {
   it('includes only published and indexable envelopes plus the homepage', () => {
@@ -42,6 +43,33 @@ describe('SEO static outputs', () => {
       'https://fitwise.stream/workspace/desk-size-for-two-27-inch-monitors/',
     ]);
     expect(entries[1]?.lastmod).toBe('2026-10-06');
+  });
+
+  it('keeps enriched noindex content out while updating lastmod for materially linked references', () => {
+    const entries = publishedSitemapEntries(
+      productionDataset.pageIntents,
+      productionDataset.seoPublications,
+    );
+    const urls = entries.map((entry) => entry.url);
+
+    expect(urls).toEqual([
+      'https://fitwise.stream/',
+      'https://fitwise.stream/workspace/monitor-size-chart/',
+      'https://fitwise.stream/bedroom/us-bed-size-dimensions/',
+      'https://fitwise.stream/bedroom/uk-bed-size-dimensions/',
+    ]);
+    expect(urls).not.toContain('https://fitwise.stream/workspace/what-fits-on-a-140cm-desk/');
+    expect(urls).not.toContain('https://fitwise.stream/bedroom/minimum-room-size-for-queen-bed/');
+    expect(urls).not.toContain('https://fitwise.stream/bedroom/minimum-room-size-for-king-bed/');
+    expect(entries.find((entry) => entry.url.endsWith('/us-bed-size-dimensions/'))?.lastmod).toBe(
+      '2026-10-08',
+    );
+    expect(entries.find((entry) => entry.url.endsWith('/monitor-size-chart/'))?.lastmod).toBe(
+      '2026-10-08',
+    );
+    expect(entries.find((entry) => entry.url.endsWith('/uk-bed-size-dimensions/'))?.lastmod).toBe(
+      '2026-10-08',
+    );
   });
 
   it('escapes XML values and writes only editorial lastmod values', () => {

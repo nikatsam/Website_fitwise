@@ -118,9 +118,27 @@ const dedicatedPages = [
     includes: ['Maximum count by hard width only', 'Screen-only approximation'],
   },
   {
+    route: '/workspace/what-fits-on-a-140cm-desk/',
+    heading: 'What fits on a 140 cm desk? Monitor layout estimates',
+    includes: [
+      'One 34-inch 21:9 ultrawide',
+      'Two 32-inch 16:9 monitors',
+      'derived screen-panel estimate',
+    ],
+  },
+  {
     route: '/bedroom/minimum-room-size-for-king-bed/',
-    heading: 'Minimum room size for king bed',
-    includes: ['US King mattress', 'UK Standard King mattress', 'not a building-code minimum'],
+    heading: 'King mattress room-space estimates: US vs UK',
+    includes: [
+      'US King: about 3.15 m (10 ft 4 in) wide',
+      'UK Standard King: about 2.72 m (8 ft 11 in) wide',
+      'not a building-code minimum',
+    ],
+  },
+  {
+    route: '/bedroom/minimum-room-size-for-queen-bed/',
+    heading: 'US Queen mattress: clear-space planning estimate',
+    includes: ['US Queen: about 2.74 m (9 ft) wide', 'excludes unmeasured frame overhang'],
   },
   {
     route: '/bedroom/what-bed-fits-in-10x10-room/',

@@ -56,6 +56,18 @@ describe('data-backed page-family answers', () => {
     ).toBeCloseTo(3149.6, 8);
     expect(room.sources.some((source) => source.publisher === 'Sleep Foundation')).toBe(true);
     expect(room.sources.some((source) => source.publisher === 'IKEA UK')).toBe(true);
+    expect(room.intro).toContain('US King: about 3.15 m (10 ft 4 in) wide');
+    expect(room.intro).toContain('UK Standard King: about 2.72 m (8 ft 11 in) wide');
+    expect(room.intro).toContain('not a building-code minimum');
+  });
+
+  it('answers the US Queen room-space question without calling the recommendation a minimum', () => {
+    const answer = buildFamilyAnswer(intent('pi-p025-room-for-queen-bed'), dataset);
+    expect(answer.intro).toContain('US Queen: about 2.74 m (9 ft) wide by 2.64 m (8 ft 8 in) long');
+    expect(answer.intro).toContain('excludes unmeasured frame overhang');
+    expect(
+      answer.sections[0]?.facts.some((fact) => fact.label === 'Mattress-only physical width'),
+    ).toBe(true);
   });
 
   it('computes bedroom reverse-fit results for each distinct bed layout', () => {

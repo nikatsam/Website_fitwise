@@ -2,14 +2,20 @@
 import PageFamilyLayout from '../PageFamilyLayout.astro';
 import UnitValue from '../../fit/UnitValue.astro';
 import AssumptionList from '../../fit/AssumptionList.astro';
+import SourceCitationList from '../SourceCitationList.astro';
+import RelatedPageLinks from '../RelatedPageLinks.astro';
 import { FIT_STATE_BADGE_COPY, type FitState } from '../../../lib/fit';
 import type { BreadcrumbItem } from '../../../lib/content';
+import type { ContentNavigationLink } from '../../../lib/content/navigation';
+import type { SourceRecord } from '../../../types';
 
 interface Candidate {
   label: string;
   requiredMm: number;
+  recommendedMm: number;
   availableMm: number;
   state: FitState;
+  widthBasis: string;
 }
 
 interface Props {
@@ -19,51 +25,70 @@ interface Props {
   spaceLabel: string;
   candidates: Candidate[];
   assumptions: string[];
+  sources: SourceRecord[];
+  relatedPages: ContentNavigationLink[];
 }
 
-const { breadcrumb, h1, intro, spaceLabel, candidates, assumptions } = Astro.props;
+const { breadcrumb, h1, intro, spaceLabel, candidates, assumptions, sources, relatedPages } =
+  Astro.props;
 ---
 
 <PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
   <p>{intro}</p>
-  <table class="reverse-fit-table">
-    <caption class="visually-hidden">{`What fits ${spaceLabel}`}</caption>
-    <thead>
-      <tr>
-        <th scope="col">Option</th>
-        <th scope="col">Required</th>
-        <th scope="col">Available</th>
-        <th scope="col">Result</th>
-      </tr>
-    </thead>
-    <tbody>
-      {candidates.map((candidate) => {
-        const copy = FIT_STATE_BADGE_COPY[candidate.state];
-        return (
-          <tr data-fit-state={candidate.state}>
-            <th scope="row">{candidate.label}</th>
-            <td>
-              <UnitValue mm={candidate.requiredMm} />
-            </td>
-            <td>
-              <UnitValue mm={candidate.availableMm} />
-            </td>
-            <td>
-              <span aria-hidden="true">{copy.icon}</span> {copy.label}
-            </td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </table>
+  <div class="table-scroll" role="region" aria-label={`Fit results for ${spaceLabel}`} tabindex="0">
+    <table class="reverse-fit-table">
+      <caption class="visually-hidden">{`What fits ${spaceLabel}`}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Option</th>
+          <th scope="col">Footprint incl. gaps</th>
+          <th scope="col">With side margins</th>
+          <th scope="col">Available</th>
+          <th scope="col">Width basis</th>
+          <th scope="col">Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {candidates.map((candidate) => {
+          const copy = FIT_STATE_BADGE_COPY[candidate.state];
+          return (
+            <tr data-fit-state={candidate.state}>
+              <th scope="row">{candidate.label}</th>
+              <td>
+                <UnitValue mm={candidate.requiredMm} />
+              </td>
+              <td>
+                <UnitValue mm={candidate.recommendedMm} />
+              </td>
+              <td>
+                <UnitValue mm={candidate.availableMm} />
+              </td>
+              <td>{candidate.widthBasis}</td>
+              <td>
+                <span aria-hidden="true">{copy.icon}</span> {copy.label}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
   <AssumptionList assumptions={assumptions} />
+  <SourceCitationList sources={sources} />
+  <RelatedPageLinks links={relatedPages} />
 </PageFamilyLayout>
 
 <style>
   .reverse-fit-table {
     width: 100%;
+    min-width: 48rem;
     border-collapse: collapse;
     font-size: var(--fs-sm);
+  }
+
+  .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
   }
 
   .reverse-fit-table th,
@@ -71,6 +96,10 @@ const { breadcrumb, h1, intro, spaceLabel, candidates, assumptions } = Astro.pro
     text-align: left;
     padding: var(--space-3);
     border-bottom: 1px solid var(--color-border);
+  }
+
+  .reverse-fit-table td {
+    vertical-align: top;
   }
 
   .reverse-fit-table tr[data-fit-state='does_not_fit'] td,

@@ -1,15 +1,15 @@
 {
   "project": "fitwise.stream",
   "stage": "production",
-  "activeTask": "T025",
+  "activeTask": "T026",
   "nextTask": null,
-  "lastCompletedTask": "T024",
-  "implementationProgressPct": 99,
-  "deploymentProgressPct": 99,
+  "lastCompletedTask": "T025",
+  "implementationProgressPct": 96,
+  "deploymentProgressPct": 96,
   "knownBlockers": [
-    "T025 live acceptance requires the owner-managed Cloudflare www traffic CNAME and DNS-propagated HTTPS verification."
+    "Indexing enriched 140 cm desk and room-fit pages remains gated on documented search-demand/SERP-gap evidence."
   ],
   "lastVerificationCommand": "npm run verify",
   "cloudDeploymentAllowed": true,
-  "notes": "T001-T024 complete; T025 is active for www hostname support. T021 Gate E was signed. T022/T023 deployed the private S3 origin in eu-north-1 and global CloudFront via GitHub OIDC. Stack fitwise-static-site is UPDATE_COMPLETE; distribution EY0IX2NYZEEG1 is Deployed with aliases fitwise.stream and www.fitwise.stream and certificate arn:aws:acm:us-east-1:754246170171:certificate/d8916f6d-31f8-4696-b3fb-b6594c4b8df5. T024 added the Cloudflare apex CNAME; https://fitwise.stream returns 200 with apex canonical and redirects HTTP to HTTPS. T025 code is published in commits 7659715, f6f0a66, c2e5c51, 7d08999, 4c9b0f4, 7a4a11f and c55cf63; the OIDC role was updated through CloudFormation. Both ACM validations succeeded. A direct CloudFront edge check returned a 301 from www to apex preserving nested path and query; the apex returns 200. The final Cloudflare www traffic CNAME and DNS-propagated HTTPS verification remain owner operations. IndexNow deployment notification completed. GA4 G-J10W58E2ZL runs on the apex hostname. GSC/Bing/Yandex account property verification and optional GSC API credentials are operationally pending owner access."
+  "notes": "T001-T025 complete; T026 is active for sourced content upgrades and internal SEO navigation. T021 Gate E was signed. T022/T023 deployed the private S3 origin in eu-north-1 and global CloudFront via GitHub OIDC. Stack fitwise-static-site is UPDATE_COMPLETE; distribution EY0IX2NYZEEG1 is Deployed with apex and www aliases and the dual-name ACM certificate. T025 is complete: both ACM validations succeeded, the Cloudflare www traffic CNAME is present, and public HTTPS redirects to the apex preserving path/query. T026 updates the 140 cm desk matrix, US/UK Queen/King room-fit answers, hub copy, curated internal links and breadcrumb presentation. It preserves noindex for pages without documented SERP/search evidence; the sitemap remains indexable-only and now advances lastmod for materially updated indexable references. The current code changes are not yet pushed or deployed. IndexNow deployment notification completed. GA4 G-J10W58E2ZL runs on the apex hostname. GSC/Bing/Yandex account property verification and optional GSC API credentials are operationally pending owner access."
 }

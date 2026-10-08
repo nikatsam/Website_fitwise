@@ -340,25 +340,42 @@ function bedSourceRules(dataset: Dataset): ClearanceRule[] {
   return [ruleById(dataset, BED_SIDE_RULE_ID), ruleById(dataset, BED_FOOT_RULE_ID)];
 }
 
+function formatPlanningDimension(valueMm: number): string {
+  const roundedInches = Math.round(valueMm / 25.4);
+  const feet = Math.floor(roundedInches / 12);
+  const inches = roundedInches % 12;
+  const imperial = inches === 0 ? `${feet} ft` : `${feet} ft ${inches} in`;
+  return `${(valueMm / 1000).toFixed(2)} m (${imperial})`;
+}
+
 function bedObjectAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
   const beds = intent.entityIds.map((id) => bedEntity(dataset, id));
   if (beds.length === 0)
     throw new Error(`Bed fit intent '${intent.id}' must reference at least one bed.`);
   const rules = bedSourceRules(dataset);
+  const bedPlans = beds.map((bed) => ({ bed, plan: bedRoomPlan(bed, dataset) }));
+  const planningAnswers = bedPlans.map(({ bed, plan }) => {
+    const name = bed.name.replace(/ mattress$/i, '');
+    return `${name}: about ${formatPlanningDimension(plan.recommendedWidthMm)} wide by ${formatPlanningDimension(plan.recommendedLengthMm)} long`;
+  });
   return {
-    intro:
-      'This is a recommended clear-space planning rectangle, not a building-code minimum. It uses the market-specific mattress dimensions plus the cited side and foot clearance guidance; unmeasured frame overhang and additional furniture are excluded.',
-    sections: beds.map((bed) => {
-      const plan = bedRoomPlan(bed, dataset);
+    intro: `Planning estimate, not a building-code minimum: ${planningAnswers.join('; ')}. The model adds the cited approximately 24-inch side and foot clearances to each market-specific mattress footprint. It excludes unmeasured frame overhang, nightstands, wardrobe or dresser access, doors and circulation; measure the actual frame and room before buying.`,
+    sections: bedPlans.map(({ bed, plan }) => {
+      const footprintLabel = bed.defaultFrameAllowanceMm
+        ? 'Mattress/frame physical width'
+        : 'Mattress-only physical width';
+      const lengthLabel = bed.defaultFrameAllowanceMm
+        ? 'Mattress/frame physical length'
+        : 'Mattress-only physical length';
       return {
         title: bed.name,
         facts: [
           { label: 'Market', valueText: bed.market },
           { label: 'Mattress width', valueMm: bed.mattressWidthMm.valueMm },
           { label: 'Mattress length', valueMm: bed.mattressLengthMm.valueMm },
-          { label: 'Hard mattress/frame width', valueMm: plan.minimumWidthMm },
+          { label: footprintLabel, valueMm: plan.minimumWidthMm },
           { label: 'Recommended clear room width', valueMm: plan.recommendedWidthMm },
-          { label: 'Hard mattress/frame length', valueMm: plan.minimumLengthMm },
+          { label: lengthLabel, valueMm: plan.minimumLengthMm },
           { label: 'Recommended clear room length', valueMm: plan.recommendedLengthMm },
         ],
         assumptions: [

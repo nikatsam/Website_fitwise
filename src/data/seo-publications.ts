@@ -2,15 +2,17 @@ import type { SeoPublication } from '../types';
 
 /**
  * Editorial publication metadata for routes currently rendered from PageIntent
- * data. Landing hubs remain noindex until their primary answer is available.
+ * data. Hubs and generated calculations remain noindex until their search and
+ * internal-link release gates are satisfied.
  */
 export const seoPublications: SeoPublication[] = [
   {
     pageIntentId: 'pi-p001-desk-size-guide',
     indexable: false,
     title: 'Desk Size for Monitors — Fitwise.stream',
-    description: 'Browse desk and monitor fit references and workspace planning tools.',
-    h1: 'desk size for monitors',
+    description:
+      'Compare monitor footprints against reference desk widths, then check the physical monitor model and desk depth before buying. Screen-only estimates are clearly separated from sourced outer-device dimensions.',
+    h1: 'Desk size and monitor fit guide',
     canonicalPath: '/workspace/desk-size-guide/',
     publishedOn: '2026-10-06',
     breadcrumbIds: [],
@@ -28,6 +30,7 @@ export const seoPublications: SeoPublication[] = [
     h1: 'monitor physical size chart',
     canonicalPath: '/workspace/monitor-size-chart/',
     publishedOn: '2026-10-06',
+    significantlyModifiedOn: '2026-10-08',
     breadcrumbIds: [],
     relatedPageIds: [],
     market: 'global',
@@ -53,8 +56,9 @@ export const seoPublications: SeoPublication[] = [
     pageIntentId: 'pi-p023-bed-fits-room-hub',
     indexable: false,
     title: 'What Size Bed Fits My Room? — Fitwise.stream',
-    description: 'Explore market-specific bed dimensions and bedroom fit-planning tools.',
-    h1: 'what size bed fits my room',
+    description:
+      'There is no universal minimum room size for a bed. Compare US and UK mattress dimensions, then add the modelled side and foot clearances; bed-frame overhang, doors and other furniture can change the layout.',
+    h1: 'What size bed fits my room? US and UK planning guide',
     canonicalPath: '/bedroom/what-size-bed-fits-my-room/',
     publishedOn: '2026-10-06',
     breadcrumbIds: [],
@@ -62,6 +66,28 @@ export const seoPublications: SeoPublication[] = [
     market: 'global',
     language: 'en',
     sourceIds: [],
+  },
+  {
+    pageIntentId: 'pi-p011-what-fits-140cm-desk',
+    indexable: false,
+    title: 'What Fits on a 140 cm Desk? Monitor Layout Estimates — Fitwise.stream',
+    description:
+      'Compare representative monitor layouts on a nominal 140 cm desk using derived screen widths, a sourced 32-inch model and explicit side margins.',
+    h1: 'What fits on a 140 cm desk? Monitor layout estimates',
+    canonicalPath: '/workspace/what-fits-on-a-140cm-desk/',
+    publishedOn: '2026-10-06',
+    significantlyModifiedOn: '2026-10-08',
+    breadcrumbIds: [],
+    relatedPageIds: [],
+    market: 'global',
+    language: 'en',
+    sourceIds: [
+      'src-ikea-lagkapten-desk',
+      'src-fitwise-internal-convention',
+      'src-samsung-m7-32in',
+    ],
+    intentEvidence:
+      'Published PageIntent P011 in data/INITIAL_CONTENT_MAP.csv; rendered as a static fit matrix.',
   },
   {
     pageIntentId: 'pi-p039-us-bed-size-dimensions',
@@ -72,8 +98,9 @@ export const seoPublications: SeoPublication[] = [
     h1: 'US bed sizes',
     canonicalPath: '/bedroom/us-bed-size-dimensions/',
     publishedOn: '2026-10-06',
+    significantlyModifiedOn: '2026-10-08',
     breadcrumbIds: [],
-    relatedPageIds: [],
+    relatedPageIds: ['pi-p040-uk-bed-size-dimensions'],
     market: 'US',
     language: 'en',
     sourceIds: ['src-sleep-foundation-us-mattress-sizes'],
@@ -88,8 +115,9 @@ export const seoPublications: SeoPublication[] = [
     h1: 'UK bed sizes',
     canonicalPath: '/bedroom/uk-bed-size-dimensions/',
     publishedOn: '2026-10-06',
+    significantlyModifiedOn: '2026-10-08',
     breadcrumbIds: [],
-    relatedPageIds: [],
+    relatedPageIds: ['pi-p039-us-bed-size-dimensions'],
     market: 'UK',
     language: 'en-GB',
     sourceIds: ['src-ikea-uk-malm-double', 'src-ikea-uk-malm-king'],

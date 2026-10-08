@@ -20,10 +20,10 @@
 ### Current progress
 
 - Specification/development-pack progress: **100%**
-- Implementation progress: **99%**
-- Deployment progress: **99%**
-- Current active task: **T025 — add www CloudFront alias and apex redirect**
-- Next task: **Complete certificate validation and live rollout after owner DNS actions**
+- Implementation progress: **96%**
+- Deployment progress: **96%**
+- Current active task: **T026 — upgrade fit guides and strengthen internal navigation**
+- Next task: **Collect search-demand/SERP evidence before reconsidering indexability for noindex guides**
 
 ## Task tracker
 
@@ -53,7 +53,8 @@
 | T022 | 🟩 DONE        |     3% | 2026-10-07 | Private S3/CloudFront/OAC/ACM deployed through GitHub OIDC; project tags and security smoke verified             |
 | T023 | 🟩 DONE        |     2% | 2026-10-07 | Repeatable OIDC deploy, cache sync, invalidation and IndexNow workflow passed                                    |
 | T024 | 🟩 DONE        |     1% | 2026-10-07 | Cloudflare apex HTTPS/DNS and production smoke pass; GSC/Bing/Yandex remain owner-operationally-pending          |
-| T025 | 🟦 IN PROGRESS |     1% | —          | Certificate issued and CloudFront deployed; final Cloudflare www CNAME and live DNS smoke pending                |
+| T025 | 🟩 DONE        |     1% | 2026-10-08 | Dual-name certificate, CloudFront alias/301, Cloudflare DNS, and live redirect verified                          |
+| T026 | 🟦 IN PROGRESS |     4% | —          | Sourced desk/bed-fit content and internal links upgraded; validation passed; production rollout pending          |
 
 ## Session log
 
@@ -337,15 +338,23 @@ Paused mid-task at the user's request to document progress. Current state is saf
 - GSC/Bing/Yandex account/property verification remains owner-operationally-pending. The optional GSC API step is skipped until the owner adds service-account/property configuration; no credentials are stored in the repo.
 - `npm run verify` passes with 153 tests; all T001-T024 are done, implementation/deployment progress 100%. No T025 task card currently exists.
 
-### 2026-10-07 — T025 www hostname support (IN PROGRESS)
+### 2026-10-07 to 2026-10-08 — T025 www hostname support (DONE)
 
 - Updated the ACM request workflow to require both `fitwise.stream` and `www.fitwise.stream`, request both SANs, and print DNS validation records for both hostnames. It requests with `project=fitwise` alone, then adds `Project=FitWise` separately.
 - The first dual-SAN request was denied when it submitted two differently-cased tag keys. The next attempt exposed ACM's additional `AddTagsToCertificate` authorization for tags embedded in `RequestCertificate`; the role policy was corrected through the existing `fitwise-github-oidc` CloudFormation stack and now separately authorizes the initial lowercase tag.
 - Added `www.fitwise.stream` to CloudFront and a viewer-request 301 redirect to the apex that preserves path, single-value queries, and multi-value queries. Added offline infrastructure and redirect regression checks. T025 commits through `c55cf63` are published.
 - ACM workflow run `37699499456` succeeded; apex and `www` validations are both `SUCCESS`, and certificate `arn:aws:acm:us-east-1:754246170171:certificate/d8916f6d-31f8-4696-b3fb-b6594c4b8df5` is `ISSUED`.
-- Production deployment run `37744144860` completed. Stack `fitwise-static-site` is `UPDATE_COMPLETE`; distribution `EY0IX2NYZEEG1` is `Deployed` with both aliases and the dual-name certificate. A direct edge test returned 301 with path/query preserved; apex returned 200. Only the Cloudflare `www` traffic CNAME and DNS-resolved smoke remain.
+- Production deployment run `37744144860` completed. Stack `fitwise-static-site` is `UPDATE_COMPLETE`; distribution `EY0IX2NYZEEG1` is `Deployed` with both aliases and the dual-name certificate. The DNS-only Cloudflare `www` CNAME was added; live HTTPS returns 301 with path/query preserved and the apex returns 200.
 - During rollout, IAM policy was corrected and the `UPDATE_ROLLBACK_FAILED` stack was recovered before the successful retry. Fixes are tracked in commits `4c9b0f4`, `7a4a11f`, and `c55cf63`.
 - `npm run verify` passes with 155 tests, type/lint/format, the 38-page build, SEO/link/route/content checks and offline infrastructure validation; both CloudFormation templates pass `sam validate --lint`.
+
+### 2026-10-08 — T026 content and internal SEO upgrades (IN PROGRESS)
+
+- Rebuilt the 140 cm desk matrix from sourced desk/display entities and geometry rules. It now distinguishes derived screen-only estimates from model-specific outer widths, reports physical footprint and margin-adjusted width, and cites the input sources.
+- Updated Queen and US/UK King room-fit answers with market-specific computed planning dimensions. The copy calls these recommendations rather than legal minima and explicitly excludes unmeasured bed frames, furniture, doors and circulation.
+- Added curated content navigation from Home, workspace/bedroom hubs, the 140 cm matrix and generated fit guides. Noindex pages now show a useful cluster breadcrumb but emit no canonical or breadcrumb structured data.
+- Cross-linked the existing indexable US/UK bed references and updated material `lastmod` dates. Sitemap remains four indexable URLs; enriched noindex guides stay excluded pending search-demand/SERP-gap evidence.
+- `npm run verify` passes: 160 tests, 38-page build, SEO/link/route/content validators and infrastructure validation. These T026 changes are local and not yet pushed/deployed.
 
 ### 2026-10-06 — T020 accessibility, performance and manual QA (DONE)
 

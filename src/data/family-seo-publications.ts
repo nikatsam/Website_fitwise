@@ -5,6 +5,25 @@ import type { Dataset } from '../lib/validation/dataset';
 
 const FAMILY_RENDERERS = new Set(['object_to_space', 'space_to_object', 'comparison', 'clearance']);
 
+const EDITORIAL_OVERRIDES: Record<string, Partial<SeoPublication>> = {
+  'pi-p024-room-for-king-bed': {
+    title: 'King Mattress Room-Space Estimates: US vs UK — Fitwise.stream',
+    description:
+      'Compare clear-space plans for US King and UK Standard King mattresses. These are recommendations, not building-code minimums; frame and furniture dimensions vary.',
+    h1: 'King mattress room-space estimates: US vs UK',
+    significantlyModifiedOn: '2026-10-08',
+    relatedPageIds: ['pi-p039-us-bed-size-dimensions', 'pi-p040-uk-bed-size-dimensions'],
+  },
+  'pi-p025-room-for-queen-bed': {
+    title: 'US Queen Mattress Clear-Space Planning Estimate — Fitwise.stream',
+    description:
+      'Estimate a mattress-only clear-space rectangle for a nominal US Queen using cited side and foot allowances. This is not a complete room layout or building-code minimum.',
+    h1: 'US Queen mattress: clear-space planning estimate',
+    significantlyModifiedOn: '2026-10-08',
+    relatedPageIds: ['pi-p039-us-bed-size-dimensions'],
+  },
+};
+
 export function buildFamilySeoPublications(
   dataset: Omit<Dataset, 'seoPublications'>,
 ): SeoPublication[] {
@@ -46,7 +65,8 @@ export function buildFamilySeoPublications(
       market,
       language: market === 'UK' ? 'en-GB' : 'en',
       sourceIds: answer.sources.map((source) => source.id),
-      intentEvidence: `Offline answer generated from PageIntent '${intent.id}' and cited dimensions/rules; kept noindex pending editorial release review.`,
+      intentEvidence: `Offline answer generated from PageIntent '${intent.id}' and cited dimensions/rules; remains noindex pending search-demand, SERP-gap and indexable-link release evidence.`,
+      ...EDITORIAL_OVERRIDES[intent.id],
     };
     return [publication];
   });

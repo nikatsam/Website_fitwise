@@ -29,11 +29,12 @@ Work only on the first unblocked incomplete task unless an explicit blocker requ
 | T023 | AWS            | Add deployment + cache invalidation workflow          |     2% | T022           |
 | T024 | AWS            | DNS/TLS smoke test and production runbook             |     1% | T023           |
 | T025 | AWS            | Add www alias and permanent apex redirect             |     1% | T024           |
+| T026 | Content/SEO    | Upgrade fit guides and strengthen internal navigation |     4% | T025           |
 
-Total implementation weight: 101%.
+Total implementation weight: 105%.
 
 Detailed task cards are in `tasks/`.
 
 ## v0.2.0 SEO task expansion (weights unchanged)
 
-T004/T005/T014 implement publication-envelope fields, T017 metadata and structured data, T018 deterministic sitemap/robots/redirect & `validate:seo`, T019 negative/positive SEO tests, T021 offline SEO release gate, T024 live edge SEO smoke and engine setup runbook. T025 adds the post-release `www` hostname. Engine account verification is a manual post-deploy operational step that may remain pending without blocking a completed local build.
+T004/T005/T014 implement publication-envelope fields, T017 metadata and structured data, T018 deterministic sitemap/robots/redirect & `validate:seo`, T019 negative/positive SEO tests, T021 offline SEO release gate, T024 live edge SEO smoke and engine setup runbook. T025 adds the post-release `www` hostname; T026 upgrades sourced fit answers and internal navigation while preserving indexability gates. Engine account verification is a manual post-deploy operational step that may remain pending without blocking a completed local build.

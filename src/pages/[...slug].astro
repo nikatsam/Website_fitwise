@@ -9,7 +9,7 @@ import EntityTemplate from '../components/content/templates/EntityTemplate.astro
 import FamilyFactsTemplate from '../components/content/templates/FamilyFactsTemplate.astro';
 import HubTemplate from '../components/content/templates/HubTemplate.astro';
 import { dataset } from '../data';
-import { getPublishedRoutes, titleCaseFromSlug } from '../lib/content';
+import { buildBreadcrumb, buildContentNavigationLinks, getPublishedRoutes } from '../lib/content';
 import { buildFamilyAnswer } from '../lib/content/build-family-answer';
 import { buildPublicationBreadcrumbs, publicationStructuredData } from '../lib/seo/metadata';
 import type { PageIntent } from '../types';
@@ -38,32 +38,24 @@ interface Props {
 const { pageIntent } = Astro.props;
 const publication = dataset.seoPublications.find((record) => record.pageIntentId === pageIntent.id);
 if (!publication) throw new Error(`Missing SEO publication record for '${pageIntent.id}'.`);
-const breadcrumb = buildPublicationBreadcrumbs(
-  pageIntent,
-  publication,
-  dataset.pageIntents,
-  dataset.seoPublications,
-);
+const breadcrumb = publication.indexable
+  ? buildPublicationBreadcrumbs(
+      pageIntent,
+      publication,
+      dataset.pageIntents,
+      dataset.seoPublications,
+    )
+  : buildBreadcrumb(pageIntent.route, pageIntent.cluster);
 const h1 = publication.h1;
 const structuredData = publication.indexable
   ? publicationStructuredData(publication, breadcrumb)
   : [];
-
-const hubLinks = dataset.pageIntents
-  .filter(
-    (intent) =>
-      intent.status === 'published' &&
-      dataset.routeDispositions.some(
-        (record) => record.pageIntentId === intent.id && record.disposition === 'generated',
-      ) &&
-      intent.cluster === pageIntent.cluster &&
-      intent.route !== pageIntent.route,
-  )
-  .map((intent) => ({
-    href: intent.route,
-    label: titleCaseFromSlug(intent.route.split('/').filter(Boolean).at(-1) ?? intent.route),
-    description: intent.primaryQuery,
-  }));
+const contentLinks = buildContentNavigationLinks(
+  pageIntent.id,
+  dataset.pageIntents,
+  dataset.seoPublications,
+  dataset.routeDispositions,
+);
 
 const familyAnswer =
   pageIntent.family === 'hub' || pageIntent.family === 'entity'
@@ -111,7 +103,12 @@ const measurements = dataset.entities
   structuredData={structuredData}
 >
   {pageIntent.family === 'hub' && (
-    <HubTemplate breadcrumb={breadcrumb} h1={h1} intro={publication.description} links={hubLinks} />
+    <HubTemplate
+      breadcrumb={breadcrumb}
+      h1={h1}
+      intro={publication.description}
+      links={contentLinks}
+    />
   )}
   {pageIntent.family === 'entity' && (
     <EntityTemplate
@@ -125,9 +122,10 @@ const measurements = dataset.entities
     <FamilyFactsTemplate
       breadcrumb={breadcrumb}
       h1={h1}
-      intro={publication.description}
+      intro={familyAnswer?.intro ?? publication.description}
       sections={familyAnswer.sections}
       sources={familyAnswer.sources}
+      relatedPages={contentLinks}
     />
   )}
 </BaseLayout>

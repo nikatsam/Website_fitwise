@@ -20,14 +20,17 @@ const { breadcrumb, h1, intro, links } = Astro.props;
 
 <PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
   <p>{intro}</p>
-  <ul class="hub-links">
-    {links.map((link) => (
-      <li>
-        <a href={link.href}>{link.label}</a>
-        {link.description && <p>{link.description}</p>}
-      </li>
-    ))}
-  </ul>
+  <nav aria-label="Related planning guides">
+    <h2>Explore related planning guides</h2>
+    <ul class="hub-links">
+      {links.map((link) => (
+        <li>
+          <a href={link.href}>{link.label}</a>
+          {link.description && <p>{link.description}</p>}
+        </li>
+      ))}
+    </ul>
+  </nav>
 </PageFamilyLayout>
 
 <style>

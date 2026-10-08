@@ -2,7 +2,9 @@
 import PageFamilyLayout from '../PageFamilyLayout.astro';
 import UnitValue from '../../fit/UnitValue.astro';
 import SourceCitationList from '../SourceCitationList.astro';
+import RelatedPageLinks from '../RelatedPageLinks.astro';
 import type { BreadcrumbItem } from '../../../lib/content';
+import type { ContentNavigationLink } from '../../../lib/content/navigation';
 import type { SourceRecord } from '../../../types';
 
 interface Fact {
@@ -25,9 +27,10 @@ interface Props {
   intro: string;
   sections: Section[];
   sources: SourceRecord[];
+  relatedPages: ContentNavigationLink[];
 }
 
-const { breadcrumb, h1, intro, sections, sources } = Astro.props;
+const { breadcrumb, h1, intro, sections, sources, relatedPages } = Astro.props;
 ---
 
 <PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
@@ -61,6 +64,7 @@ const { breadcrumb, h1, intro, sections, sources } = Astro.props;
     </section>
   ))}
   <SourceCitationList sources={sources} />
+  <RelatedPageLinks links={relatedPages} />
 </PageFamilyLayout>
 
 <style>

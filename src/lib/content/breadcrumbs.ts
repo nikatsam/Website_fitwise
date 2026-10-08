@@ -16,7 +16,7 @@ const CLUSTER_LABELS: Record<ContentCluster, string> = {
   other: 'Other',
 };
 
-/** Also used by [...slug].astro to derive hub-link labels from a route. */
+/** Creates a readable fallback label for legacy routes and file names. */
 export function titleCaseFromSlug(slug: string): string {
   return slug
     .split('-')
@@ -25,12 +25,7 @@ export function titleCaseFromSlug(slug: string): string {
     .join(' ');
 }
 
-/**
- * Builds a simple Home → Cluster → Page breadcrumb trail from a route and
- * cluster. This is a placeholder derived purely from the URL shape; T017
- * replaces it with the typed ancestor chain from the SEO publication
- * envelope's `breadcrumbIds` once that data exists.
- */
+/** Builds a visible Home → Cluster → Page trail for noindex content pages. */
 export function buildBreadcrumb(route: string, cluster: ContentCluster): BreadcrumbItem[] {
   const segments = route.split('/').filter(Boolean);
   const clusterHref = `/${cluster}/`;

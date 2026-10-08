@@ -1,61 +1,149 @@
 ---
-// Representative 'space_to_object' page (tasks/T014): fixed space, several
-// candidate configurations. noindex: not yet backed by a published PageIntent.
+// Static reverse-fit answer for the published P011 workspace intent.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SpaceToObjectTemplate from '../../components/content/templates/SpaceToObjectTemplate.astro';
-import { buildBreadcrumb } from '../../lib/content';
+import { dataset } from '../../data';
+import { buildBreadcrumb, buildContentNavigationLinks } from '../../lib/content';
 import { evaluateFit } from '../../lib/fit';
-import { buildWorkspaceWidthCheck, computeConfigurationWidth } from '../../lib/geometry';
+import {
+  buildWorkspaceWidthCheck,
+  computeConfigurationWidth,
+  resolveMonitorWidth,
+} from '../../lib/geometry';
 
-const deskWidthMm = 1400;
-const gapMm = 20;
-const sideMarginMm = 38;
+const pageIntentId = 'pi-p011-what-fits-140cm-desk';
+const pageIntent = dataset.pageIntents.find((intent) => intent.id === pageIntentId);
+const publication = dataset.seoPublications.find((record) => record.pageIntentId === pageIntentId);
+const desk = dataset.entities.find((entity) => entity.id === 'ent-desk-1400');
+const gapRule = dataset.clearanceRules.find((rule) => rule.id === 'clr-monitor-gap');
+const sideMarginRule = dataset.clearanceRules.find((rule) => rule.id === 'clr-desk-side-margin');
+if (!pageIntent || !publication || desk?.category !== 'desk' || !gapRule || !sideMarginRule) {
+  throw new Error('The 140 cm desk fit answer is missing its published intent or model inputs.');
+}
+
+const deskWidthMm = desk.widthMm.valueMm;
+const gapMm = gapRule.recommendedMm?.valueMm;
+const sideMarginMm = sideMarginRule.recommendedMm?.valueMm;
+if (gapMm === undefined || sideMarginMm === undefined) {
+  throw new Error('The 140 cm desk fit answer requires a monitor gap and side-margin rule.');
+}
+
+const displays = new Map(
+  dataset.entities
+    .filter((entity) => entity.category === 'display')
+    .map((display) => [display.id, display]),
+);
 
 const candidateConfigs = [
-  { label: 'One 27" monitor', widthsMm: [613] },
-  { label: 'Two 24" monitors', widthsMm: [540, 540] },
-  { label: 'Two 27" monitors', widthsMm: [613, 613] },
-  { label: 'Two 32" monitors', widthsMm: [720, 720] },
-  { label: 'Three 24" monitors', widthsMm: [540, 540, 540] },
+  { label: 'One 27-inch 16:9 monitor', displayIds: ['ent-display-27in-16x9'] },
+  {
+    label: 'Two 24-inch 16:9 monitors',
+    displayIds: ['ent-display-24in-16x9', 'ent-display-24in-16x9'],
+  },
+  {
+    label: 'Two 27-inch 16:9 monitors',
+    displayIds: ['ent-display-27in-16x9', 'ent-display-27in-16x9'],
+  },
+  { label: 'One 32-inch 16:9 monitor', displayIds: ['ent-display-32in-16x9'] },
+  {
+    label: 'Two 32-inch 16:9 monitors',
+    displayIds: ['ent-display-32in-16x9', 'ent-display-32in-16x9'],
+  },
+  { label: 'One 34-inch 21:9 ultrawide', displayIds: ['ent-display-34in-ultrawide'] },
+  { label: 'One 49-inch 32:9 super-ultrawide', displayIds: ['ent-display-49in-superultrawide'] },
+  {
+    label: 'Three 24-inch 16:9 monitors',
+    displayIds: ['ent-display-24in-16x9', 'ent-display-24in-16x9', 'ent-display-24in-16x9'],
+  },
 ];
 
 const candidates = candidateConfigs.map((config) => {
-  const configurationWidthMm = computeConfigurationWidth({ widthsMm: config.widthsMm, gapMm });
+  const monitorWidths = config.displayIds.map((id) => {
+    const display = displays.get(id);
+    if (!display || display.category !== 'display') {
+      throw new Error(`Missing monitor dimensions for '${id}'.`);
+    }
+    return resolveMonitorWidth(display);
+  });
+  const configurationWidthMm = computeConfigurationWidth({
+    widthsMm: monitorWidths.map((monitor) => monitor.valueMm),
+    gapMm,
+  });
   const check = buildWorkspaceWidthCheck({
     configurationWidthMm,
     sideMarginRecommendedMm: sideMarginMm,
     deskWidthMm,
   });
   const result = evaluateFit([check]);
+  const widthBasis = [...new Set(monitorWidths.map((monitor) => monitor.basis))]
+    .map((basis) =>
+      basis === 'overall'
+        ? 'model-specific outer width without stand'
+        : monitorWidths.some((monitor) => monitor.note)
+          ? 'screen-only estimate; cited active area excludes bezel'
+          : 'derived screen-panel estimate; outer bezel excluded',
+    )
+    .join(' plus ');
   return {
     label: config.label,
     requiredMm: check.minimumMm,
+    recommendedMm: check.recommendedMm!,
     availableMm: deskWidthMm,
     state: result.state,
+    widthBasis,
   };
 });
 
-const h1 = `What fits on a ${deskWidthMm / 10}cm desk?`;
-const breadcrumb = buildBreadcrumb('/workspace/what-fits-on-a-140cm-desk/', 'workspace');
+const fitLabels = candidates
+  .filter((candidate) => candidate.state !== 'does_not_fit')
+  .map((candidate) => candidate.label);
+const noFitLabels = candidates
+  .filter((candidate) => candidate.state === 'does_not_fit')
+  .map((candidate) => candidate.label);
+const intro = `Width-only estimate for a nominal ${(deskWidthMm / 10).toFixed(0)} cm reference desk: ${fitLabels.join(', ')} stay within the modeled width target after the stated gaps and side margins. ${noFitLabels.join(' and ')} exceed the desk's stated width even before stand, cable or accessory space. This does not confirm that the complete physical setup fits; most entries use screen-panel estimates, and desk depth is not checked.`;
+const breadcrumb = buildBreadcrumb(pageIntent.route, pageIntent.cluster);
+const relatedPages = buildContentNavigationLinks(
+  pageIntent.id,
+  dataset.pageIntents,
+  dataset.seoPublications,
+  dataset.routeDispositions,
+);
+const sourceIds = new Set([
+  desk.widthMm.sourceId,
+  gapRule.recommendedMm?.sourceId,
+  sideMarginRule.recommendedMm?.sourceId,
+  ...candidateConfigs.flatMap((config) =>
+    config.displayIds.flatMap((id) => {
+      const display = displays.get(id);
+      return display?.category === 'display'
+        ? [display.overallWidthMm?.sourceId, display.activeWidthMm?.sourceId].filter(
+            (sourceId): sourceId is string => sourceId !== undefined,
+          )
+        : [];
+    }),
+  ),
+]);
+const sources = dataset.sources.filter((source) => sourceIds.has(source.id));
 ---
 
-<BaseLayout
-  title={`${h1} — Fitwise.stream`}
-  description="See which monitor configurations fit a 140 cm desk, from one monitor up to a triple-monitor setup."
-  noindex
->
+<BaseLayout title={publication.title} description={publication.description} noindex>
   <div class="wrapper">
     <SpaceToObjectTemplate
       breadcrumb={breadcrumb}
-      h1={h1}
-      intro={`A ${deskWidthMm / 10} cm desk fits these common monitor configurations, assuming a ${gapMm} mm gap between monitors and using the hard physical footprint as the required width.`}
+      h1={publication.h1}
+      intro={intro}
       spaceLabel={`a ${deskWidthMm / 10}cm desk`}
       candidates={candidates}
       assumptions={[
-        'Monitor widths are approximate, screen-only sizes for common diagonal presets.',
-        `Gap between monitors: ${gapMm} mm.`,
-        'Required width shown is the hard physical footprint only, not the recommended comfortable envelope.',
+        'A 140 cm desk is a nominal reference size from the cited IKEA range, not a measurement of every desk sold as 140 cm.',
+        'Unless a row names a model-specific overall width, monitor width is a screen-panel estimate derived from diagonal and aspect ratio; bezel width is not included.',
+        'The 32-inch and 34-inch examples use model-specific overall widths without stands. Other monitor bodies and stands can differ.',
+        'The 49-inch example is screen-only; its cited active panel width is not the full outer device width, which is wider.',
+        `The model adds a ${gapMm} mm gap between adjacent displays and ${sideMarginMm} mm of recommended side margin on each side. These are planning assumptions, not regulations.`,
+        'The comparison checks width only; desk depth, monitor stands, cables, speakers and other objects are not modelled.',
       ]}
+      sources={sources}
+      relatedPages={relatedPages}
     />
   </div>
 </BaseLayout>

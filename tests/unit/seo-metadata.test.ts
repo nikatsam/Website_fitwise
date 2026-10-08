@@ -4,6 +4,7 @@ import {
   absoluteCanonical,
   serializeJsonLd,
 } from '../../src/lib/seo/metadata';
+import { buildBreadcrumb } from '../../src/lib/content';
 import { validateDataset } from '../../src/lib/validation/dataset';
 import {
   pageIntents,
@@ -45,6 +46,17 @@ describe('SEO publication metadata', () => {
       { label: 'Home', href: '/' },
       { label: 'Workspace fit guides', href: '/workspace/' },
       { label: 'Desk size for two 27-inch monitors', href: childIntent.route },
+    ]);
+  });
+
+  it('shows a useful cluster breadcrumb on noindex content without creating indexable schema', () => {
+    expect(buildBreadcrumb('/bedroom/minimum-room-size-for-queen-bed/', 'bedroom')).toEqual([
+      { label: 'Home', href: '/' },
+      { label: 'Bedroom', href: '/bedroom/' },
+      {
+        label: 'Minimum Room Size For Queen Bed',
+        href: '/bedroom/minimum-room-size-for-queen-bed/',
+      },
     ]);
   });
 
