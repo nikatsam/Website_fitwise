@@ -89,7 +89,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: FitwiseProductionDeploy
 
-      - name: Require issued apex certificate
+      - name: Require issued dual-host certificate
         shell: bash
         env:
           ACM_CERTIFICATE_ARN: ${{ vars.ACM_CERTIFICATE_ARN }}
@@ -97,7 +97,16 @@ jobs:
           set -euo pipefail
           status="$(aws acm describe-certificate --region us-east-1 --certificate-arn "$ACM_CERTIFICATE_ARN" --query Certificate.Status --output text)"
           [[ "$status" == "ISSUED" ]] || { echo "ACM certificate status is $status, expected ISSUED."; exit 1; }
-          aws acm add-tags-to-certificate --region us-east-1 --certificate-arn "$ACM_CERTIFICATE_ARN" --tags Key=project,Value=fitwise Key=Project,Value=FitWise
+          domains="$(aws acm describe-certificate --region us-east-1 --certificate-arn "$ACM_CERTIFICATE_ARN" --query Certificate.SubjectAlternativeNames --output json)"
+          jq -e 'index("fitwise.stream") != null and index("www.fitwise.stream") != null' <<< "$domains" >/dev/null || {
+            echo 'ACM certificate must cover fitwise.stream and www.fitwise.stream.'
+            exit 1
+          }
+          tags="$(aws acm list-tags-for-certificate --region us-east-1 --certificate-arn "$ACM_CERTIFICATE_ARN" --query Tags --output json)"
+          jq -e 'any(.[]; .Key == "project" and .Value == "fitwise") and any(.[]; .Key == "Project" and .Value == "FitWise")' <<< "$tags" >/dev/null || {
+            echo 'ACM certificate must carry both FitWise project tags.'
+            exit 1
+          }
 
       - name: Deploy private S3 and CloudFront stack
         shell: bash
