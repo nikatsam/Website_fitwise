@@ -42,12 +42,12 @@ Reviewer: **Project owner — sign-off confirmed through authenticated user inte
 - ACM certificate `arn:aws:acm:us-east-1:754246170171:certificate/d8916f6d-31f8-4696-b3fb-b6594c4b8df5` is `ISSUED`; both validations are `SUCCESS`. A direct edge test returned `301 Location: https://fitwise.stream/workspace/what-fits-on-a-140cm-desk?units=imperial`; the apex returned `200`.
 - Owner-managed Cloudflare `www` CNAME (`www` -> `d1qzsj88vccaey.cloudfront.net`, DNS only, TTL Auto) is present. Public HTTPS returned the same 301 with path/query preserved.
 
-## T026 content and internal SEO upgrades (in progress)
+## T026 content and internal SEO upgrades (complete)
 
 - Updated the 140 cm desk matrix and US Queen/US-UK King room-fit answer copy with sourced inputs, transparent calculations and explicit exclusions.
 - Added curated navigation on Home, cluster hubs, desk/bed fit pages and indexable US/UK bed reference pages. Updated material sitemap `lastmod` values for the indexable references.
 - Noindex routes remain absent from the four-URL sitemap and continue to omit canonical and breadcrumb JSON-LD output. Their visibility in search remains gated on documented demand/SERP evidence.
-- Core T026 changes passed with 160 tests and were deployed by workflow `37757168827` from commit `5f283fe`.
+- Core T026 changes were deployed by workflow `37757168827` from commit `5f283fe`; the comparison-copy correction was deployed by `37758357733` from `51d2021`. `npm run verify` passes with 161 tests.
 - Public HTML checks confirmed the upgraded content and related navigation. The four-URL sitemap includes the updated `lastmod` dates for the three materially updated indexable references; the enhanced desk and room-fit pages remain noindex and absent from the sitemap until their search/SERP release evidence is documented.
 - IndexNow notification succeeded. Search Console API sitemap submission was skipped because credentials and property configuration remain owner-managed.
-- A live content review found the King-vs-Queen comparison description was generic; its market-specific copy and regression test now pass the full suite with 161 tests. The correction is pending publication and deployment.
+- The live King-vs-Queen page now describes US-market mattress footprints and recommended clear-space rectangles without presenting planning assumptions as code minimums.

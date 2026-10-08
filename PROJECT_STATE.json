@@ -1,13 +1,13 @@
 {
   "project": "fitwise.stream",
   "stage": "production",
-  "activeTask": "T026",
+  "activeTask": null,
   "nextTask": null,
-  "lastCompletedTask": "T025",
-  "implementationProgressPct": 96,
-  "deploymentProgressPct": 96,
+  "lastCompletedTask": "T026",
+  "implementationProgressPct": 100,
+  "deploymentProgressPct": 100,
   "knownBlockers": [],
   "lastVerificationCommand": "npm run verify",
   "cloudDeploymentAllowed": true,
-  "notes": "T001-T025 complete; T026 content/SEO upgrades are in progress. T021 Gate E was signed. T022/T023 deployed the private S3 origin in eu-north-1 and global CloudFront via GitHub OIDC. Stack fitwise-static-site is UPDATE_COMPLETE; distribution EY0IX2NYZEEG1 is Deployed with apex and www aliases and the dual-name ACM certificate. T025 is complete: both ACM validations succeeded, the Cloudflare www traffic CNAME is present, and public HTTPS redirects to the apex preserving path/query. T026 core changes were pushed in 5f283fe and deployed by workflow run 37757168827; a follow-up editorial correction to the King-vs-Queen comparison is locally verified but not yet pushed/deployed. The desk matrix and market-specific Queen/King fit pages remain noindex pending documented search-demand/SERP evidence. Home, cluster hubs and related fit pages use curated navigation. The sitemap remains limited to four indexable URLs and advances lastmod for material reference-page changes. IndexNow deployment notification completed. GA4 G-J10W58E2ZL runs on the apex hostname. GSC/Bing/Yandex account property verification and optional GSC API credentials are operationally pending owner access."
+  "notes": "T001-T026 complete. T021 Gate E was signed. T022/T023 deployed the private S3 origin in eu-north-1 and global CloudFront via GitHub OIDC. Stack fitwise-static-site is UPDATE_COMPLETE; distribution EY0IX2NYZEEG1 is Deployed with apex and www aliases and the dual-name ACM certificate. T025 is complete: both ACM validations succeeded, the Cloudflare www traffic CNAME is present, and public HTTPS redirects to the apex preserving path/query. T026 content/SEO upgrades were pushed in 5f283fe and 51d2021 and deployed by runs 37757168827 and 37758357733. The 140 cm desk matrix, market-specific Queen/King fit pages and King-vs-Queen comparison are live; they remain noindex pending documented search-demand/SERP evidence. Home, cluster hubs and related fit pages use curated navigation. The sitemap remains limited to four indexable URLs and advances lastmod for material reference-page changes. IndexNow deployment notification completed. GA4 G-J10W58E2ZL runs on the apex hostname. GSC/Bing/Yandex account property verification and optional GSC API credentials are operationally pending owner access."
 }
