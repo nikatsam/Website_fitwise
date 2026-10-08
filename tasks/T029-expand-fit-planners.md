@@ -19,8 +19,8 @@ keeping sourced dimensions separate from user-selected assumptions.
 - [x] Add geometry, preset, summary, diagram and keyboard-QA regression coverage.
 - [x] Keep planner pages noindex and the sitemap at four URLs.
 - [x] Run `npm run verify`, mobile keyboard QA and representative mobile Lighthouse audits; confirm dynamic result rows remain responsive.
-- [ ] Commit and push T029 changes.
-- [ ] Deploy through GitHub OIDC and run live planner smoke checks.
+- [x] Commit and push T029 changes (`623d8bd`).
+- [x] Deploy through GitHub OIDC (run `37838761910`) and run live planner keyboard/HTTP smoke checks.
 
 ## Acceptance criteria
 
@@ -30,7 +30,7 @@ keeping sourced dimensions separate from user-selected assumptions.
 - [x] Dynamic summaries report all failed constraints; dynamic furniture rows appear/disappear with their toggles.
 - [x] `npm run verify` passes with 189 tests and a 43-page build; keyboard QA and sampled mobile Lighthouse checks pass.
 - [x] Noindex routes remain absent from the four-URL sitemap.
-- [ ] Production deployment and live checks complete.
+- [x] Production deployment and live checks complete; indexability and sitemap remain unchanged.
 
 ## Guardrails
 

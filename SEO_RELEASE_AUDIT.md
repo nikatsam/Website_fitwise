@@ -68,3 +68,9 @@ Reviewer: **Project owner — sign-off confirmed through authenticated user inte
 - `npm run verify` passes with 170 tests, a 43-page build and 42 internal-link routes. SEO validation confirms four canonical/sitemap URLs; generated noindex pages remain excluded.
 - Commit `fc6b108` was deployed by workflow `37793826349`. Live US/UK bed-reference heads return reciprocal `en-US`/`en-GB` alternates, self-canonicals and matching Open Graph locales; robots, breadcrumb JSON-LD and the four-URL sitemap remain valid.
 - Search Console account/index data remains owner-unavailable; no Google/Bing/Yandex indexing guarantee is claimed. Social preview images remain an optional follow-up; no `og:image` is currently configured.
+
+## T029 FitCheck expansion (complete)
+
+- Planner updates were deployed by workflow `37838761910` from commit `623d8bd`. Workspace now checks multi-monitor count/aspect plus a stand/cable/keyboard depth envelope; Bedroom supports sourced mattress/frame presets, nightstand footprints, and optional wardrobe-door/dresser-drawer collision checks.
+- `npm run verify` passes with 189 tests, 43 built pages, 42 link-validated routes and four canonical sitemap URLs. Live headless keyboard checks passed on both planners; mobile Lighthouse samples scored 100 for performance/accessibility/best practices, with SEO 66 on the intentionally noindex hubs.
+- The www/apex redirect and indexability set are unchanged; Search Console query data remains unavailable and no planner pages were promoted.
