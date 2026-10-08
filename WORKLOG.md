@@ -53,7 +53,7 @@
 | T022 | 🟩 DONE        |     3% | 2026-10-07 | Private S3/CloudFront/OAC/ACM deployed through GitHub OIDC; project tags and security smoke verified             |
 | T023 | 🟩 DONE        |     2% | 2026-10-07 | Repeatable OIDC deploy, cache sync, invalidation and IndexNow workflow passed                                    |
 | T024 | 🟩 DONE        |     1% | 2026-10-07 | Cloudflare apex HTTPS/DNS and production smoke pass; GSC/Bing/Yandex remain owner-operationally-pending          |
-| T025 | 🟦 IN PROGRESS |     1% | —          | Published dual-SAN workflow and CloudFront alias/301; certificate validation, DNS and deployment pending         |
+| T025 | 🟦 IN PROGRESS |     1% | —          | Certificate issued and CloudFront deployed; final Cloudflare www CNAME and live DNS smoke pending                |
 
 ## Session log
 
@@ -341,8 +341,10 @@ Paused mid-task at the user's request to document progress. Current state is saf
 
 - Updated the ACM request workflow to require both `fitwise.stream` and `www.fitwise.stream`, request both SANs, and print DNS validation records for both hostnames. It requests with `project=fitwise` alone, then adds `Project=FitWise` separately.
 - The first dual-SAN request was denied when it submitted two differently-cased tag keys. The next attempt exposed ACM's additional `AddTagsToCertificate` authorization for tags embedded in `RequestCertificate`; the role policy was corrected through the existing `fitwise-github-oidc` CloudFormation stack and now separately authorizes the initial lowercase tag.
-- Added `www.fitwise.stream` to CloudFront and a viewer-request 301 redirect to the apex that preserves path, single-value queries, and multi-value queries. Added offline infrastructure and redirect regression checks. Commits `7659715`, `f6f0a66`, and `c2e5c51` are published.
-- ACM workflow run `37699499456` succeeded and requested dual-name certificate `arn:aws:acm:us-east-1:754246170171:certificate/d8916f6d-31f8-4696-b3fb-b6594c4b8df5`. Apex validation is already `SUCCESS`; the `www` CNAME is pending in Cloudflare. CloudFront deployment and the `www` alias record remain pending.
+- Added `www.fitwise.stream` to CloudFront and a viewer-request 301 redirect to the apex that preserves path, single-value queries, and multi-value queries. Added offline infrastructure and redirect regression checks. T025 commits through `c55cf63` are published.
+- ACM workflow run `37699499456` succeeded; apex and `www` validations are both `SUCCESS`, and certificate `arn:aws:acm:us-east-1:754246170171:certificate/d8916f6d-31f8-4696-b3fb-b6594c4b8df5` is `ISSUED`.
+- Production deployment run `37744144860` completed. Stack `fitwise-static-site` is `UPDATE_COMPLETE`; distribution `EY0IX2NYZEEG1` is `Deployed` with both aliases and the dual-name certificate. A direct edge test returned 301 with path/query preserved; apex returned 200. Only the Cloudflare `www` traffic CNAME and DNS-resolved smoke remain.
+- During rollout, IAM policy was corrected and the `UPDATE_ROLLBACK_FAILED` stack was recovered before the successful retry. Fixes are tracked in commits `4c9b0f4`, `7a4a11f`, and `c55cf63`.
 - `npm run verify` passes with 155 tests, type/lint/format, the 38-page build, SEO/link/route/content checks and offline infrastructure validation; both CloudFormation templates pass `sam validate --lint`.
 
 ### 2026-10-06 — T020 accessibility, performance and manual QA (DONE)

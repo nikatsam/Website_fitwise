@@ -38,6 +38,6 @@ Reviewer: **Project owner — sign-off confirmed through authenticated user inte
 
 ## Follow-up — T025 www hostname (in progress)
 
-- The production evidence above applies to `fitwise.stream` only. The deployed certificate and CloudFront aliases currently cover the apex only; `www.fitwise.stream` is not configured or verified.
-- Commits `7659715`, `f6f0a66`, and `c2e5c51` publish the dual-name ACM request workflow, CloudFront alias and permanent apex redirect with path/query preservation. The scoped OIDC policy update is deployed, but the CloudFront changes are not yet deployed.
-- ACM certificate `arn:aws:acm:us-east-1:754246170171:certificate/d8916f6d-31f8-4696-b3fb-b6594c4b8df5` is `PENDING_VALIDATION`: apex validation is `SUCCESS`; the `www` validation CNAME remains pending owner action in Cloudflare. GitHub `ACM_CERTIFICATE_ARN`, CloudFront deployment, the DNS-only `www` traffic CNAME, and HTTPS redirect smoke checks remain pending.
+- Commits through `c55cf63` publish the dual-name ACM workflow, CloudFront alias, permanent redirect, and scoped role fixes. Deployment run `37744144860` completed; distribution `EY0IX2NYZEEG1` is `Deployed` with both aliases.
+- ACM certificate `arn:aws:acm:us-east-1:754246170171:certificate/d8916f6d-31f8-4696-b3fb-b6594c4b8df5` is `ISSUED`; both validations are `SUCCESS`. A direct edge test returned `301 Location: https://fitwise.stream/workspace/what-fits-on-a-140cm-desk?units=imperial`; the apex returned `200`.
+- Live DNS acceptance remains pending the owner-managed Cloudflare `www` CNAME (`www` -> `d1qzsj88vccaey.cloudfront.net`, DNS only, TTL Auto) and a DNS-resolved HTTPS redirect smoke check.

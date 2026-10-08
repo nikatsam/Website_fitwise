@@ -6,10 +6,10 @@
 
 - IaC choice: CloudFormation JSON in `infra/fitwise-static-site.template.json` (ADR-011).
 - Origin: private S3 REST endpoint; Block Public Access on, bucket-owner-enforced ownership, SSE-S3 encryption, versioning enabled, no S3 website endpoint.
-- Delivery: CloudFront OAC with SigV4, least-privilege `s3:GetObject` scoped to the distribution ARN, TLS 1.2 or later, security response headers, and a CloudFront Function that maps directory/extensionless paths to `index.html`. S3 REST-origin missing-key 403 responses are translated to the `/404.html` body with actual HTTP 404, without granting `s3:ListBucket`.
+- Delivery: CloudFront OAC with SigV4, least-privilege `s3:GetObject` scoped to the distribution ARN, TLS 1.2 or later, security response headers, and a CloudFront Function that redirects `www` to the apex before mapping directory/extensionless paths to `index.html`. S3 REST-origin missing-key 403 responses are translated to the `/404.html` body with actual HTTP 404, without granting `s3:ListBucket`.
 - Production packaging excludes local-only `/dev/` preview routes. The local QA build still includes them; `npm run deploy:plan` identifies but omits those files. Any cleanup of dev keys in an existing bucket must be inventoried and approved separately.
 - Cache policy: HTML browser revalidation with bounded shared-cache TTL; fingerprinted `/_astro/` assets immutable for one year; images one day; crawl-control and other static files short-lived.
-- Certificate: The currently deployed ACM certificate is issued in `us-east-1` and covers `fitwise.stream` only. T025 configuration is published; replacement certificate `d8916f6d-31f8-4696-b3fb-b6594c4b8df5` is pending DNS validation. Live `www` support is not enabled yet.
+- Certificate: The deployed ACM certificate is issued in `us-east-1` and covers both `fitwise.stream` and `www.fitwise.stream`. CloudFront has both aliases; the final Cloudflare `www` traffic record is the remaining owner operation.
 - Region/price: S3 and CloudFormation stack are in `eu-north-1`; CloudFront is global and uses `PriceClass_100`.
 - Tagging: taggable Fitwise resources and stacks carry both `project=fitwise` and `Project=FitWise`. CloudFront OAC/cache/response-policy subresources rejected tag operations and use the `fitwise-static-site` name prefix; the pre-existing shared OIDC provider is not retagged.
 
@@ -27,13 +27,14 @@ The production workflow `.github/workflows/deploy-production.yml` deploys only f
 
 - GitHub Actions run `37672593182` created the private S3/CloudFront site in account `754246170171`; a follow-up tag-only run completed. Stack status is `UPDATE_COMPLETE` in `eu-north-1`.
 - S3 bucket: `fitwise-static-site-754246170171-eu-north-1`. It has Block Public Access enabled, SSE-S3, versioning, and both project tags.
-- CloudFront distribution: `EY0IX2NYZEEG1`; domain `d1qzsj88vccaey.cloudfront.net`; viewer alias `fitwise.stream`; TLS minimum `TLSv1.2_2021`; both project tags.
-- The ACM apex certificate is `ISSUED` in `us-east-1`, which is required for a CloudFront custom-domain certificate. All regional site infrastructure is in `eu-north-1`; CloudFront is global.
+- CloudFront distribution: `EY0IX2NYZEEG1`; domain `d1qzsj88vccaey.cloudfront.net`; viewer aliases `fitwise.stream` and `www.fitwise.stream`; TLS minimum `TLSv1.2_2021`.
+- The ACM certificate `d8916f6d-31f8-4696-b3fb-b6594c4b8df5` is `ISSUED` in `us-east-1` for both hostnames. All regional site infrastructure is in `eu-north-1`; CloudFront is global.
 - The Cloudflare apex CNAME is now configured DNS-only and `fitwise.stream` resolves to CloudFront.
 
 ## Production Smoke Results
 
 - CloudFront returned 200 for Home, both hubs, the monitor chart, the US bed chart, sitemap, robots, and the IndexNow key file. Unknown paths return 404; HTTP redirects to HTTPS.
+- T025 direct edge test (bypassing DNS) returned 301 for `www.fitwise.stream/workspace/what-fits-on-a-140cm-desk?units=imperial`, with the same path/query on the apex `Location`; apex returned 200. DNS-resolved `www` verification remains pending its Cloudflare traffic CNAME.
 - Direct S3 REST access returns 403. CloudFront uses OAC, TLS 1.2 or later, CSP/HSTS/nosniff/frame/referrer/permissions headers, and the static route rewrite.
 - Sitemap is 200 `application/xml`; robots is 200 `text/plain`. The indexable sitemap has four URLs. IndexNow notifications ran successfully; Google Search Console API submission was skipped because no service-account/property inputs are configured.
 - The GA4 tag for `G-J10W58E2ZL` is in deployed HTML and executes only on `fitwise.stream`. No consent banner/Consent Mode is implemented; consent/privacy review remains an owner action.
@@ -42,8 +43,8 @@ The production workflow `.github/workflows/deploy-production.yml` deploys only f
 ## Cloudflare DNS Steps
 
 1. The active record in Cloudflare's `fitwise.stream` zone is Type `CNAME`, Name `@`, Target `d1qzsj88vccaey.cloudfront.net`, Proxy status **DNS only** (grey cloud), TTL **Auto**. Cloudflare flattens this apex CNAME.
-2. Keep the existing apex ACM validation CNAME (`_1edc6822c121a20d6c3ff917e57f7239.fitwise.stream` -> `_9afed6ba1fe910ed23229218d83112f5.wzccmgtwzk.acm-validations.aws`). It already validates the apex. Add the pending `www` validation CNAME: Name `_4455b73eda5608f94f725596eba032f6.www`, Target `_653916f1eba3003dfa38003a65e83e09.wzccmgtwzk.acm-validations.aws`, Type `CNAME`, DNS only (grey cloud), TTL Auto. Cloudflare appends the `fitwise.stream` zone to the Name; do not add a separate `www` traffic record yet.
-3. After the dual-name ACM certificate is issued and the CloudFront deployment completes, add Type `CNAME`, Name `www`, Target `d1qzsj88vccaey.cloudfront.net`, Proxy status **DNS only**, TTL **Auto**. Do not enable this record before the distribution is configured with the alias and certificate.
+2. Keep both ACM validation CNAMEs. They now validate the apex and `www`; do not remove them while the certificate is in use.
+3. The CloudFront distribution is deployed with both hostnames and the dual-name certificate. Add or update Type `CNAME`, Name `www`, Target `d1qzsj88vccaey.cloudfront.net`, Proxy status **DNS only**, TTL **Auto**. If a `www` record already exists, edit it rather than creating a duplicate.
 4. Verify `https://www.fitwise.stream/` and nested routes return 301 to the matching apex URL, including query strings. Recheck `https://fitwise.stream/`, `/sitemap.xml`, `/robots.txt`, and a nonexistent path. If Cloudflare proxying is enabled later, use SSL/TLS **Full (strict)**.
 
 ## Search and Analytics Setup
