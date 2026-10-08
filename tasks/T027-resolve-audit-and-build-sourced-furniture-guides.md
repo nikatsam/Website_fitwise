@@ -21,7 +21,7 @@ sources, and preserve noindex status until the Search Console/SERP gate is met.
 - [x] Record public SERP snapshots and the absence of Search Console query credentials; do not promote any page to indexable.
 - [x] Run full validation, keyboard QA and representative mobile Lighthouse checks.
 - [x] Record the owner's decision to keep GA4 active and track missing privacy/consent information as a future defect; do not claim compliance is resolved.
-- [ ] Commit, push, deploy through GitHub OIDC, and verify the live pages.
+- [x] Commit, push, deploy through GitHub OIDC, and verify the live pages.
 
 ## Acceptance criteria
 
@@ -30,7 +30,7 @@ sources, and preserve noindex status until the Search Console/SERP gate is met.
 - [x] Furniture collision footprints are distinguished from standing/walking room allowances.
 - [x] Noindex pages remain out of the sitemap and emit no canonical or breadcrumb JSON-LD.
 - [x] `npm run verify` passes with 169 tests; the static build has 43 pages and the sitemap contains four canonical URLs.
-- [ ] Owner privacy/consent decision is recorded; live content and policy state are verified after deployment.
+- [x] Owner chose to keep GA4; the privacy/consent gap is explicitly recorded as a future defect. Live content, noindex behavior and sitemap were verified.
 
 ## Guardrails
 

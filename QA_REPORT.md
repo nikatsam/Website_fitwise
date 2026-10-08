@@ -76,4 +76,5 @@
 - Keyboard QA passed on both FitCheck clusters. Manual screen-reader testing remains outstanding.
 - F-02, F-03, F-04 and F-05 are corrected in the local build. F-01 remains open by owner decision: GA4 stays active, and the missing privacy notice/consent control is recorded as a future defect. No consent or GA4 behavior was changed; the owner explicitly deferred this item.
 - Search Console credentials/query data are unavailable. Bing result checks were ambiguous or broad and provided no volume evidence; DuckDuckGo automated searches were challenged. No noindex page was promoted and no draft room-size URL was added to the sitemap.
-- This T027 content update is validated locally but has not yet been committed, deployed or live-smoke-tested.
+- Commit `962b822` was deployed by workflow `37786143468`. Public page checks confirmed the new chair, monitor-depth, wardrobe-door, dresser-drawer and nightstand examples; Double-market titles and fit estimates; and the unchanged four-URL sitemap.
+- Live noindex pages remain absent from the sitemap and expose visible cluster navigation without canonical or breadcrumb JSON-LD. The 301 www/apex configuration remains deployed and live.

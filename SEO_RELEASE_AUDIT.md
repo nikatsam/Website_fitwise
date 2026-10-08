@@ -52,10 +52,11 @@ Reviewer: **Project owner — sign-off confirmed through authenticated user inte
 - IndexNow notification succeeded. Search Console API sitemap submission was skipped because credentials and property configuration remain owner-managed.
 - The live King-vs-Queen page now describes US-market mattress footprints and recommended clear-space rectangles without presenting planning assumptions as code minimums.
 
-## T027 audit remediation and furniture examples (in progress)
+## T027 audit remediation and furniture examples (complete)
 
 - Corrected P026/P031 market labels, separated the FitWise foot-clearance assumption from cited lateral clearance, and replaced the blocked OSHA numeric claim with accessible CCOHS guidance that does not assert a universal distance.
 - Added source-backed static noindex pages for chair footprint/movement, monitor stand-depth/viewing-distance, wardrobe-door swing, dresser-drawer pull-out and bed-plus-nightstand footprints. UK MALM frame allowances use measured outer dimensions; no walking or ergonomic minimums are inferred from the object widths.
 - Search Console query data is unavailable; Bing SERPs were broad/ambiguous and DuckDuckGo automated fetches were challenged. Noindex status remains unchanged; draft P038 was not built and sitemap remains four canonical URLs.
-- Local validation passes: 169 tests, 43-page build, 42 route/link checks, zero dataset warnings. Mobile Lighthouse is 100 for performance/accessibility/best-practices on samples; noindex SEO score 66 reflects the intentional `is-crawlable` block. Keyboard QA passes. Content has not been pushed/deployed yet.
+- Local validation passes: 169 tests, 43-page build, 42 route/link checks, zero dataset warnings. Mobile Lighthouse is 100 for performance/accessibility/best-practices on samples; noindex SEO score 66 reflects the intentional `is-crawlable` block. Keyboard QA passes.
+- Commit `962b822` was deployed by workflow `37786143468`. Public checks confirmed the new content, noindex behavior and four-URL sitemap.
 - GA4 remains active without a consent gate at the owner's direction. The missing privacy/cookie notice is a recorded future issue, not a resolved compliance claim.

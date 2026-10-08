@@ -1,13 +1,13 @@
 {
   "project": "fitwise.stream",
   "stage": "production",
-  "activeTask": "T027",
+  "activeTask": null,
   "nextTask": null,
-  "lastCompletedTask": "T026",
-  "implementationProgressPct": 95,
-  "deploymentProgressPct": 95,
+  "lastCompletedTask": "T027",
+  "implementationProgressPct": 100,
+  "deploymentProgressPct": 100,
   "knownBlockers": [],
   "lastVerificationCommand": "npm run verify",
   "cloudDeploymentAllowed": true,
-  "notes": "T001-T026 complete; T027 is in progress for audit remediation and measured furniture examples. T021 Gate E was signed. T022/T023 deployed the private S3 origin in eu-north-1 and global CloudFront via GitHub OIDC. Stack fitwise-static-site is UPDATE_COMPLETE; distribution EY0IX2NYZEEG1 is Deployed with apex and www aliases and the dual-name ACM certificate. T025/T026 production releases are complete. T027 local changes add source-backed chair, bed-frame/nightstand/wardrobe/dresser, and model-specific monitor-depth examples as noindex pages; they are not yet published. No draft room-size PageIntents have been activated. The sitemap remains limited to four indexable URLs. IndexNow is configured; Google Search Console query access remains unavailable, so indexability is unchanged. The owner chose to keep GA4 active and track the missing privacy/consent notice as a future defect; this does not block T027 deployment."
+  "notes": "T001-T027 complete. T021 Gate E was signed. T022/T023 deployed the private S3 origin in eu-north-1 and global CloudFront via GitHub OIDC. Stack fitwise-static-site is UPDATE_COMPLETE; distribution EY0IX2NYZEEG1 is Deployed with apex and www aliases and the dual-name ACM certificate. T025/T026 production releases are complete. T027 audit fixes and source-backed chair, bed-frame/nightstand/wardrobe/dresser, and model-specific monitor-depth examples were pushed in commit 962b822 and deployed by workflow 37786143468. These guides remain noindex; no draft room-size PageIntents were activated, and the sitemap remains four indexable URLs. Search Console query data is unavailable, so indexability did not change. The owner chose to keep GA4 active; the missing privacy/consent notice is a documented future defect, not a resolved compliance item."
 }
