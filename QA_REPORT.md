@@ -78,3 +78,11 @@
 - Search Console credentials/query data are unavailable. Bing result checks were ambiguous or broad and provided no volume evidence; DuckDuckGo automated searches were challenged. No noindex page was promoted and no draft room-size URL was added to the sitemap.
 - Commit `962b822` was deployed by workflow `37786143468`. Public page checks confirmed the new chair, monitor-depth, wardrobe-door, dresser-drawer and nightstand examples; Double-market titles and fit estimates; and the unchanged four-URL sitemap.
 - Live noindex pages remain absent from the sitemap and expose visible cluster navigation without canonical or breadcrumb JSON-LD. The 301 www/apex configuration remains deployed and live.
+
+## T028 SEO Tag and Crawl Audit — 2026-10-08
+
+- Reviewed live-generated HTML paths and the SEO publication source of truth. Indexable pages have absolute apex self-canonicals, unique titles/descriptions, one H1, WebPage/BreadcrumbList JSON-LD and matching visible breadcrumbs. Noindex guides have no canonical, hreflang, Open Graph or breadcrumb JSON-LD and remain absent from the sitemap.
+- Added reciprocal `en-US`/`en-GB` hreflang for the market-specific US/UK bed-dimension reference pair. Each page emits its own canonical-language alternate, the other market alternate, and matching `og:locale` values. No x-default or hreflang was added to unrelated/noindex pages.
+- `robots.txt` is HTTP 200 plain text, allows public pages and points to `https://fitwise.stream/sitemap.xml`; sitemap is HTTP 200 XML with four unique HTTPS apex canonicals. Apex/HTTPS/www redirects and true 404 behavior are verified.
+- Search Console/Bing/Yandex account and index-coverage status cannot be checked because owner credentials are unavailable. A public DNS TXT record or IndexNow notification does not prove account verification or indexation.
+- T028 hreflang code/validators pass locally with `npm run verify` (170 tests, 43-page build, 42 internal-link routes, zero dataset warnings). T028 is not yet deployed; live hreflang verification remains pending.

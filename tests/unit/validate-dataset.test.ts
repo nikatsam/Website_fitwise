@@ -13,6 +13,7 @@ import {
   seoPublications,
 } from '../fixtures/valid/sample-dataset';
 import { invalidRecordCases } from '../fixtures/invalid/sample-invalid-records';
+import { dataset as productionDataset } from '../../src/data';
 
 const validDataset: Dataset = {
   sources,
@@ -35,6 +36,21 @@ describe('validateDataset — valid sample dataset', () => {
     const result = validateDataset(emptyDataset);
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
+  });
+});
+
+describe('validateDataset — hreflang publication contracts', () => {
+  it('requires reciprocal published indexable language alternates', () => {
+    const invalid = structuredClone(productionDataset);
+    const ukBeds = invalid.seoPublications.find(
+      (publication) => publication.pageIntentId === 'pi-p040-uk-bed-size-dimensions',
+    );
+    if (!ukBeds) throw new Error('Missing UK bed-size publication fixture.');
+    ukBeds.alternatePageIds = [];
+
+    expect(
+      validateDataset(invalid).errors.some((error) => error.rule === 'invalid-hreflang-reference'),
+    ).toBe(true);
   });
 });
 

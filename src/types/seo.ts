@@ -24,6 +24,8 @@ export interface SeoPublication {
   significantlyModifiedOn?: string;
   /** Stable ancestor PageIntent ids, not raw URL segments. */
   breadcrumbIds: string[];
+  /** Reciprocal published market/language variants; only indexable pages. */
+  alternatePageIds?: string[];
   /** Only ids of other published, indexable PageIntents. */
   relatedPageIds: string[];
   market?: SeoMarket;

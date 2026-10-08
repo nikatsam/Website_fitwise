@@ -83,6 +83,17 @@ describe('SEO static outputs', () => {
     expect(entries.find((entry) => entry.url.endsWith('/uk-bed-size-dimensions/'))?.lastmod).toBe(
       '2026-10-08',
     );
+
+    const usBeds = productionDataset.seoPublications.find(
+      (publication) => publication.pageIntentId === 'pi-p039-us-bed-size-dimensions',
+    );
+    const ukBeds = productionDataset.seoPublications.find(
+      (publication) => publication.pageIntentId === 'pi-p040-uk-bed-size-dimensions',
+    );
+    expect(usBeds?.language).toBe('en-US');
+    expect(usBeds?.alternatePageIds).toEqual(['pi-p040-uk-bed-size-dimensions']);
+    expect(ukBeds?.language).toBe('en-GB');
+    expect(ukBeds?.alternatePageIds).toEqual(['pi-p039-us-bed-size-dimensions']);
   });
 
   it('escapes XML values and writes only editorial lastmod values', () => {

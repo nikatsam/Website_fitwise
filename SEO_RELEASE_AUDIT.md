@@ -60,3 +60,10 @@ Reviewer: **Project owner — sign-off confirmed through authenticated user inte
 - Local validation passes: 169 tests, 43-page build, 42 route/link checks, zero dataset warnings. Mobile Lighthouse is 100 for performance/accessibility/best-practices on samples; noindex SEO score 66 reflects the intentional `is-crawlable` block. Keyboard QA passes.
 - Commit `962b822` was deployed by workflow `37786143468`. Public checks confirmed the new content, noindex behavior and four-URL sitemap.
 - GA4 remains active without a consent gate at the owner's direction. The missing privacy/cookie notice is a recorded future issue, not a resolved compliance claim.
+
+## T028 technical SEO audit (in progress)
+
+- Canonicals, title/description/H1, noindex behavior, breadcrumb JSON-LD, `robots.txt`, redirects and the four-URL sitemap pass local validation.
+- The US and UK bed-size reference pages are reciprocal `en-US`/`en-GB` hreflang alternatives with self-references, canonical targets and matching Open Graph locales. Other pages emit no hreflang; noindex pages are excluded.
+- `npm run verify` passes with 170 tests, a 43-page build and 42 internal-link routes. SEO validation confirms four canonical/sitemap URLs; generated noindex pages remain excluded.
+- T028 code is local and awaits push/deployment and live hreflang verification. Search Console account/index data remains owner-unavailable; no Google/Bing/Yandex indexing guarantee is claimed.

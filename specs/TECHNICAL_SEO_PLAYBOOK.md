@@ -101,7 +101,7 @@ Home  >  Workspace  >  Desk size for two 27-inch monitors
 ## 7. Locale/market strategy
 
 - MVP: one English URL per distinct intent, with unit toggle on same canonical page. Do not deploy parallel URLs solely for centimetres/inches.
-- Bed dimensions differ between US/UK and other markets. Clearly identify which measurement standard is being applied. For true distinct market-specific pages with substantively different answers, choose separate canonical URLs and later implement verified reciprocal `hreflang` entries. Do **not** output hreflang to non-existent translations/localizations.
+- Bed dimensions differ between US/UK and other markets. Clearly identify which measurement standard is being applied. For true distinct market-specific pages with substantively different answers, choose separate canonical URLs and implement verified reciprocal `hreflang` entries when both variants are published/indexable. The US and UK bed-size reference pages emit reciprocal `en-US`/`en-GB` alternates. Do **not** output hreflang to noindex, draft, deferred or non-existent variants.
 - Compare `x-default`, canonical and hreflang relationships only when real locale variants exist. No invented localization for SEO coverage.
 
 ## 8. URL changes / removal lifecycle

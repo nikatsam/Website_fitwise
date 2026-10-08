@@ -11,7 +11,11 @@ import HubTemplate from '../components/content/templates/HubTemplate.astro';
 import { dataset } from '../data';
 import { buildBreadcrumb, buildContentNavigationLinks, getPublishedRoutes } from '../lib/content';
 import { buildFamilyAnswer } from '../lib/content/build-family-answer';
-import { buildPublicationBreadcrumbs, publicationStructuredData } from '../lib/seo/metadata';
+import {
+  absoluteCanonical,
+  buildPublicationBreadcrumbs,
+  publicationStructuredData,
+} from '../lib/seo/metadata';
 import type { PageIntent } from '../types';
 
 export async function getStaticPaths() {
@@ -50,6 +54,18 @@ const h1 = publication.h1;
 const structuredData = publication.indexable
   ? publicationStructuredData(publication, breadcrumb)
   : [];
+const alternateLanguages = (publication.alternatePageIds ?? []).map((alternatePageId) => {
+  const alternatePublication = dataset.seoPublications.find(
+    (record) => record.pageIntentId === alternatePageId,
+  );
+  if (!alternatePublication?.indexable) {
+    throw new Error(`Hreflang alternate '${alternatePageId}' is missing or not indexable.`);
+  }
+  return {
+    language: alternatePublication.language ?? 'en',
+    href: absoluteCanonical(alternatePublication.canonicalPath),
+  };
+});
 const contentLinks = buildContentNavigationLinks(
   pageIntent.id,
   dataset.pageIntents,
@@ -100,6 +116,7 @@ const measurements = dataset.entities
   noindex={!publication.indexable}
   canonicalPath={publication.indexable ? publication.canonicalPath : undefined}
   language={publication.language}
+  alternateLanguages={alternateLanguages}
   structuredData={structuredData}
 >
   {pageIntent.family === 'hub' && (

@@ -47,6 +47,7 @@ export type ValidationRule =
   | 'missing-seo-publication'
   | 'invalid-seo-publication'
   | 'invalid-breadcrumb-reference'
+  | 'invalid-hreflang-reference'
   | 'invalid-related-page-reference'
   | 'duplicate-route-disposition'
   | 'missing-route-disposition'
@@ -637,6 +638,54 @@ export function validateDataset(dataset: Dataset): ValidationResult {
           message: `SEO related page '${relatedId}' must be a distinct published PageIntent with an indexable SEO publication.`,
         });
       }
+    }
+
+    const alternateIds = publication.alternatePageIds ?? [];
+    const validLanguageTag = (tag: string | undefined) =>
+      tag !== undefined && /^[a-z]{2,3}(?:-[A-Z]{2})?$/.test(tag);
+    if (alternateIds.length > 0 && !validLanguageTag(publication.language)) {
+      errors.push({
+        level: 'error',
+        rule: 'invalid-hreflang-reference',
+        recordId: publication.pageIntentId,
+        message: `SEO publication '${publication.pageIntentId}' needs a valid BCP 47 language tag for hreflang.`,
+      });
+    }
+    if (alternateIds.length > 0 && (!publication.indexable || !publication.language)) {
+      errors.push({
+        level: 'error',
+        rule: 'invalid-hreflang-reference',
+        recordId: publication.pageIntentId,
+        message: `Hreflang alternates are only valid for indexable pages with a declared language.`,
+      });
+    }
+    const seenAlternateIds = new Set<string>();
+    const seenAlternateLanguages = new Set(publication.language ? [publication.language] : []);
+    for (const alternateId of alternateIds) {
+      const alternateIntent = pageIntentsById.get(alternateId);
+      const alternatePublication = publicationsByIntentId.get(alternateId);
+      if (
+        !alternateIntent ||
+        alternateId === publication.pageIntentId ||
+        seenAlternateIds.has(alternateId) ||
+        alternateIntent.status !== 'published' ||
+        !publication.indexable ||
+        !alternatePublication?.indexable ||
+        !validLanguageTag(publication.language) ||
+        !validLanguageTag(alternatePublication.language) ||
+        alternatePublication.language === publication.language ||
+        seenAlternateLanguages.has(alternatePublication?.language ?? '') ||
+        !alternatePublication.alternatePageIds?.includes(publication.pageIntentId)
+      ) {
+        errors.push({
+          level: 'error',
+          rule: 'invalid-hreflang-reference',
+          recordId: publication.pageIntentId,
+          message: `Hreflang alternate '${alternateId}' must be a distinct, reciprocal, published indexable language variant.`,
+        });
+      }
+      seenAlternateIds.add(alternateId);
+      if (alternatePublication?.language) seenAlternateLanguages.add(alternatePublication.language);
     }
   }
 

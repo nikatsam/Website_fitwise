@@ -31,11 +31,12 @@ Work only on the first unblocked incomplete task unless an explicit blocker requ
 | T025 | AWS            | Add www alias and permanent apex redirect               |     1% | T024           |
 | T026 | Content/SEO    | Upgrade fit guides and strengthen internal navigation   |     4% | T025           |
 | T027 | Content/QA     | Resolve audit findings and add sourced furniture guides |     5% | T026           |
+| T028 | SEO/QA         | Audit metadata, hreflang, sitemap and robots            |     2% | T027           |
 
-Total implementation weight: 110%.
+Total implementation weight: 112%.
 
 Detailed task cards are in `tasks/`.
 
 ## v0.2.0 SEO task expansion (weights unchanged)
 
-T004/T005/T014 implement publication-envelope fields, T017 metadata and structured data, T018 deterministic sitemap/robots/redirect & `validate:seo`, T019 negative/positive SEO tests, T021 offline SEO release gate, T024 live edge SEO smoke and engine setup runbook. T025 adds the post-release `www` hostname; T026 upgrades sourced fit answers and internal navigation; T027 resolves follow-up content/source issues and adds measured furniture examples. Search-engine query data and privacy-controller details remain owner inputs.
+T004/T005/T014 implement publication-envelope fields, T017 metadata and structured data, T018 deterministic sitemap/robots/redirect & `validate:seo`, T019 negative/positive SEO tests, T021 offline SEO release gate, T024 live edge SEO smoke and engine setup runbook. T025 adds the post-release `www` hostname; T026 upgrades sourced fit answers and internal navigation; T027 adds measured furniture examples; T028 audits live SEO metadata and adds market-specific hreflang. Search-engine query data and privacy-controller details remain owner inputs.

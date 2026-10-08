@@ -17,24 +17,25 @@ The build writes `dist/sitemap.xml` and `dist/robots.txt` from indexable publica
 
 ## Release-blocking offline assertions
 
-| Gate              | Assertion                                                                                                        | Failing example                           |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Route inventory   | All `published && indexable` intents have exactly one built HTML route                                           | missing `dist/workspace/.../index.html`   |
-| Exclusions        | Draft/deferred/deprecated URLs excluded from generated public route and sitemap                                  | `/draft/example/` present                 |
-| Canonical         | Each indexable page has one absolute HTTPS self canonical on `fitwise.stream`, matching generated output URL     | canonical points at `www` or misses slash |
-| Titles            | Unique meaningful title and 1 H1 per page; no empty/placeholder descriptions                                     | `TODO`, repeated title                    |
-| Sitemap           | XML parses; URLs unique/absolute/canonical/published; none redirect/noindex/404; entrypoint correct              | deleted page still listed                 |
-| Sitemap scale     | <=50k URLs and <=50MB uncompressed per sitemap                                                                   | huge single sitemap                       |
-| lastmod           | Valid ISO date, not in future; dates tied to material editorial changes, stable across no-op builds              | every page set to build date              |
-| robots            | Production robots is plaintext, includes a reachable generated Sitemap directive and lacks blanket `Disallow: /` | blocking all bots                         |
-| Breadcrumbs       | Visible HTML trail and JSON-LD agree; each ancestor resolves; JSON-LD has ordered positions                      | Schema refers to unpublished crumb        |
-| JSON-LD           | Each `application/ld+json` script parses; content truthful/visible and `<` escaped in serialization              | invalid nested JSON                       |
-| Links             | No internal `href` to missing/redirected/unpublished route; every leaf reachable from crawlable hub nav          | orphan detail URL                         |
-| Source integrity  | Critical physical measurements cited/derived; market and assumptions visible                                     | 'exact' number no source                  |
-| No-JS             | Server-built HTML includes key answer/measurements and related `<a>` elements                                    | blank app shell                           |
-| Meta robots       | Indexable pages are not `noindex`; removed/public preview pages not inadvertently indexed                        | `noindex` on hub                          |
-| Content integrity | No generated numeric permutation without separate justification; no duplicate primary-answer slugs               | 100 thin near-copies                      |
-| Redirect registry | No loops/missing targets/chains, retired URL absent from sitemap                                                 | `/old/` → `/missing/`                     |
+| Gate              | Assertion                                                                                                        | Failing example                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Route inventory   | All `published && indexable` intents have exactly one built HTML route                                           | missing `dist/workspace/.../index.html`              |
+| Exclusions        | Draft/deferred/deprecated URLs excluded from generated public route and sitemap                                  | `/draft/example/` present                            |
+| Canonical         | Each indexable page has one absolute HTTPS self canonical on `fitwise.stream`, matching generated output URL     | canonical points at `www` or misses slash            |
+| Hreflang          | Market/language alternates are published/indexable, reciprocal, self-referencing and canonical                   | UK page links to draft or nonreciprocal US alternate |
+| Titles            | Unique meaningful title and 1 H1 per page; no empty/placeholder descriptions                                     | `TODO`, repeated title                               |
+| Sitemap           | XML parses; URLs unique/absolute/canonical/published; none redirect/noindex/404; entrypoint correct              | deleted page still listed                            |
+| Sitemap scale     | <=50k URLs and <=50MB uncompressed per sitemap                                                                   | huge single sitemap                                  |
+| lastmod           | Valid ISO date, not in future; dates tied to material editorial changes, stable across no-op builds              | every page set to build date                         |
+| robots            | Production robots is plaintext, includes a reachable generated Sitemap directive and lacks blanket `Disallow: /` | blocking all bots                                    |
+| Breadcrumbs       | Visible HTML trail and JSON-LD agree; each ancestor resolves; JSON-LD has ordered positions                      | Schema refers to unpublished crumb                   |
+| JSON-LD           | Each `application/ld+json` script parses; content truthful/visible and `<` escaped in serialization              | invalid nested JSON                                  |
+| Links             | No internal `href` to missing/redirected/unpublished route; every leaf reachable from crawlable hub nav          | orphan detail URL                                    |
+| Source integrity  | Critical physical measurements cited/derived; market and assumptions visible                                     | 'exact' number no source                             |
+| No-JS             | Server-built HTML includes key answer/measurements and related `<a>` elements                                    | blank app shell                                      |
+| Meta robots       | Indexable pages are not `noindex`; removed/public preview pages not inadvertently indexed                        | `noindex` on hub                                     |
+| Content integrity | No generated numeric permutation without separate justification; no duplicate primary-answer slugs               | 100 thin near-copies                                 |
+| Redirect registry | No loops/missing targets/chains, retired URL absent from sitemap                                                 | `/old/` → `/missing/`                                |
 
 Make validators diagnostic: print route + offending field + expected value, nonzero exit code. Require tests for at least one workspace and one bedroom leaf, a hub, homepage and deliberate negative fixture for each important gate.
 

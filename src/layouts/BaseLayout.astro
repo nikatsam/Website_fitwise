@@ -10,6 +10,7 @@ interface Props {
   noindex?: boolean;
   canonicalPath?: string;
   language?: string;
+  alternateLanguages?: { language: string; href: string }[];
   structuredData?: Record<string, unknown>[];
 }
 
@@ -19,9 +20,11 @@ const {
   noindex = false,
   canonicalPath,
   language = 'en',
+  alternateLanguages = [],
   structuredData = [],
 } = Astro.props;
 const canonicalUrl = canonicalPath ? absoluteCanonical(canonicalPath) : undefined;
+const ogLocale = language.includes('-') ? language.replace('-', '_') : undefined;
 ---
 
 <html lang={language}>
@@ -36,10 +39,22 @@ const canonicalUrl = canonicalPath ? absoluteCanonical(canonicalPath) : undefine
     <meta name="theme-color" content="#7c3aed" />
     {noindex && <meta name="robots" content="noindex" />}
     {canonicalUrl && !noindex && <link rel="canonical" href={canonicalUrl} />}
+    {canonicalUrl && !noindex && alternateLanguages.length > 0 && (
+      <>
+        <link rel="alternate" hreflang={language} href={canonicalUrl} />
+        {alternateLanguages.map((alternate) => (
+          <link rel="alternate" hreflang={alternate.language} href={alternate.href} />
+        ))}
+      </>
+    )}
     {canonicalUrl && !noindex && (
       <>
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Fitwise.stream" />
+        {ogLocale && <meta property="og:locale" content={ogLocale} />}
+        {alternateLanguages.map((alternate) => (
+          <meta property="og:locale:alternate" content={alternate.language.replace('-', '_')} />
+        ))}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonicalUrl} />

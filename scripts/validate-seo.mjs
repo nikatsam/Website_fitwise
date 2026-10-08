@@ -53,6 +53,10 @@ function assert(condition, message) {
   if (!condition) errors.push(message);
 }
 
+function attribute(tag, name) {
+  return tag.match(new RegExp(`\\b${name}="([^"]*)"`, 'i'))?.[1];
+}
+
 let files;
 try {
   files = (await walk(dist)).filter((file) => file.endsWith('.html'));
@@ -65,6 +69,7 @@ const htmlByRoute = new Map();
 const canonicalRoutes = new Map();
 const indexableTitles = new Map();
 const breadcrumbUrls = [];
+const hreflangByRoute = new Map();
 
 for (const file of files) {
   const route = routeForFile(file);
@@ -73,9 +78,25 @@ for (const file of files) {
   htmlByRoute.set(route, { file, html });
 
   const canonicalTags = [...html.matchAll(/<link\b[^>]*rel="canonical"[^>]*href="([^"]+)"[^>]*>/g)];
+  const allAlternateTags = [...html.matchAll(/<link\b[^>]*>/gi)]
+    .map(([tag]) => ({
+      rel: attribute(tag, 'rel'),
+      language: attribute(tag, 'hreflang'),
+      href: attribute(tag, 'href'),
+    }))
+    .filter((link) => link.rel === 'alternate');
+  const alternateLinks = allAlternateTags.filter((link) => link.language && link.href);
+  assert(
+    allAlternateTags.length === alternateLinks.length,
+    `${route}: every hreflang alternate must have both language and href attributes.`,
+  );
   const isNoindex = /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(html);
   if (isNoindex) {
     assert(canonicalTags.length === 0, `${route}: noindex page must not emit a canonical.`);
+    assert(
+      alternateLinks.length === 0,
+      `${route}: noindex page must not emit hreflang alternates.`,
+    );
     continue;
   }
   if (canonicalTags.length === 0) continue;
@@ -105,6 +126,54 @@ for (const file of files) {
     );
   } else {
     canonicalRoutes.set(canonical, route);
+  }
+
+  if (alternateLinks.length > 0) {
+    const documentLanguage = html.match(/<html\b[^>]*lang="([^"]+)"/i)?.[1];
+    const selfAlternates = alternateLinks.filter((link) => link.href === canonical);
+    assert(
+      selfAlternates.length === 1 && selfAlternates[0]?.language === documentLanguage,
+      `${route}: hreflang set must include one self-reference matching html lang and canonical.`,
+    );
+    const expectedOgLocale = documentLanguage?.includes('-')
+      ? documentLanguage.replace('-', '_')
+      : undefined;
+    const ogLocale = html.match(
+      /<meta\b[^>]*property="og:locale"[^>]*content="([^"]+)"[^>]*>/i,
+    )?.[1];
+    assert(
+      ogLocale === expectedOgLocale,
+      `${route}: Open Graph locale must match the regional html lang when hreflang alternates are present.`,
+    );
+    const ogAlternateLocales = [
+      ...html.matchAll(/<meta\b[^>]*property="og:locale:alternate"[^>]*content="([^"]+)"[^>]*>/gi),
+    ].map((match) => match[1]);
+    const expectedOgAlternateLocales = alternateLinks
+      .filter((link) => link.href !== canonical)
+      .map((link) => link.language.replace('-', '_'))
+      .sort();
+    assert(
+      ogAlternateLocales.sort().join(',') === expectedOgAlternateLocales.join(','),
+      `${route}: Open Graph alternate locales must match hreflang alternates.`,
+    );
+    const seenLanguages = new Set();
+    for (const link of alternateLinks) {
+      assert(
+        !seenLanguages.has(link.language),
+        `${route}: duplicate hreflang language '${link.language}'.`,
+      );
+      seenLanguages.add(link.language);
+      try {
+        const alternateUrl = new URL(link.href);
+        assert(
+          alternateUrl.origin === siteOrigin && !alternateUrl.search && !alternateUrl.hash,
+          `${route}: hreflang URL '${link.href}' must be a clean canonical on ${siteOrigin}.`,
+        );
+      } catch {
+        errors.push(`${route}: invalid hreflang URL '${link.href}'.`);
+      }
+    }
+    hreflangByRoute.set(route, { canonical, documentLanguage, alternateLinks });
   }
 
   const title = plainText(html.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '');
@@ -206,6 +275,31 @@ for (const file of files) {
     }
     breadcrumbUrls.push({ route, url: item.item });
   });
+}
+
+for (const [route, hreflangSet] of hreflangByRoute) {
+  for (const alternate of hreflangSet.alternateLinks) {
+    if (alternate.href === hreflangSet.canonical) continue;
+    let alternateRoute;
+    try {
+      alternateRoute = new URL(alternate.href).pathname;
+    } catch {
+      continue;
+    }
+    const reciprocal = hreflangByRoute.get(alternateRoute);
+    assert(
+      canonicalRoutes.has(alternate.href),
+      `${route}: hreflang target '${alternate.href}' is not a published canonical page.`,
+    );
+    assert(
+      reciprocal?.documentLanguage === alternate.language &&
+        reciprocal.alternateLinks.some(
+          (link) =>
+            link.href === hreflangSet.canonical && link.language === hreflangSet.documentLanguage,
+        ),
+      `${route}: hreflang target '${alternate.href}' must reciprocate with matching language tags.`,
+    );
+  }
 }
 
 let sitemapUrls = [];
