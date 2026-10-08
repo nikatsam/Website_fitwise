@@ -17,14 +17,14 @@ the existing indexability gate.
 - [x] Check Search Console credentials/query access; none are configured. Record public SERP observations without inferring volume.
 - [x] Add reciprocal `en-US`/`en-GB` hreflang and matching Open Graph locales for the published US/UK bed-dimension pages.
 - [x] Add local regression validation for self-reference, canonical targets and reciprocal hreflang.
-- [ ] Commit/push, deploy through GitHub OIDC, and verify live hreflang tags and unchanged sitemap.
+- [x] Commit/push, deploy through GitHub OIDC, and verify live hreflang tags and unchanged sitemap.
 
 ## Acceptance criteria
 
 - [x] Indexable pages keep absolute HTTPS apex self-canonicals and truthful WebPage/BreadcrumbList data.
 - [x] Hreflang alternates target published indexable canonical pages and point back reciprocally.
 - [x] Robots remains permissive and references the generated sitemap; the sitemap remains four canonical URLs.
-- [ ] Production output matches the verified local hreflang output.
+- [x] Production output matches the verified local hreflang output.
 
 ## Guardrails
 
