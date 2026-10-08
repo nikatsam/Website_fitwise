@@ -70,6 +70,16 @@ describe('data-backed page-family answers', () => {
     ).toBe(true);
   });
 
+  it('describes bed comparison pages with market-specific clear-space estimates', () => {
+    const answer = buildFamilyAnswer(intent('pi-p030-king-vs-queen-room-space'), dataset);
+    expect(answer.intro).toContain(
+      'US King: recommended clear rectangle about 3.15 m (10 ft 4 in)',
+    );
+    expect(answer.intro).toContain('US Queen: recommended clear rectangle about 2.74 m (9 ft)');
+    expect(answer.intro).toContain('not code minimums');
+    expect(answer.intro).not.toContain('Screen dimensions');
+  });
+
   it('computes bedroom reverse-fit results for each distinct bed layout', () => {
     const squareRoom = buildFamilyAnswer(intent('pi-p027-bed-in-10x10-room'), dataset);
     const rectangularRoom = buildFamilyAnswer(intent('pi-p028-bed-in-10x12-room'), dataset);

@@ -19,7 +19,7 @@ promotion.
 - [x] Cross-link the indexable US/UK bed references and update their editorial sitemap `lastmod` dates.
 - [x] Keep generated desk/bed pages `noindex`; ensure they stay out of the sitemap and do not receive canonical or breadcrumb JSON-LD metadata.
 - [x] Run `npm run verify` and inspect route, SEO, sitemap, and internal-link outputs.
-- [ ] Commit and push T026 changes.
+- [ ] Commit and push the comparison-copy correction.
 - [ ] Deploy through GitHub OIDC and verify live pages, internal links, canonical/robots output, and sitemap.
 
 ## Acceptance criteria
@@ -27,7 +27,7 @@ promotion.
 - [x] Desk and bed-fit copy uses sourced or derived model data, explicit units, and precise assumptions; it does not present planning recommendations as legal minimums.
 - [x] Related links resolve to published routes; US and UK mattress references remain explicitly market-specific.
 - [x] Sitemap contains only the four currently indexable routes; material changes to indexable reference pages advance `lastmod`.
-- [ ] Published deployment passes direct page, metadata, sitemap and link smoke checks.
+- [ ] Published deployment passes direct page, metadata, sitemap and link smoke checks for the final comparison-copy correction.
 
 ## Guardrails
 

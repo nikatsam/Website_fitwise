@@ -455,7 +455,8 @@ function comparisonAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
   const entities = intent.entityIds.map((id) => entityById(dataset, id));
   if (entities.length < 2)
     throw new Error(`Comparison intent '${intent.id}' needs at least two entities.`);
-  const isBedCompare = entities.every((entity): entity is BedEntity => entity.category === 'bed');
+  const bedEntities = entities.filter((entity): entity is BedEntity => entity.category === 'bed');
+  const isBedCompare = bedEntities.length === entities.length;
   const bedRules = isBedCompare ? bedSourceRules(dataset) : [];
   const sections = entities.map((entity) => {
     if (entity.category === 'desk') {
@@ -531,8 +532,19 @@ function comparisonAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
     throw new Error(`Comparison renderer does not support '${entity.category}' entities.`);
   });
   const sources = collectSources(dataset, entities, bedRules);
+  const intro = isBedCompare
+    ? `${bedEntities
+        .map((bed) => {
+          const plan = bedRoomPlan(bed, dataset);
+          const marketName = bed.name.replace(/ mattress$/i, '');
+          return `${marketName}: recommended clear rectangle about ${formatPlanningDimension(plan.recommendedWidthMm)} wide by ${formatPlanningDimension(plan.recommendedLengthMm)} long`;
+        })
+        .join(
+          '; ',
+        )}. These are market-specific planning estimates, not code minimums; frame overhang, furniture, doors and circulation are excluded.`
+    : `${intent.primaryQuery}: compare the listed physical dimensions and their market/source basis.${entities.some((entity) => entity.category === 'display') ? ' Screen-panel dimensions are distinguished from outer-device widths where provided.' : ''}`;
   return {
-    intro: `${intent.primaryQuery}: compare the listed physical dimensions and their market/source basis. Screen dimensions are explicitly distinguished from outer device footprints.`,
+    intro,
     sections,
     sources,
   };

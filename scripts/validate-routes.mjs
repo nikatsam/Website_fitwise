@@ -141,6 +141,15 @@ const dedicatedPages = [
     includes: ['US Queen: about 2.74 m (9 ft) wide', 'excludes unmeasured frame overhang'],
   },
   {
+    route: '/bedroom/king-vs-queen-room-space/',
+    heading: 'US King vs Queen: compare mattress and room-space dimensions',
+    includes: [
+      'US King: recommended clear rectangle about 3.15 m (10 ft 4 in)',
+      'US Queen: recommended clear rectangle about 2.74 m (9 ft)',
+      'not code minimums',
+    ],
+  },
+  {
     route: '/bedroom/what-bed-fits-in-10x10-room/',
     heading: 'What bed fits in 10x10 room',
     includes: ['US King mattress', 'Fit result', 'mattress footprint'],

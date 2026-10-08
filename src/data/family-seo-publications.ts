@@ -22,6 +22,14 @@ const EDITORIAL_OVERRIDES: Record<string, Partial<SeoPublication>> = {
     significantlyModifiedOn: '2026-10-08',
     relatedPageIds: ['pi-p039-us-bed-size-dimensions'],
   },
+  'pi-p030-king-vs-queen-room-space': {
+    title: 'US King vs Queen Bed: Room-Space Comparison — Fitwise.stream',
+    description:
+      'Compare nominal US King and Queen mattress footprints and recommended clear-space rectangles. Estimates exclude frames, furniture and circulation; they are not legal minimums.',
+    h1: 'US King vs Queen: compare mattress and room-space dimensions',
+    significantlyModifiedOn: '2026-10-08',
+    relatedPageIds: ['pi-p039-us-bed-size-dimensions'],
+  },
 };
 
 export function buildFamilySeoPublications(
