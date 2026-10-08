@@ -131,6 +131,7 @@
                   "Action": [
                     "cloudfront:CreateInvalidation",
                     "cloudfront:DeleteDistribution",
+                    "cloudfront:AssociateAlias",
                     "cloudfront:GetDistribution",
                     "cloudfront:GetDistributionConfig",
                     "cloudfront:GetInvalidation",
@@ -202,7 +203,8 @@
                     "cloudfront:GetFunction",
                     "cloudfront:ListTagsForResource",
                     "cloudfront:PublishFunction",
-                    "cloudfront:UpdateFunction"
+                    "cloudfront:UpdateFunction",
+                    "cloudfront:UntagResource"
                   ],
                   "Resource": {
                     "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:function/fitwise-static-site-*"

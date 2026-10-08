@@ -65,6 +65,30 @@ describe('offline cloud release preparation', () => {
         error.includes('tagging'),
       ),
     ).toBe(true);
+
+    const functionWithoutRollbackPermission = JSON.parse(await readFile(oidcTemplatePath, 'utf8'));
+    const functionPermissions =
+      functionWithoutRollbackPermission.Resources.FitwiseGitHubDeployRole.Properties.Policies[0].PolicyDocument.Statement.find(
+        (statement) => statement.Sid === 'ManageFitwiseDirectoryFunctions',
+      ).Action;
+    functionPermissions.splice(functionPermissions.indexOf('cloudfront:UntagResource'), 1);
+    expect(
+      validateOidcDeployRoleTemplate(functionWithoutRollbackPermission).some((error) =>
+        error.includes('Function rollback'),
+      ),
+    ).toBe(true);
+
+    const roleWithoutAliasAssociation = JSON.parse(await readFile(oidcTemplatePath, 'utf8'));
+    const distributionPermissions =
+      roleWithoutAliasAssociation.Resources.FitwiseGitHubDeployRole.Properties.Policies[0].PolicyDocument.Statement.find(
+        (statement) => statement.Sid === 'ManageAndInvalidateTaggedFitwiseDistributions',
+      ).Action;
+    distributionPermissions.splice(distributionPermissions.indexOf('cloudfront:AssociateAlias'), 1);
+    expect(
+      validateOidcDeployRoleTemplate(roleWithoutAliasAssociation).some((error) =>
+        error.includes('alias association'),
+      ),
+    ).toBe(true);
   });
 
   it('rejects public bucket access and a non-HTTPS cache behavior', async () => {

@@ -293,6 +293,26 @@ export function validateOidcDeployRoleTemplate(template) {
   if (
     !statements.some(
       (statement) =>
+        statement.Sid === 'ManageAndInvalidateTaggedFitwiseDistributions' &&
+        statement.Action?.includes('cloudfront:AssociateAlias'),
+    )
+  ) {
+    errors.push(
+      'CloudFront alias association must be authorized for the tagged Fitwise distribution.',
+    );
+  }
+  if (
+    !statements.some(
+      (statement) =>
+        statement.Sid === 'ManageFitwiseDirectoryFunctions' &&
+        statement.Action?.includes('cloudfront:UntagResource'),
+    )
+  ) {
+    errors.push('CloudFront Function rollback must be able to remove its resource tags.');
+  }
+  if (
+    !statements.some(
+      (statement) =>
         statement.Sid === 'CreateFitwiseOriginAccessControl' &&
         statement.Action === 'cloudfront:CreateOriginAccessControl' &&
         statement.Resource === '*',
