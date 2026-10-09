@@ -1,6 +1,6 @@
 ---
 import { mmToPx, labelFontSizePx } from '../../lib/diagram';
-import { formatMetric, formatFeetInches } from '../../lib/units';
+import { formatMeasurement } from '../../lib/units';
 
 interface Props {
   /** id of the enclosing ScaleDiagram, to reference its arrowhead markers. */
@@ -48,8 +48,8 @@ const labelY = isHorizontal ? y1 - labelOffsetPx : (y1 + y2) / 2;
     dominant-baseline={isHorizontal ? 'auto' : 'middle'}
     transform={isHorizontal ? undefined : `rotate(-90 ${labelX} ${labelY})`}
   >
-    <tspan data-unit="metric">{formatMetric(valueMm)}</tspan>
-    <tspan data-unit="imperial">{formatFeetInches(valueMm)}</tspan>
+    <tspan data-unit="metric">{formatMeasurement(valueMm, 'metric')}</tspan>
+    <tspan data-unit="imperial">{formatMeasurement(valueMm, 'imperial')}</tspan>
   </text>
 </g>
 

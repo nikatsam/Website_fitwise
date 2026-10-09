@@ -16,7 +16,9 @@ describe('data-backed page-family answers', () => {
     const facts = answer.sections[0]!.facts;
     expect(
       facts.find((fact) => fact.label === 'Configuration width (including gaps)')?.valueMm,
-    ).toBeGreaterThan(0);
+    ).toBe(1216);
+    expect(facts.find((fact) => fact.label === 'Hard minimum desk width')?.valueMm).toBe(1216);
+    expect(facts.find((fact) => fact.label === 'Recommended desk width')?.valueMm).toBe(1292);
     expect(facts.find((fact) => fact.label === 'Recommended desk width')?.valueMm).toBeGreaterThan(
       facts.find((fact) => fact.label === 'Hard minimum desk width')!.valueMm!,
     );
@@ -67,7 +69,7 @@ describe('data-backed page-family answers', () => {
   it('answers the US Queen room-space question without calling the recommendation a minimum', () => {
     const answer = buildFamilyAnswer(intent('pi-p025-room-for-queen-bed'), dataset);
     expect(answer.intro).toContain(
-      'US Queen mattress-only: about 2.74 m (9 ft) wide by 2.64 m (8 ft 8 in) long',
+      'US Queen mattress-only: about 2.74 m (9 ft 0 in) wide by 2.64 m (8 ft 8 in) long',
     );
     expect(answer.intro).toContain(
       'Only entries naming a frame include that specific sourced model',
@@ -89,7 +91,7 @@ describe('data-backed page-family answers', () => {
       'US King mattress-only: recommended clear rectangle about 3.15 m (10 ft 4 in)',
     );
     expect(answer.intro).toContain(
-      'US Queen mattress-only: recommended clear rectangle about 2.74 m (9 ft)',
+      'US Queen mattress-only: recommended clear rectangle about 2.74 m (9 ft 0 in)',
     );
     expect(answer.intro).toContain('not code minimums');
     expect(answer.intro).not.toContain('Screen dimensions');

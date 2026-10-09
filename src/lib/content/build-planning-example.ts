@@ -8,6 +8,7 @@ import type {
 } from '../../types';
 import type { Dataset } from '../validation/dataset';
 import type { FamilyAnswer, FamilyFact } from './build-family-answer';
+import { formatMeasurement } from '../units';
 
 function requireEntity<T extends Entity['category']>(
   dataset: Dataset,
@@ -30,10 +31,6 @@ function sourceRecords(dataset: Dataset, ids: Array<string | undefined>) {
 
 function measurementSourceId(measurement: { sourceId?: string } | undefined): string | undefined {
   return measurement?.sourceId;
-}
-
-function millimetreLabel(valueMm: number): string {
-  return `${Number(valueMm.toFixed(1))} mm`;
 }
 
 function bedFrameDimensions(bed: BedEntity) {
@@ -85,7 +82,7 @@ function monitorDepthAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer 
   ]);
 
   return {
-    intro: `A Samsung Smart Monitor M7 M70B example shows why a monitor's screen size is not desk depth: the sourced base is ${millimetreLabel(standDepthMm)} deep, while the panel without its stand is ${millimetreLabel(displayDepthMm)} deep. On a nominal ${millimetreLabel(deskDepthMm)} desk, placing that base flush to the rear leaves ${millimetreLabel(remainingSurfaceMm)} of desktop in front of it. That remainder does not establish a comfortable viewing distance or fit for a keyboard, cable bend or other equipment.`,
+    intro: `A Samsung Smart Monitor M7 M70B example shows why a monitor's screen size is not desk depth: the sourced base is ${formatMeasurement(standDepthMm)} deep, while the panel without its stand is ${formatMeasurement(displayDepthMm)} deep. On a nominal ${formatMeasurement(deskDepthMm)} desk, placing that base flush to the rear leaves ${formatMeasurement(remainingSurfaceMm)} of desktop in front of it. That remainder does not establish a comfortable viewing distance or fit for a keyboard, cable bend or other equipment.`,
     sections: [
       {
         title: 'Measure the complete workstation, not the screen diagonal',
@@ -115,7 +112,7 @@ function chairAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
     'src-ccohs-ergonomic-chair',
   ]);
   return {
-    intro: `A Herman Miller Aeron Size B example has a maximum published outer footprint of about ${millimetreLabel(chair.overallWidthMm.valueMm)} wide by ${millimetreLabel(chair.overallDepthMm.valueMm)} deep, depending on arm configuration. That is the chair body, not the space needed to pull back, turn or walk behind it. CCOHS says a chair must suit the user's body, workstation and task and gives no universal numeric movement clearance.`,
+    intro: `A Herman Miller Aeron Size B example has a maximum published outer footprint of about ${formatMeasurement(chair.overallWidthMm.valueMm)} wide by ${formatMeasurement(chair.overallDepthMm.valueMm)} deep, depending on arm configuration. That is the chair body, not the space needed to pull back, turn or walk behind it. CCOHS says a chair must suit the user's body, workstation and task and gives no universal numeric movement clearance.`,
     sections: [
       {
         title: 'A manufacturer-measured chair example',
@@ -153,7 +150,7 @@ function wardrobeAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
     measurementSourceId(wardrobe.doorLeafWidthMm),
   ]);
   return {
-    intro: `This US-market IKEA PAX/GRIMO two-door wardrobe example measures the door sweep to compare with a bed in the actual room. Each GRIMO leaf is ${millimetreLabel(sweepMm)} wide, so at a 90-degree opening it sweeps approximately ${millimetreLabel(sweepMm)} out from the wardrobe face. It is a product-specific collision envelope, not a paired bed/wardrobe room plan and not a recommended walking aisle or room-size minimum.`,
+    intro: `This US-market IKEA PAX/GRIMO two-door wardrobe example measures the door sweep to compare with a bed in the actual room. Each GRIMO leaf is ${formatMeasurement(sweepMm)} wide, so at a 90-degree opening it sweeps approximately ${formatMeasurement(sweepMm)} out from the wardrobe face. It is a product-specific collision envelope, not a paired bed/wardrobe room plan and not a recommended walking aisle or room-size minimum.`,
     sections: [
       {
         title: 'Measured wardrobe and door envelope',
@@ -195,7 +192,7 @@ function dresserAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
     measurementSourceId(bed.mattressLengthMm),
   ]);
   return {
-    intro: `The IKEA HEMNES 8-drawer example has a ${millimetreLabel(dresser.overallDepthMm.valueMm)} closed depth and a manufacturer-listed ${millimetreLabel(dresser.drawerPulloutMm.valueMm)} drawer pull-out. If its back is flush to a wall, the fully extended drawer reaches about ${millimetreLabel(wallToOpenFrontMm)} from that wall. Keep the drawer's extension path clear; this is not a standing or walking allowance.`,
+    intro: `The IKEA HEMNES 8-drawer example has a ${formatMeasurement(dresser.overallDepthMm.valueMm)} closed depth and a manufacturer-listed ${formatMeasurement(dresser.drawerPulloutMm.valueMm)} drawer pull-out. If its back is flush to a wall, the fully extended drawer reaches about ${formatMeasurement(wallToOpenFrontMm)} from that wall. Keep the drawer's extension path clear; this is not a standing or walking allowance.`,
     sections: [
       {
         title: 'Drawer extension and bed example',
@@ -236,7 +233,7 @@ function nightstandAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer {
     measurementSourceId(table.overallHeightMm),
   ]);
   return {
-    intro: `${bed.name} plus two ${table.name} units have a combined object width of ${millimetreLabel(combinedWidthMm)} if the tables sit flush to the mattress edges with no gaps. This is a furniture-footprint sum, not a room-size recommendation: it excludes a bed frame, spacing between items, wall-side access and walking clearance.`,
+    intro: `${bed.name} plus two ${table.name} units have a combined object width of ${formatMeasurement(combinedWidthMm)} if the tables sit flush to the mattress edges with no gaps. This is a furniture-footprint sum, not a room-size recommendation: it excludes a bed frame, spacing between items, wall-side access and walking clearance.`,
     sections: [
       {
         title: 'Bed and bedside-table footprints',

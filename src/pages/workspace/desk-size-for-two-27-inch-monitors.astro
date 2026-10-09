@@ -3,27 +3,37 @@
 // by a published PageIntent/SeoPublication record (T015-T017).
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import FitAnswerTemplate from '../../components/content/templates/FitAnswerTemplate.astro';
+import { dataset } from '../../data';
 import { buildBreadcrumb } from '../../lib/content';
 import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
-import { buildWorkspaceWidthCheck, deriveScreenDimensions } from '../../lib/geometry';
+import { buildWorkspaceConfigurationCheck, resolveMonitorWidth } from '../../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../../lib/diagram';
+import { formatMeasurement } from '../../lib/units';
 
-const deskWidthMm = 1400;
-const gapMm = 20;
-const sideMarginMm = 38;
-const derived = deriveScreenDimensions(27, { width: 16, height: 9 });
-const monitorWidthMm = Math.round(derived.screenWidthMm.valueMm);
-const configurationWidthMm = monitorWidthMm * 2 + gapMm;
-
-const check = buildWorkspaceWidthCheck({
-  configurationWidthMm,
+const desk = dataset.entities.find((entity) => entity.id === 'ent-desk-1400');
+const monitor = dataset.entities.find((entity) => entity.id === 'ent-display-27in-16x9');
+const gapRule = dataset.clearanceRules.find((rule) => rule.id === 'clr-monitor-gap');
+const sideMarginRule = dataset.clearanceRules.find((rule) => rule.id === 'clr-desk-side-margin');
+if (desk?.category !== 'desk' || monitor?.category !== 'display' || !gapRule || !sideMarginRule) {
+  throw new Error('The dual 27-inch monitor example is missing its shared model inputs.');
+}
+const deskWidthMm = desk.widthMm.valueMm;
+const monitorWidthMm = resolveMonitorWidth(monitor).valueMm;
+const gapMm = gapRule.recommendedMm?.valueMm;
+const sideMarginMm = sideMarginRule.recommendedMm?.valueMm;
+if (gapMm === undefined || sideMarginMm === undefined) {
+  throw new Error('The dual 27-inch monitor example needs gap and side-margin measurements.');
+}
+const { check } = buildWorkspaceConfigurationCheck({
+  widthsMm: [monitorWidthMm, monitorWidthMm],
+  gapMm,
   sideMarginRecommendedMm: sideMarginMm,
   deskWidthMm,
 });
 const assumptions = [
-  `Monitor width: approximate screen-only width derived from a 27" 16:9 diagonal; actual device is typically wider due to bezel.`,
-  'Monitor depth (incl. stand) assumed at 200 mm.',
-  `Gap between monitors: ${gapMm} mm.`,
+  `Monitor width: approximate screen-only width derived from a 27" 16:9 diagonal and rounded to the nearest millimetre for fit checks; actual device is typically wider due to bezel.`,
+  `Monitor depth (incl. stand) assumed at ${formatMeasurement(200)}.`,
+  `Gap between monitors: ${formatMeasurement(gapMm)}.`,
 ];
 const result = evaluateFit([check], assumptions);
 const rows = toDimensionDisplayRows([check], result);
@@ -62,7 +72,7 @@ const breadcrumb = buildBreadcrumb('/workspace/desk-size-for-two-27-inch-monitor
       diagramId={diagramId}
       diagramWidthPx={640}
       diagramHeightPx={360}
-      diagramSummary={`Two 27-inch monitors on a ${deskWidthMm} mm desk, ${gapMm} mm gap, ${sideMarginMm} mm recommended side clearance.`}
+      diagramSummary={`Two 27-inch monitors on a ${formatMeasurement(deskWidthMm)} desk, ${formatMeasurement(gapMm)} gap, ${formatMeasurement(sideMarginMm)} recommended side clearance.`}
       diagramMarkup={diagramMarkup}
       tableCaption="Desk width breakdown: required, recommended, available and margin"
       assumptions={result.assumptions}

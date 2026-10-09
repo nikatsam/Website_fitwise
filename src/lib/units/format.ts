@@ -2,6 +2,7 @@ import type { Millimetres } from '../../types';
 import { mmToCm, mmToM, mmToInches, mmToFeetInches } from './convert';
 
 export type UnitSystem = 'metric' | 'imperial';
+export type MeasurementDisplay = 'mm' | 'cm' | 'm' | UnitSystem;
 
 /**
  * Rounds to a fixed number of decimals using a half-away-from-zero rule,
@@ -45,6 +46,18 @@ export function formatFeetInches(mm: Millimetres): string {
   return `${roundedFeet} ft ${roundedInches} in`;
 }
 
+/** Canonical public dimension formatting; all modes share finite-value validation. */
+export function formatMeasurement(mm: Millimetres, display: MeasurementDisplay = 'mm'): string {
+  if (!Number.isFinite(mm)) throw new RangeError(`Measurement must be finite, got ${mm}.`);
+  if (display === 'cm') return formatCm(mm);
+  if (display === 'm') return formatM(mm);
+  if (display === 'metric') return formatMetric(mm);
+  if (display === 'imperial') return formatFeetInches(mm);
+  const rounded = roundTo(mm, 1);
+  const value = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return `${value} mm`;
+}
+
 /**
  * Metric display defaults to centimetres under 10 m and metres at/above it,
  * matching how people naturally talk about furniture (cm) vs rooms (m).
@@ -54,5 +67,5 @@ export function formatMetric(mm: Millimetres): string {
 }
 
 export function formatLength(mm: Millimetres, system: UnitSystem): string {
-  return system === 'metric' ? formatMetric(mm) : formatFeetInches(mm);
+  return formatMeasurement(mm, system);
 }

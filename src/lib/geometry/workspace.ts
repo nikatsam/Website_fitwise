@@ -81,8 +81,8 @@ export interface ResolvedMonitorWidth {
 /**
  * Resolves the width basis for a footprint calculation. Prefers sourced
  * `overallWidthMm` (includes bezel); otherwise falls back to derived
- * `screenWidthMm` and reports that approximation. `activeWidthMm` is never
- * used as the outer device width.
+ * `screenWidthMm`, rounded to whole millimetres for fit calculations, and
+ * reports that approximation. `activeWidthMm` is never used as the outer device width.
  */
 export function resolveMonitorWidth(
   display: Pick<DisplayEntity, 'overallWidthMm' | 'screenWidthMm' | 'activeWidthMm'>,
@@ -92,7 +92,7 @@ export function resolveMonitorWidth(
   }
   if (display.screenWidthMm) {
     return {
-      valueMm: display.screenWidthMm.valueMm,
+      valueMm: Math.round(display.screenWidthMm.valueMm),
       basis: 'screen_only_approximation',
       ...(display.activeWidthMm?.note ? { note: display.activeWidthMm.note } : {}),
     };
@@ -124,6 +124,29 @@ export function computeConfigurationWidth(input: MonitorConfigurationInput): Mil
   const result = totalWidth + totalGap;
   if (!Number.isFinite(result)) throw new RangeError('Configuration width must be finite.');
   return result;
+}
+
+export interface WorkspaceConfigurationCheckInput extends MonitorConfigurationInput {
+  sideMarginRecommendedMm?: Millimetres;
+  deskWidthMm: Millimetres;
+}
+
+export interface WorkspaceConfigurationCheck {
+  configurationWidthMm: Millimetres;
+  check: DimensionCheck;
+}
+
+/** Applies shared footprint and width-check rules to a monitor arrangement. */
+export function buildWorkspaceConfigurationCheck(
+  input: WorkspaceConfigurationCheckInput,
+): WorkspaceConfigurationCheck {
+  const configurationWidthMm = computeConfigurationWidth(input);
+  const check = buildWorkspaceWidthCheck({
+    configurationWidthMm,
+    sideMarginRecommendedMm: input.sideMarginRecommendedMm,
+    deskWidthMm: input.deskWidthMm,
+  });
+  return { configurationWidthMm, check };
 }
 
 export interface WorkspaceWidthCheckInput {

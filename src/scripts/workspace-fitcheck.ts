@@ -7,15 +7,15 @@ import {
   type FitState,
 } from '../lib/fit';
 import {
+  buildWorkspaceConfigurationCheck,
   buildWorkspaceDepthCheck,
-  buildWorkspaceWidthCheck,
   deriveScreenDimensions,
   MAX_SIDE_BY_SIDE_MONITORS,
   MONITOR_ASPECT_RATIOS,
   type MonitorAspectRatioKey,
 } from '../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../lib/diagram';
-import { formatMetric, formatFeetInches } from '../lib/units';
+import { formatMeasurement } from '../lib/units';
 
 interface FormValues {
   deskWidthMm: number;
@@ -60,7 +60,7 @@ const VIEWPORT_HEIGHT_PX = 360;
 const DIAGRAM_PADDING_PX = 60;
 
 function unitValueHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMetric(mm)}</span> <span data-unit="imperial">${formatFeetInches(mm)}</span></span>`;
+  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span> <span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
 }
 
 function escapeHtml(value: string): string {
@@ -191,8 +191,8 @@ function patchUnitValue(id: string, mm: number): void {
   if (!el) return;
   const metric = el.querySelector<HTMLElement>('[data-unit="metric"]');
   const imperial = el.querySelector<HTMLElement>('[data-unit="imperial"]');
-  if (metric) metric.textContent = formatMetric(mm);
-  if (imperial) imperial.textContent = formatFeetInches(mm);
+  if (metric) metric.textContent = formatMeasurement(mm, 'metric');
+  if (imperial) imperial.textContent = formatMeasurement(mm, 'imperial');
 }
 
 function recompute(): void {
@@ -203,30 +203,28 @@ function recompute(): void {
   let widthAssumption: string;
   if (values.monitorWidthOverrideMm !== null) {
     monitorWidthMm = values.monitorWidthOverrideMm;
-    widthAssumption = `Monitor width: using your custom ${monitorWidthMm} mm override.`;
+    widthAssumption = `Monitor width: using your custom ${formatMeasurement(monitorWidthMm)} override.`;
   } else {
     const derived = deriveScreenDimensions(
       values.monitorDiagonalIn,
       MONITOR_ASPECT_RATIOS[values.monitorAspectRatio],
     );
     monitorWidthMm = Math.round(derived.screenWidthMm.valueMm);
-    widthAssumption = `Monitor width: approximate screen-only width derived from a ${values.monitorDiagonalIn}" ${values.monitorAspectRatio} diagonal; actual device is typically wider due to bezel. Enter an exact overall width below to override.`;
+    widthAssumption = `Monitor width: approximate screen-only width derived from a ${values.monitorDiagonalIn}" ${values.monitorAspectRatio} diagonal and rounded to the nearest millimetre; actual device is typically wider due to bezel. Enter an exact overall width below to override.`;
   }
-
-  const configurationWidthMm =
-    monitorWidthMm * values.monitorCount + values.gapMm * (values.monitorCount - 1);
 
   const assumptions = [
     widthAssumption,
-    `Monitor stand/base depth: ${values.monitorStandDepthMm} mm; replace this initial example with the actual model depth.`,
-    `Rear cable/vent clearance: ${values.rearCableClearanceMm} mm. Zero means it is excluded.`,
-    `Keyboard/mouse zone: ${values.keyboardZoneMm} mm, selected by you. Zero means it is excluded.`,
+    `Monitor stand/base depth: ${formatMeasurement(values.monitorStandDepthMm)}; replace this initial example with the actual model depth.`,
+    `Rear cable/vent clearance: ${formatMeasurement(values.rearCableClearanceMm)}. Zero means it is excluded.`,
+    `Keyboard/mouse zone: ${formatMeasurement(values.keyboardZoneMm)}, selected by you. Zero means it is excluded.`,
     'Eye-to-screen viewing distance is separate from desk surface depth and is not added to this envelope.',
-    `Gap between monitors: ${values.gapMm} mm.`,
+    `Gap between monitors: ${formatMeasurement(values.gapMm)}.`,
   ];
 
-  const widthCheck = buildWorkspaceWidthCheck({
-    configurationWidthMm,
+  const { check: widthCheck } = buildWorkspaceConfigurationCheck({
+    widthsMm: Array.from({ length: values.monitorCount }, () => monitorWidthMm),
+    gapMm: values.gapMm,
     sideMarginRecommendedMm: values.sideMarginMm,
     deskWidthMm: values.deskWidthMm,
   });

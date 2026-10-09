@@ -1,6 +1,6 @@
 import type { BedOrientation } from '../geometry';
 import { computeScale, labelFontSizePx, mmToPx } from './scale';
-import { formatFeetInches, formatMetric } from '../units';
+import { formatMeasurement } from '../units';
 
 export interface BedroomDiagramInput {
   diagramId: string;
@@ -202,7 +202,7 @@ export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
     <g class="diagram-arrow">
       <line x1="${roomX}" y1="${arrowY}" x2="${roomX + roomW}" y2="${arrowY}" class="diagram-arrow__line" marker-start="url(#${diagramId}-arrow-start)" marker-end="url(#${diagramId}-arrow-end)" vector-effect="non-scaling-stroke" />
       <text x="${roomX + roomW / 2}" y="${arrowY - 10}" class="diagram-arrow__label" font-size="${arrowFontSize}" text-anchor="middle">
-        <tspan data-unit="metric">${formatMetric(roomWidthMm)}</tspan> <tspan data-unit="imperial">${formatFeetInches(roomWidthMm)}</tspan>
+        <tspan data-unit="metric">${formatMeasurement(roomWidthMm, 'metric')}</tspan> <tspan data-unit="imperial">${formatMeasurement(roomWidthMm, 'imperial')}</tspan>
       </text>
     </g>`;
 

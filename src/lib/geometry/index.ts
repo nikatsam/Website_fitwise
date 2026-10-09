@@ -3,6 +3,7 @@ export {
   deriveScreenDimensions,
   resolveMonitorWidth,
   computeConfigurationWidth,
+  buildWorkspaceConfigurationCheck,
   buildWorkspaceWidthCheck,
   buildWorkspaceDepthCheck,
   MONITOR_ASPECT_RATIOS,
@@ -14,6 +15,8 @@ export {
   type ResolvedMonitorWidth,
   type MonitorConfigurationInput,
   type WorkspaceWidthCheckInput,
+  type WorkspaceConfigurationCheckInput,
+  type WorkspaceConfigurationCheck,
 } from './workspace';
 export {
   computeBedFootprint,

@@ -13,6 +13,7 @@ import {
   formatM,
   formatInches,
   formatFeetInches,
+  formatMeasurement,
   formatMetric,
   parseLength,
 } from '../../src/lib/units';
@@ -67,6 +68,15 @@ describe('roundTo', () => {
 });
 
 describe('display formatting — deterministic', () => {
+  it('formats public millimetre values without floating-point artifacts', () => {
+    expect(formatMeasurement(1930.3999999999999)).toBe('1930.4 mm');
+    expect(formatMeasurement(1215.999999999)).toBe('1216 mm');
+    expect(formatMeasurement(3047.999999999)).toBe('3048 mm');
+    expect(formatMeasurement(1400, 'metric')).toBe('140.0 cm');
+    expect(formatMeasurement(1400, 'imperial')).toBe('4 ft 7 in');
+    expect(() => formatMeasurement(Number.NaN)).toThrow(RangeError);
+  });
+
   it('formats cm with one decimal by default', () => {
     expect(formatCm(1400)).toBe('140.0 cm');
   });

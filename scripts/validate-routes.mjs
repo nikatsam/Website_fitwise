@@ -109,7 +109,12 @@ const dedicatedPages = [
   {
     route: '/workspace/desk-size-for-two-27-inch-monitors/',
     heading: 'Desk size for two 27-inch monitors',
-    includes: ['desk width breakdown', 'desk-two-27in-diagram'],
+    includes: ['desk width breakdown', 'desk-two-27in-diagram', '121.6 cm', '129.2 cm'],
+  },
+  {
+    route: '/workspace/120cm-vs-140cm-desk/',
+    heading: '120cm vs 140cm desk',
+    includes: ['121.6 cm', '-1.6 cm', '+18.4 cm', '129.2 cm', '-9.2 cm', '+10.8 cm'],
   },
   {
     route: '/workspace/monitor-size-chart/',
@@ -172,7 +177,7 @@ const dedicatedPages = [
     route: '/bedroom/minimum-room-size-for-queen-bed/',
     heading: 'US Queen mattress: clear-space planning estimate',
     includes: [
-      'US Queen mattress-only: about 2.74 m (9 ft) wide',
+      'US Queen mattress-only: about 2.74 m (9 ft 0 in) wide',
       'Only entries naming a frame include that specific sourced model',
       'FitWise-assumed 24-inch foot allowance',
     ],
@@ -187,7 +192,7 @@ const dedicatedPages = [
     heading: 'US King vs Queen: compare mattress and room-space dimensions',
     includes: [
       'US King mattress-only: recommended clear rectangle about 3.15 m (10 ft 4 in)',
-      'US Queen mattress-only: recommended clear rectangle about 2.74 m (9 ft)',
+      'US Queen mattress-only: recommended clear rectangle about 2.74 m (9 ft 0 in)',
       'not code minimums',
     ],
   },
@@ -230,6 +235,44 @@ const dedicatedPages = [
 for (const page of dedicatedPages) {
   checkPage(page.route, await html(page.route), page);
 }
+
+const sharedDualMonitorPages = [
+  ['/workspace/', workspace],
+  [
+    '/workspace/desk-size-for-two-27-inch-monitors/',
+    await html('/workspace/desk-size-for-two-27-inch-monitors/'),
+  ],
+  ['/workspace/120cm-vs-140cm-desk/', await html('/workspace/120cm-vs-140cm-desk/')],
+  ['/workspace/what-fits-on-a-140cm-desk/', await html('/workspace/what-fits-on-a-140cm-desk/')],
+  [
+    '/workspace/desk-size-for-dual-monitors/',
+    await html('/workspace/desk-size-for-dual-monitors/'),
+  ],
+];
+for (const [route, source] of sharedDualMonitorPages) {
+  assert(
+    source.includes('121.6 cm') && source.includes('129.2 cm'),
+    `${route}: the dual-27 scenario must show the shared 121.6 cm physical width and 129.2 cm recommended width.`,
+  );
+}
+
+for (const route of [
+  '/bedroom/what-bed-fits-in-10x10-room/',
+  '/bedroom/what-bed-fits-in-10x12-room/',
+]) {
+  const source = await html(route);
+  assert(
+    !/\b\d+\.\d{8,}\b/.test(source),
+    `${route}: rendered dimensions must not expose floating-point artifacts.`,
+  );
+}
+
+const breadcrumbGuide = await html('/workspace/monitor-size-chart/');
+assert(
+  breadcrumbGuide.includes('class="page-family__breadcrumb"') &&
+    breadcrumbGuide.includes('"@type":"BreadcrumbList"'),
+  'Published guide pages must retain both visible breadcrumbs and matching BreadcrumbList JSON-LD.',
+);
 
 let notFound = '';
 try {

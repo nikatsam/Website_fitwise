@@ -6,12 +6,13 @@ import UnitToggle from '../fit/UnitToggle.astro';
 import ScaleDiagram from '../diagram/ScaleDiagram.astro';
 import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
 import {
+  buildWorkspaceConfigurationCheck,
   buildWorkspaceDepthCheck,
-  buildWorkspaceWidthCheck,
   deriveScreenDimensions,
   MONITOR_ASPECT_RATIOS,
 } from '../../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../../lib/diagram';
+import { formatMeasurement } from '../../lib/units';
 
 // Default, SSR-rendered scenario: this is the complete static answer a
 // visitor gets with JavaScript disabled (tasks/T012 acceptance criterion 1).
@@ -41,11 +42,9 @@ const derivedScreen = deriveScreenDimensions(
 );
 const monitorWidthMm = Math.round(derivedScreen.screenWidthMm.valueMm);
 
-const configurationWidthMm =
-  monitorWidthMm * DEFAULTS.monitorCount + DEFAULTS.gapMm * (DEFAULTS.monitorCount - 1);
-
-const widthCheck = buildWorkspaceWidthCheck({
-  configurationWidthMm,
+const { check: widthCheck } = buildWorkspaceConfigurationCheck({
+  widthsMm: Array.from({ length: DEFAULTS.monitorCount }, () => monitorWidthMm),
+  gapMm: DEFAULTS.gapMm,
   sideMarginRecommendedMm: DEFAULTS.sideMarginMm,
   deskWidthMm: DEFAULTS.deskWidthMm,
 });
@@ -58,12 +57,12 @@ const depthCheck = buildWorkspaceDepthCheck({
 const checks = [widthCheck, depthCheck];
 
 const assumptions = [
-  `Monitor width: approximate screen-only width derived from a ${DEFAULTS.monitorDiagonalIn}" ${DEFAULTS.monitorAspectRatio} diagonal; actual device is typically wider due to bezel. Enter an exact overall width below to override.`,
-  `Monitor stand/base depth: ${DEFAULTS.monitorDepthMm} mm initial example; replace it with the actual model's sourced depth.`,
-  `Rear cable/vent allowance: ${DEFAULTS.rearCableClearanceMm} mm. Zero means no rear allowance was included.`,
-  `Keyboard/mouse surface zone: ${DEFAULTS.keyboardZoneMm} mm, selected by the user. Zero means no front working zone was included.`,
+  `Monitor width: approximate screen-only width derived from a ${DEFAULTS.monitorDiagonalIn}" ${DEFAULTS.monitorAspectRatio} diagonal and rounded to the nearest millimetre; actual device is typically wider due to bezel. Enter an exact overall width below to override.`,
+  `Monitor stand/base depth: ${formatMeasurement(DEFAULTS.monitorDepthMm)} initial example; replace it with the actual model's sourced depth.`,
+  `Rear cable/vent allowance: ${formatMeasurement(DEFAULTS.rearCableClearanceMm)}. Zero means no rear allowance was included.`,
+  `Keyboard/mouse surface zone: ${formatMeasurement(DEFAULTS.keyboardZoneMm)}, selected by the user. Zero means no front working zone was included.`,
   'Eye-to-screen viewing distance is separate from the desktop-depth envelope and is not calculated as a desk surface measurement.',
-  `Gap between monitors: ${DEFAULTS.gapMm} mm.`,
+  `Gap between monitors: ${formatMeasurement(DEFAULTS.gapMm)}.`,
 ];
 
 const result = evaluateFit(checks, assumptions);
@@ -83,7 +82,7 @@ const diagramMarkup = renderWorkspaceDiagramMarkup({
   sideMarginMm: DEFAULTS.sideMarginMm,
 });
 
-const diagramSummary = `${DEFAULTS.deskWidthMm} by ${DEFAULTS.deskDepthMm} mm desk with ${DEFAULTS.monitorCount} monitors (${monitorWidthMm} mm screen width each), ${DEFAULTS.gapMm} mm gap. Stand depth and user-selected cable/keyboard zones are checked separately in the results table.`;
+const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMeasurement(DEFAULTS.deskDepthMm)} desk with ${DEFAULTS.monitorCount} monitors (${formatMeasurement(monitorWidthMm)} screen width each), ${formatMeasurement(DEFAULTS.gapMm)} gap. Stand depth and user-selected cable/keyboard zones are checked separately in the results table.`;
 ---
 
 <div class="workspace-fitcheck" data-workspace-fitcheck data-diagram-id={DIAGRAM_ID}>

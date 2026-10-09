@@ -9,12 +9,9 @@ import type {
 } from '../../types';
 import type { Dataset } from '../validation/dataset';
 import { buildBedRoomChecks, computeBedFootprint } from '../geometry/bedroom';
-import {
-  buildWorkspaceWidthCheck,
-  computeConfigurationWidth,
-  resolveMonitorWidth,
-} from '../geometry/workspace';
+import { buildWorkspaceConfigurationCheck, resolveMonitorWidth } from '../geometry/workspace';
 import { evaluateFit, FIT_STATE_BADGE_COPY } from '../fit';
+import { formatMeasurement } from '../units';
 
 export interface FamilyFact {
   label: string;
@@ -142,7 +139,7 @@ function widthBasisNote(display: DisplayEntity): string {
   const width = resolveMonitorWidth(display);
   if (width.basis === 'screen_only_approximation') {
     return [
-      'Screen-only width derived from diagonal and aspect ratio; bezel and stand are not included.',
+      'Screen-only width derived from diagonal and aspect ratio, rounded to the nearest millimetre for fit calculations; bezel and stand are not included.',
       width.note,
     ]
       .filter(Boolean)
@@ -171,12 +168,9 @@ function workspaceObjectAnswer(intent: PageIntent, dataset: Dataset): FamilyAnsw
   const width = resolveMonitorWidth(display);
   const gapMm = requiredMeasurement(gapRule, 'recommendedMm').valueMm;
   const sideMarginMm = requiredMeasurement(marginRule, 'recommendedMm').valueMm;
-  const configurationWidthMm = computeConfigurationWidth({
+  const { configurationWidthMm, check } = buildWorkspaceConfigurationCheck({
     widthsMm: Array.from({ length: spec.count }, () => width.valueMm),
     gapMm,
-  });
-  const check = buildWorkspaceWidthCheck({
-    configurationWidthMm,
     sideMarginRecommendedMm: sideMarginMm,
     deskWidthMm: desk.widthMm.valueMm,
   });
@@ -204,8 +198,8 @@ function workspaceObjectAnswer(intent: PageIntent, dataset: Dataset): FamilyAnsw
         ],
         assumptions: [
           'Displays are flat and side by side; angled/yawed monitors are not modeled.',
-          `Adjacent-display gap: ${gapMm} mm from the workspace gap rule. ${ruleAssumption(gapRule)}`,
-          `Recommended side margin: ${sideMarginMm} mm per side. ${ruleAssumption(marginRule)}`,
+          `Adjacent-display gap: ${formatMeasurement(gapMm)} from the workspace gap rule. ${ruleAssumption(gapRule)}`,
+          `Recommended side margin: ${formatMeasurement(sideMarginMm)} per side. ${ruleAssumption(marginRule)}`,
           'A screen-only approximation is not the same as the complete device/bezel/stand footprint.',
         ],
       },
@@ -228,12 +222,9 @@ function workspaceSpaceAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswe
   const sections = displays.map((display) => {
     const width = resolveMonitorWidth(display);
     const configurations = Array.from({ length: 5 }, (_, index) => index + 1).map((count) => {
-      const configurationWidthMm = computeConfigurationWidth({
+      const { configurationWidthMm, check } = buildWorkspaceConfigurationCheck({
         widthsMm: Array.from({ length: count }, () => width.valueMm),
         gapMm,
-      });
-      const check = buildWorkspaceWidthCheck({
-        configurationWidthMm,
         sideMarginRecommendedMm: sideMarginMm,
         deskWidthMm: desk.widthMm.valueMm,
       });
@@ -273,7 +264,7 @@ function workspaceSpaceAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswe
     sections: sections.map((section) => ({
       ...section,
       assumptions: [
-        `Adjacent-display gap: ${gapMm} mm; recommended side margin: ${sideMarginMm} mm per side.`,
+        `Adjacent-display gap: ${formatMeasurement(gapMm)}; recommended side margin: ${formatMeasurement(sideMarginMm)} per side.`,
         'Only flat side-by-side layouts are modeled; no angle/yaw or arm geometry is assumed.',
         'Screen-only width estimates omit bezels and stands; check the complete device footprint before purchase.',
       ],
@@ -341,11 +332,7 @@ function bedSourceRules(dataset: Dataset): ClearanceRule[] {
 }
 
 function formatPlanningDimension(valueMm: number): string {
-  const roundedInches = Math.round(valueMm / 25.4);
-  const feet = Math.floor(roundedInches / 12);
-  const inches = roundedInches % 12;
-  const imperial = inches === 0 ? `${feet} ft` : `${feet} ft ${inches} in`;
-  return `${(valueMm / 1000).toFixed(2)} m (${imperial})`;
+  return `${formatMeasurement(valueMm, 'm')} (${formatMeasurement(valueMm, 'imperial')})`;
 }
 
 function bedDisplayName(name: string): string {
@@ -449,7 +436,7 @@ function bedroomSpaceAnswer(intent: PageIntent, dataset: Dataset): FamilyAnswer 
           { label: 'Market', valueText: bed.market },
           {
             label: 'Mattress footprint',
-            valueText: `${bed.mattressWidthMm.valueMm} × ${bed.mattressLengthMm.valueMm} mm`,
+            valueText: `${formatMeasurement(bed.mattressWidthMm.valueMm)} × ${formatMeasurement(bed.mattressLengthMm.valueMm)}`,
           },
           { label: 'Room width required (physical)', valueMm: width.minimumMm },
           { label: 'Room width recommended', valueMm: width.recommendedMm },

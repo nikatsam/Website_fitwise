@@ -18,8 +18,10 @@ export {
   formatM,
   formatInches,
   formatFeetInches,
+  formatMeasurement,
   formatMetric,
   formatLength,
+  type MeasurementDisplay,
   type UnitSystem,
 } from './format';
 export { parseLength, type ParseLengthResult } from './parse';

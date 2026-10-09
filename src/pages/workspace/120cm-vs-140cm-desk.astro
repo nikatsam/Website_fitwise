@@ -3,20 +3,73 @@
 // a published PageIntent/SeoPublication record.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ComparisonTemplate from '../../components/content/templates/ComparisonTemplate.astro';
+import { dataset } from '../../data';
 import { buildBreadcrumb } from '../../lib/content';
-import { formatCm } from '../../lib/units';
-import { computeConfigurationWidth } from '../../lib/geometry';
+import { evaluateFit } from '../../lib/fit';
+import { buildWorkspaceConfigurationCheck, resolveMonitorWidth } from '../../lib/geometry';
+import { formatMeasurement } from '../../lib/units';
 
-const deskWidths = [1200, 1400];
-const gapMm = 20;
-const twoMonitorWidthMm = computeConfigurationWidth({ widthsMm: [613, 613], gapMm });
+const monitor = dataset.entities.find((entity) => entity.id === 'ent-display-27in-16x9');
+const desks = ['ent-desk-1200', 'ent-desk-1400'].map((id) =>
+  dataset.entities.find((entity) => entity.id === id),
+);
+const gapRule = dataset.clearanceRules.find((rule) => rule.id === 'clr-monitor-gap');
+const sideMarginRule = dataset.clearanceRules.find((rule) => rule.id === 'clr-desk-side-margin');
+if (
+  monitor?.category !== 'display' ||
+  desks.some((desk) => desk?.category !== 'desk') ||
+  !gapRule ||
+  !sideMarginRule
+) {
+  throw new Error('The desk comparison is missing its shared monitor, desk or clearance inputs.');
+}
+const monitorWidthMm = resolveMonitorWidth(monitor).valueMm;
+const gapMm = gapRule.recommendedMm?.valueMm;
+const sideMarginMm = sideMarginRule.recommendedMm?.valueMm;
+if (gapMm === undefined || sideMarginMm === undefined) {
+  throw new Error('The desk comparison requires gap and side-margin measurements.');
+}
 
-const rowLabels = ['Desk width', 'Fits two 27" monitors (20 mm gap)', 'Remaining margin'];
-const columns = deskWidths.map((widthMm) => {
-  const marginMm = widthMm - twoMonitorWidthMm;
+const calculations = desks.map((desk) => {
+  if (desk?.category !== 'desk') throw new Error('A comparison desk has invalid category data.');
+  const { configurationWidthMm, check } = buildWorkspaceConfigurationCheck({
+    widthsMm: [monitorWidthMm, monitorWidthMm],
+    gapMm,
+    sideMarginRecommendedMm: sideMarginMm,
+    deskWidthMm: desk.widthMm.valueMm,
+  });
   return {
-    title: formatCm(widthMm),
-    values: [formatCm(widthMm), marginMm >= 0 ? 'Yes' : 'No', formatCm(Math.abs(marginMm))],
+    deskWidthMm: desk.widthMm.valueMm,
+    configurationWidthMm,
+    minimumMarginMm: check.availableMm - check.minimumMm,
+    recommendedWidthMm: check.recommendedMm!,
+    recommendedMarginMm: check.availableMm - check.recommendedMm!,
+    fits: evaluateFit([check]).hardFit,
+  };
+});
+
+const formatCm = (valueMm: number) => formatMeasurement(valueMm, 'cm');
+const signedCm = (valueMm: number) => `${valueMm > 0 ? '+' : ''}${formatCm(valueMm)}`;
+
+const rowLabels = [
+  'Available desk width',
+  'Two-monitor physical width (including gap)',
+  'Physical margin after monitors',
+  'Recommended width including side targets',
+  'Margin after recommended width',
+  'Physical footprint fits',
+];
+const columns = calculations.map((calculation) => {
+  return {
+    title: formatCm(calculation.deskWidthMm),
+    values: [
+      formatCm(calculation.deskWidthMm),
+      formatMeasurement(calculation.configurationWidthMm, 'cm'),
+      signedCm(calculation.minimumMarginMm),
+      formatMeasurement(calculation.recommendedWidthMm, 'cm'),
+      signedCm(calculation.recommendedMarginMm),
+      calculation.fits ? 'Yes' : 'No',
+    ],
   };
 });
 
@@ -26,14 +79,14 @@ const breadcrumb = buildBreadcrumb('/workspace/120cm-vs-140cm-desk/', 'workspace
 
 <BaseLayout
   title={`${h1} — Fitwise.stream`}
-  description="Compare a 120cm and a 140cm desk for fitting two 27-inch monitors side by side."
+  description="Compare 120 cm and 140 cm desks for two 27-inch monitors, with signed physical and recommended width margins."
   noindex
 >
   <div class="wrapper">
     <ComparisonTemplate
       breadcrumb={breadcrumb}
       h1={h1}
-      intro="How a 120 cm desk compares to a 140 cm desk for a common two-monitor setup."
+      intro={`A shared geometry calculation compares two approximately ${formatMeasurement(monitorWidthMm)} screen-only widths with a ${formatMeasurement(gapMm)} gap. Physical margin excludes side targets; recommended margin includes ${formatMeasurement(sideMarginMm)} per side.`}
       rowLabels={rowLabels}
       columns={columns}
     />

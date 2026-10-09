@@ -14,7 +14,7 @@ import {
 } from '../lib/geometry';
 import type { BedOrientation } from '../lib/geometry';
 import { renderBedroomDiagramMarkup } from '../lib/diagram';
-import { formatMetric, formatFeetInches, parseLength } from '../lib/units';
+import { formatMeasurement, parseLength } from '../lib/units';
 import { BEDROOM_FIT_PRESETS, DEFAULT_BEDROOM_FIT_PRESET_KEY } from '../lib/fitcheck/presets';
 
 interface FormValues {
@@ -79,7 +79,7 @@ const VIEWPORT_HEIGHT_PX = 480;
 const DIAGRAM_PADDING_PX = 60;
 
 function unitValueHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMetric(mm)}</span> <span data-unit="imperial">${formatFeetInches(mm)}</span></span>`;
+  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span> <span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
 }
 
 function escapeHtml(value: string): string {
@@ -263,8 +263,8 @@ function patchUnitValue(id: string, mm: number): void {
   if (!el) return;
   const metric = el.querySelector<HTMLElement>('[data-unit="metric"]');
   const imperial = el.querySelector<HTMLElement>('[data-unit="imperial"]');
-  if (metric) metric.textContent = formatMetric(mm);
-  if (imperial) imperial.textContent = formatFeetInches(mm);
+  if (metric) metric.textContent = formatMeasurement(mm, 'metric');
+  if (imperial) imperial.textContent = formatMeasurement(mm, 'imperial');
 }
 
 function createDimensionUnitCell(
@@ -294,10 +294,10 @@ function createDimensionUnitCell(
   unit.id = `bedroom-fitcheck-table-${row.dimension}-${key}`;
   const metric = document.createElement('span');
   metric.dataset.unit = 'metric';
-  metric.textContent = formatMetric(valueMm);
+  metric.textContent = formatMeasurement(valueMm, 'metric');
   const imperial = document.createElement('span');
   imperial.dataset.unit = 'imperial';
-  imperial.textContent = formatFeetInches(valueMm);
+  imperial.textContent = formatMeasurement(valueMm, 'imperial');
   unit.append(metric, document.createTextNode(' '), imperial);
   cell.append(unit);
   return cell;
@@ -343,7 +343,7 @@ function recompute(): void {
           ...selectedPreset,
           mattressWidthMm: values.customMattressWidthMm,
           mattressLengthMm: values.customMattressLengthMm,
-          note: `User-entered mattress dimensions: ${formatMetric(values.customMattressWidthMm)} × ${formatMetric(values.customMattressLengthMm)}.`,
+          note: `User-entered mattress dimensions: ${formatMeasurement(values.customMattressWidthMm, 'metric')} × ${formatMeasurement(values.customMattressLengthMm, 'metric')}.`,
         }
       : selectedPreset;
   const frameAllowance = preset.frameAllowanceMm;
@@ -354,8 +354,8 @@ function recompute(): void {
 
   const assumptions = [
     `Bed preset: ${preset.label}. ${preset.note}`,
-    `Selected side-clearance target: ${formatMetric(values.sideClearanceMm)} per side; selected foot-clearance target: ${formatMetric(values.footClearanceMm)}. These are editable planning assumptions, not code minimums.`,
-    `Nightstands: ${values.nightstandCount}; user-entered dimensions ${formatMetric(values.nightstandWidthMm)} × ${formatMetric(values.nightstandDepthMm)}. These initial values are editable placeholders.`,
+    `Selected side-clearance target: ${formatMeasurement(values.sideClearanceMm, 'metric')} per side; selected foot-clearance target: ${formatMeasurement(values.footClearanceMm, 'metric')}. These are editable planning assumptions, not code minimums.`,
+    `Nightstands: ${values.nightstandCount}; user-entered dimensions ${formatMeasurement(values.nightstandWidthMm, 'metric')} × ${formatMeasurement(values.nightstandDepthMm, 'metric')}. These initial values are editable placeholders.`,
     ...(values.nightstandCount > 0
       ? [
           'Tables are assumed flush beside the bed at the headboard with no gap. Their depth stays within the bed-length envelope unless greater; separate table positions/gaps are not modeled.',
@@ -363,12 +363,12 @@ function recompute(): void {
       : []),
     ...(values.includeWardrobeDoor
       ? [
-          `Door swing: ${values.wardrobeDoorLeafWidthMm} mm leaf at ${values.wardrobeDoorAngleDegrees} degrees; compared with your measured ${values.wardrobeObstacleGapMm} mm obstacle gap. This is collision geometry only.`,
+          `Door swing: ${formatMeasurement(values.wardrobeDoorLeafWidthMm)} leaf at ${values.wardrobeDoorAngleDegrees} degrees; compared with your measured ${formatMeasurement(values.wardrobeObstacleGapMm!)} obstacle gap. This is collision geometry only.`,
         ]
       : []),
     ...(values.includeDresserDrawer
       ? [
-          `Drawer extension: ${values.dresserDrawerPullOutMm} mm; compared with your measured ${values.dresserObstacleGapMm} mm obstacle gap. Standing space is not included.`,
+          `Drawer extension: ${formatMeasurement(values.dresserDrawerPullOutMm)}; compared with your measured ${formatMeasurement(values.dresserObstacleGapMm!)} obstacle gap. Standing space is not included.`,
         ]
       : []),
     'The scale diagram shows only the bed and bedside-table footprints; wardrobe/drawer interaction checks are listed separately, not drawn as placed furniture.',

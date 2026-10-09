@@ -5,11 +5,8 @@ import SpaceToObjectTemplate from '../../components/content/templates/SpaceToObj
 import { dataset } from '../../data';
 import { buildBreadcrumb, buildContentNavigationLinks } from '../../lib/content';
 import { evaluateFit } from '../../lib/fit';
-import {
-  buildWorkspaceWidthCheck,
-  computeConfigurationWidth,
-  resolveMonitorWidth,
-} from '../../lib/geometry';
+import { buildWorkspaceConfigurationCheck, resolveMonitorWidth } from '../../lib/geometry';
+import { formatMeasurement } from '../../lib/units';
 
 const pageIntentId = 'pi-p011-what-fits-140cm-desk';
 const pageIntent = dataset.pageIntents.find((intent) => intent.id === pageIntentId);
@@ -65,12 +62,9 @@ const candidates = candidateConfigs.map((config) => {
     }
     return resolveMonitorWidth(display);
   });
-  const configurationWidthMm = computeConfigurationWidth({
+  const { check } = buildWorkspaceConfigurationCheck({
     widthsMm: monitorWidths.map((monitor) => monitor.valueMm),
     gapMm,
-  });
-  const check = buildWorkspaceWidthCheck({
-    configurationWidthMm,
     sideMarginRecommendedMm: sideMarginMm,
     deskWidthMm,
   });
@@ -81,7 +75,7 @@ const candidates = candidateConfigs.map((config) => {
         ? 'model-specific outer width without stand'
         : monitorWidths.some((monitor) => monitor.note)
           ? 'screen-only estimate; cited active area excludes bezel'
-          : 'derived screen-panel estimate; outer bezel excluded',
+          : 'derived screen-panel estimate rounded to the nearest millimetre; outer bezel excluded',
     )
     .join(' plus ');
   return {
@@ -100,7 +94,7 @@ const fitLabels = candidates
 const noFitLabels = candidates
   .filter((candidate) => candidate.state === 'does_not_fit')
   .map((candidate) => candidate.label);
-const intro = `Width-only estimate for a nominal ${(deskWidthMm / 10).toFixed(0)} cm reference desk: ${fitLabels.join(', ')} stay within the modeled width target after the stated gaps and side margins. ${noFitLabels.join(' and ')} exceed the desk's stated width even before stand, cable or accessory space. This does not confirm that the complete physical setup fits; most entries use screen-panel estimates, and desk depth is not checked.`;
+const intro = `Width-only estimate for a nominal ${formatMeasurement(deskWidthMm, 'cm')} reference desk: ${fitLabels.join(', ')} stay within the modeled width target after the stated gaps and side margins. ${noFitLabels.join(' and ')} exceed the desk's stated width even before stand, cable or accessory space. This does not confirm that the complete physical setup fits; most entries use screen-panel estimates, and desk depth is not checked.`;
 const breadcrumb = buildBreadcrumb(pageIntent.route, pageIntent.cluster);
 const relatedPages = buildContentNavigationLinks(
   pageIntent.id,
@@ -139,7 +133,7 @@ const sources = dataset.sources.filter((source) => sourceIds.has(source.id));
         'Unless a row names a model-specific overall width, monitor width is a screen-panel estimate derived from diagonal and aspect ratio; bezel width is not included.',
         'The 32-inch and 34-inch examples use model-specific overall widths without stands. Other monitor bodies and stands can differ.',
         'The 49-inch example is screen-only; its cited active panel width is not the full outer device width, which is wider.',
-        `The model adds a ${gapMm} mm gap between adjacent displays and ${sideMarginMm} mm of recommended side margin on each side. These are planning assumptions, not regulations.`,
+        `The model adds a ${formatMeasurement(gapMm)} gap between adjacent displays and ${formatMeasurement(sideMarginMm)} of recommended side margin on each side. These are planning assumptions, not regulations.`,
         'The comparison checks width only; desk depth, monitor stands, cables, speakers and other objects are not modelled.',
       ]}
       sources={sources}

@@ -13,6 +13,7 @@ import {
 } from '../../lib/geometry';
 import { renderBedroomDiagramMarkup } from '../../lib/diagram';
 import { BEDROOM_FIT_PRESETS, DEFAULT_BEDROOM_FIT_PRESET_KEY } from '../../lib/fitcheck/presets';
+import { formatMeasurement } from '../../lib/units';
 
 const DEFAULTS = {
   roomWidthMm: 3000,
@@ -62,8 +63,8 @@ const checks = buildBedRoomChecks({
 
 const assumptions = [
   `Bed preset: ${preset.label}. ${preset.note}`,
-  `Selected side-clearance target: ${DEFAULTS.sideClearanceMm} mm per side; selected foot-clearance target: ${DEFAULTS.footClearanceMm} mm. Adjust these to your room/use; these are editable planning assumptions, not code minimums.`,
-  `Nightstands: ${DEFAULTS.nightstandCount}. Their ${DEFAULTS.nightstandWidthMm} × ${DEFAULTS.nightstandDepthMm} mm starting dimensions are editable placeholders. Tables are modeled flush beside the headboard with no inter-object gap.`,
+  `Selected side-clearance target: ${formatMeasurement(DEFAULTS.sideClearanceMm)} per side; selected foot-clearance target: ${formatMeasurement(DEFAULTS.footClearanceMm)}. Adjust these to your room/use; these are editable planning assumptions, not code minimums.`,
+  `Nightstands: ${DEFAULTS.nightstandCount}. Their ${formatMeasurement(DEFAULTS.nightstandWidthMm)} × ${formatMeasurement(DEFAULTS.nightstandDepthMm)} starting dimensions are editable placeholders. Tables are modeled flush beside the headboard with no inter-object gap.`,
   'The scale diagram shows the bed and bedside-table footprints only. Optional wardrobe/drawer checks compare user-measured gaps and are not drawn to scale.',
 ];
 
@@ -112,7 +113,7 @@ const diagramMarkup = renderBedroomDiagramMarkup({
   nightstandDepthMm: DEFAULTS.nightstandCount > 0 ? DEFAULTS.nightstandDepthMm : 0,
 });
 
-const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm room with ${preset.label}, ${DEFAULTS.orientation} orientation, ${DEFAULTS.sideClearanceMm} mm selected side target, and ${DEFAULTS.nightstandCount} bedside tables.`;
+const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMeasurement(DEFAULTS.roomLengthMm)} room with ${preset.label}, ${DEFAULTS.orientation} orientation, ${formatMeasurement(DEFAULTS.sideClearanceMm)} selected side target, and ${DEFAULTS.nightstandCount} bedside tables.`;
 ---
 
 <div class="bedroom-fitcheck" data-bedroom-fitcheck data-diagram-id={DIAGRAM_ID}>
@@ -126,7 +127,7 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
         name="roomWidthMm"
         min="1"
         step="1"
-        value={`${DEFAULTS.roomWidthMm} mm`}
+        value={formatMeasurement(DEFAULTS.roomWidthMm)}
         aria-describedby="room-width-error"
       />
       <span class="field__error" id="room-width-error" role="alert"></span>
@@ -141,7 +142,7 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
         name="roomLengthMm"
         min="1"
         step="1"
-        value={`${DEFAULTS.roomLengthMm} mm`}
+        value={formatMeasurement(DEFAULTS.roomLengthMm)}
         aria-describedby="room-length-error"
       />
       <span class="field__error" id="room-length-error" role="alert"></span>
@@ -170,7 +171,7 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
           inputmode="decimal"
           id="custom-bed-width"
           name="customBedWidthMm"
-          value={`${DEFAULTS.customMattressWidthMm} mm`}
+          value={formatMeasurement(DEFAULTS.customMattressWidthMm)}
           aria-describedby="custom-bed-width-error"
         />
         <span class="field__error" id="custom-bed-width-error" role="alert"></span>
@@ -182,7 +183,7 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
           inputmode="decimal"
           id="custom-bed-length"
           name="customBedLengthMm"
-          value={`${DEFAULTS.customMattressLengthMm} mm`}
+          value={formatMeasurement(DEFAULTS.customMattressLengthMm)}
           aria-describedby="custom-bed-length-error"
         />
         <span class="field__error" id="custom-bed-length-error" role="alert"></span>

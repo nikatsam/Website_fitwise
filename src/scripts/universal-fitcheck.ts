@@ -6,7 +6,7 @@ import {
   type DimensionDisplayRow,
 } from '../lib/fit';
 import { buildObjectFitPlan, type ObjectOrientation } from '../lib/geometry';
-import { formatFeetInches, formatMetric, parseLength } from '../lib/units';
+import { formatMeasurement, parseLength } from '../lib/units';
 
 type LengthField =
   | 'fit-item-width'
@@ -115,7 +115,7 @@ function readForm() {
 }
 
 function unitHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMetric(mm)}</span> <span data-unit="imperial">${formatFeetInches(mm)}</span></span>`;
+  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span> <span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
 }
 
 function renderRows(rows: DimensionDisplayRow[]): void {
@@ -181,7 +181,7 @@ function recompute(): void {
   if (assumptions) {
     assumptions.innerHTML = [
       'All dimensions are user-entered; the calculation does not identify a product or assume a local standard.',
-      `Room placement selected ${orientation} orientation. ${values.clearanceEachSideMm ? `A ${formatMetric(values.clearanceEachSideMm)} planning margin is requested on each side.` : 'No extra clearance margin was added.'}`,
+      `Room placement selected ${orientation} orientation. ${values.clearanceEachSideMm ? `A ${formatMeasurement(values.clearanceEachSideMm, 'metric')} planning margin is requested on each side.` : 'No extra clearance margin was added.'}`,
       ...(values.doorwayWidthMm
         ? [
             'Access checks use the narrowest upright face and object height; no diagonal or tilted passage is modeled.',
@@ -203,12 +203,12 @@ function createReport(): string {
   return [
     `Fitwise review: ${values.itemName}`,
     `Result: ${FIT_STATE_BADGE_COPY[result.state].label}`,
-    `Item: ${formatMetric(values.objectWidthMm)} / ${formatFeetInches(values.objectWidthMm)} W × ${formatMetric(values.objectDepthMm)} / ${formatFeetInches(values.objectDepthMm)} D × ${formatMetric(values.objectHeightMm)} / ${formatFeetInches(values.objectHeightMm)} H`,
-    `Space: ${formatMetric(values.spaceWidthMm)} / ${formatFeetInches(values.spaceWidthMm)} W × ${formatMetric(values.spaceDepthMm)} / ${formatFeetInches(values.spaceDepthMm)} D × ${formatMetric(values.spaceHeightMm)} / ${formatFeetInches(values.spaceHeightMm)} H`,
+    `Item: ${formatMeasurement(values.objectWidthMm, 'metric')} / ${formatMeasurement(values.objectWidthMm, 'imperial')} W × ${formatMeasurement(values.objectDepthMm, 'metric')} / ${formatMeasurement(values.objectDepthMm, 'imperial')} D × ${formatMeasurement(values.objectHeightMm, 'metric')} / ${formatMeasurement(values.objectHeightMm, 'imperial')} H`,
+    `Space: ${formatMeasurement(values.spaceWidthMm, 'metric')} / ${formatMeasurement(values.spaceWidthMm, 'imperial')} W × ${formatMeasurement(values.spaceDepthMm, 'metric')} / ${formatMeasurement(values.spaceDepthMm, 'imperial')} D × ${formatMeasurement(values.spaceHeightMm, 'metric')} / ${formatMeasurement(values.spaceHeightMm, 'imperial')} H`,
     `Best floor orientation: ${plan.orientation}; estimated single-layer capacity: ${plan.quantityCapacity}`,
     ...rows.map(
       (row) =>
-        `${row.label}: ${row.marginMm < 0 ? 'short by' : 'spare'} ${formatMetric(Math.abs(row.marginMm))} / ${formatFeetInches(Math.abs(row.marginMm))}`,
+        `${row.label}: ${row.marginMm < 0 ? 'short by' : 'spare'} ${formatMeasurement(Math.abs(row.marginMm), 'metric')} / ${formatMeasurement(Math.abs(row.marginMm), 'imperial')}`,
     ),
     'Screening estimate only; verify measurements and access route on site.',
   ].join('\n');

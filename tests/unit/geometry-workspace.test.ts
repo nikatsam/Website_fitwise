@@ -3,6 +3,7 @@ import {
   deriveScreenDimensions,
   MONITOR_ASPECT_RATIOS,
   resolveMonitorWidth,
+  buildWorkspaceConfigurationCheck,
   computeConfigurationWidth,
   buildWorkspaceWidthCheck,
   buildWorkspaceDepthCheck,
@@ -40,6 +41,12 @@ describe('deriveScreenDimensions', () => {
     const dimensions = deriveScreenDimensions(49, MONITOR_ASPECT_RATIOS['32:9']);
     expect(dimensions.screenWidthMm.valueMm).toBeCloseTo(1198, 0);
     expect(dimensions.screenWidthMm.kind).toBe('derived');
+  });
+
+  it('rounds derived screen-only fit widths to a consistent whole millimetre', () => {
+    const derived = deriveScreenDimensions(27, MONITOR_ASPECT_RATIOS['16:9']);
+    expect(derived.screenWidthMm.valueMm).toBeCloseTo(597.727, 2);
+    expect(resolveMonitorWidth({ screenWidthMm: derived.screenWidthMm }).valueMm).toBe(598);
   });
 });
 
@@ -164,6 +171,40 @@ describe('workspace fit — known fixture end to end', () => {
     });
     const result = evaluateFit([check]);
     expect(result.state).toBe('does_not_fit');
+  });
+});
+
+describe('shared dual-27 monitor workspace configuration', () => {
+  const monitorWidthMm = resolveMonitorWidth({
+    screenWidthMm: deriveScreenDimensions(27, MONITOR_ASPECT_RATIOS['16:9']).screenWidthMm,
+  }).valueMm;
+
+  it('uses one footprint and recommendation for the calculator and all desk comparisons', () => {
+    expect(monitorWidthMm).toBe(598);
+    const on1400 = buildWorkspaceConfigurationCheck({
+      widthsMm: [monitorWidthMm, monitorWidthMm],
+      gapMm: 20,
+      sideMarginRecommendedMm: 38,
+      deskWidthMm: 1400,
+    });
+    const on1200 = buildWorkspaceConfigurationCheck({
+      widthsMm: [monitorWidthMm, monitorWidthMm],
+      gapMm: 20,
+      sideMarginRecommendedMm: 38,
+      deskWidthMm: 1200,
+    });
+
+    expect(on1400.configurationWidthMm).toBe(1216);
+    expect(on1400.check.minimumMm).toBe(1216);
+    expect(on1400.check.recommendedMm).toBe(1292);
+    expect(on1400.check.availableMm - on1400.check.minimumMm).toBe(184);
+    expect(on1400.check.availableMm - on1400.check.recommendedMm!).toBe(108);
+    expect(evaluateFit([on1400.check]).state).toBe('fits');
+
+    expect(on1200.configurationWidthMm).toBe(on1400.configurationWidthMm);
+    expect(on1200.check.availableMm - on1200.check.minimumMm).toBe(-16);
+    expect(on1200.check.availableMm - on1200.check.recommendedMm!).toBe(-92);
+    expect(evaluateFit([on1200.check]).state).toBe('does_not_fit');
   });
 });
 
