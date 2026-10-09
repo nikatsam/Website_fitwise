@@ -256,6 +256,36 @@ async function smokePage(pathname, scope) {
       (await evaluate('document.querySelector("#orientation").value')) === 'landscape',
       `${pathname}: keyboard could not change bed orientation.`,
     );
+    const detail = await evaluate(
+      'document.querySelector("#bedroom-fitcheck-summary [data-field=detail]").textContent',
+    );
+    assert(
+      /cm\s+\d+\s+ft/.test(detail),
+      `${pathname}: metric and imperial summary values are not visibly separated: ${detail}`,
+    );
+    await cdp('Emulation.setDeviceMetricsOverride', {
+      width: 1344,
+      height: 900,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    const desktopLayout = await evaluate(`(() => {
+      const form = document.querySelector('.bedroom-fitcheck__form').getBoundingClientRect();
+      const result = document.querySelector('.bedroom-fitcheck__result').getBoundingClientRect();
+      const controls = [...document.querySelectorAll('.bedroom-fitcheck__form input, .bedroom-fitcheck__form select, .bedroom-fitcheck__form button')];
+      return { formRight: form.right, resultLeft: result.left, maxControlRight: Math.max(...controls.map((el) => el.getBoundingClientRect().right)) };
+    })()`);
+    assert(
+      desktopLayout.maxControlRight <= desktopLayout.formRight + 1 &&
+        desktopLayout.resultLeft >= desktopLayout.formRight,
+      `${pathname}: desktop form controls or result overlap: ${JSON.stringify(desktopLayout)}.`,
+    );
+    await cdp('Emulation.setDeviceMetricsOverride', {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true,
+    });
   }
 
   if (pathname !== '/will-it-fit/') {

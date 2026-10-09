@@ -11,6 +11,6 @@ const { mm, id } = Astro.props;
 ---
 
 <span class="unit-value" id={id}>
-  <span data-unit="metric">{formatMetric(mm)}</span>
+  <span data-unit="metric">{formatMetric(mm)}</span>{' '}
   <span data-unit="imperial">{formatFeetInches(mm)}</span>
 </span>

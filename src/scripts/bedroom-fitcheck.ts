@@ -79,7 +79,7 @@ const VIEWPORT_HEIGHT_PX = 480;
 const DIAGRAM_PADDING_PX = 60;
 
 function unitValueHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMetric(mm)}</span><span data-unit="imperial">${formatFeetInches(mm)}</span></span>`;
+  return `<span class="unit-value"><span data-unit="metric">${formatMetric(mm)}</span> <span data-unit="imperial">${formatFeetInches(mm)}</span></span>`;
 }
 
 function escapeHtml(value: string): string {
@@ -298,7 +298,7 @@ function createDimensionUnitCell(
   const imperial = document.createElement('span');
   imperial.dataset.unit = 'imperial';
   imperial.textContent = formatFeetInches(valueMm);
-  unit.append(metric, imperial);
+  unit.append(metric, document.createTextNode(' '), imperial);
   cell.append(unit);
   return cell;
 }

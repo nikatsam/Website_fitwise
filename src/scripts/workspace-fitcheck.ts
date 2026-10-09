@@ -60,7 +60,7 @@ const VIEWPORT_HEIGHT_PX = 360;
 const DIAGRAM_PADDING_PX = 60;
 
 function unitValueHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMetric(mm)}</span><span data-unit="imperial">${formatFeetInches(mm)}</span></span>`;
+  return `<span class="unit-value"><span data-unit="metric">${formatMetric(mm)}</span> <span data-unit="imperial">${formatFeetInches(mm)}</span></span>`;
 }
 
 function escapeHtml(value: string): string {

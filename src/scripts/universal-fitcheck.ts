@@ -115,7 +115,7 @@ function readForm() {
 }
 
 function unitHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMetric(mm)}</span><span data-unit="imperial">${formatFeetInches(mm)}</span></span>`;
+  return `<span class="unit-value"><span data-unit="metric">${formatMetric(mm)}</span> <span data-unit="imperial">${formatFeetInches(mm)}</span></span>`;
 }
 
 function renderRows(rows: DimensionDisplayRow[]): void {

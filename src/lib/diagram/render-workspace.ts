@@ -122,7 +122,7 @@ export function renderWorkspaceDiagramMarkup(input: WorkspaceDiagramInput): stri
     <g class="diagram-arrow">
       <line x1="${arrowX1}" y1="${arrowY}" x2="${arrowX2}" y2="${arrowY}" class="diagram-arrow__line" marker-start="url(#${diagramId}-arrow-start)" marker-end="url(#${diagramId}-arrow-end)" vector-effect="non-scaling-stroke" />
       <text x="${(arrowX1 + arrowX2) / 2}" y="${arrowLabelY}" class="diagram-arrow__label" font-size="${arrowFontSize}" text-anchor="middle">
-        <tspan data-unit="metric">${escapeXml(formatMetric(deskWidthMm))}</tspan><tspan data-unit="imperial">${escapeXml(formatFeetInches(deskWidthMm))}</tspan>
+        <tspan data-unit="metric">${escapeXml(formatMetric(deskWidthMm))}</tspan> <tspan data-unit="imperial">${escapeXml(formatFeetInches(deskWidthMm))}</tspan>
       </text>
     </g>`;
 
