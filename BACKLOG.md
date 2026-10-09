@@ -41,3 +41,20 @@ Detailed task cards are in `tasks/`.
 ## v0.2.0 SEO task expansion (weights unchanged)
 
 T004/T005/T014 implement publication-envelope fields, T017 metadata and structured data, T018 deterministic sitemap/robots/redirect & `validate:seo`, T019 negative/positive SEO tests, T021 offline SEO release gate, T024 live edge SEO smoke and engine setup runbook. T025 adds the post-release `www` hostname; T026 upgrades sourced fit answers and internal navigation; T027 adds measured furniture examples; T028 audits live SEO metadata and adds market-specific hreflang; T029 expands interactive Workspace/Bedroom planners. Search-engine query data and privacy-controller details remain owner inputs.
+
+## Post-T029 Fit Relationship Expansion
+
+Build interaction-quality verticals before growing page counts. Keep early tools noindex until their dimensions, assumptions, mobile UX and search demand have been reviewed. Never infer installation or safety clearances as universal standards.
+
+| Priority | Fit relationship                       | Target                  | Status / release guardrail                                                                                                                        |
+| -------: | -------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+|        1 | Objects → dining room                  | Dining FitCheck         | v1 deployed at `/dining/`; rectangular table, measured chair envelopes, user-selected circulation; no round/oval tables or generic aisle minimums |
+|        2 | Appliance → opening/installation space | Appliance Fit           | Next; use exact model specifications or user-entered ventilation/service allowances                                                               |
+|        3 | Object → delivery route                | RouteFit                | Door, hall, turn and stair bottlenecks; do not claim diagonal/tilt fit until geometry is validated                                                |
+|        4 | Display ↔ arm ↔ desk                   | Workspace compatibility | Verify VESA, weight, clamp thickness, desk edge and wall clearance from exact model data                                                          |
+|        5 | TV → wall/stand/alcove                 | TV Fit                  | Separate diagonal marketing size from measured outside dimensions; source VESA and stand dimensions                                               |
+|        6 | Equipment → gym room                   | Home Gym Fit            | Distinguish equipment footprint from user-selected operating and safety zones                                                                     |
+|        7 | Objects → storage                      | Storage planning        | Include usable dimensions and aisles; avoid packing-optimality claims without a validated solver                                                  |
+|        8 | Pool/game table → room                 | Pool/game-room fit      | Later due to cue-length geometry and competitive calculator density                                                                               |
+
+Vehicle/garage fit remains later due to high data cost. Do not create the whole cluster as thin SEO pages; start each priority with a reusable calculator, regression fixtures, sourced limits and a human SERP review.
