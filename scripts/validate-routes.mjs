@@ -58,6 +58,7 @@ checkPage('/', home, {
   includes: [
     '/will-it-fit/',
     '/dining/',
+    '/fit-services/',
     '/workspace/',
     '/bedroom/',
     '/about/',
@@ -108,6 +109,28 @@ checkPage('/dining/', dining, {
 assert(
   /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(dining),
   '/dining/: early utility page must remain noindex until source and search-demand review.',
+);
+
+const fitServices = await html('/fit-services/');
+checkPage('/fit-services/', fitServices, {
+  heading: 'Specialized fit checks',
+  includes: [
+    'data-fit-services-form',
+    'Example setup.',
+    'data-fit-sticky',
+    'appliance-install',
+    'delivery-route',
+    'workspace-compatibility',
+    'tv-fit',
+    'home-gym',
+    'storage',
+    'pool-room',
+    'name="robots" content="noindex"',
+  ],
+});
+assert(
+  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(fitServices),
+  '/fit-services/: utility suite must stay noindex until source and search review.',
 );
 
 const aboutAndSources = await html('/about/');
@@ -404,5 +427,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `Route smoke tests passed: Home, universal and dining FitChecks, workspace/bedroom hubs, ${dedicatedPages.length} dedicated pages, 404, sitemap, robots, and ${generatedIntentCount} generated/${deferredIntentCount} deferred/${draftIntentCount} draft PageIntents.`,
+  `Route smoke tests passed: Home, universal/dining/specialized FitChecks, workspace/bedroom hubs, ${dedicatedPages.length} dedicated pages, 404, sitemap, robots, and ${generatedIntentCount} generated/${deferredIntentCount} deferred/${draftIntentCount} draft PageIntents.`,
 );

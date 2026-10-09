@@ -1,0 +1,69 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro';
+---
+
+<BaseLayout
+  title="Fit Services Studio — Appliance, Route, Workspace, TV, Gym and Storage Checks — Fitwise.stream"
+  description="Try measured-input fit checks for appliances, delivery routes, workspace compatibility, TVs, home gyms, storage and pool tables."
+  noindex
+>
+  <section class="page-heading wrapper">
+    <p class="eyebrow">Fit relationships</p>
+    <h1>Specialized fit checks</h1>
+    <p>
+      Choose a relationship to test: an appliance in an opening, an item through a measured route, a
+      monitor with an arm and desk, a TV with a console or wall mount, exercise equipment in a room,
+      equal objects in storage, or a pool table and cue clearance.
+    </p>
+  </section>
+  <section class="wrapper section">
+    <FitServicesStudio />
+    <p class="fit-note">
+      All values are editable examples. Enter dimensions from your actual items and consult current
+      manuals for manufacturer load, mounting and installation limits. Turn handling, gym operating
+      zones, storage aisles and cue envelopes are simplified calculations, not guarantees, safety
+      assessments or regulatory guidance.
+    </p>
+    <p class="method-link">
+      <a href="/methodology/">How fit states and assumptions work</a>
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .page-heading {
+    padding-block: var(--space-7) var(--space-3);
+  }
+
+  .page-heading h1 {
+    margin-block: var(--space-1) var(--space-3);
+    font-size: var(--fs-3xl);
+    letter-spacing: -0.035em;
+  }
+
+  .page-heading > p:last-child,
+  .fit-note {
+    max-width: 78ch;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+  }
+
+  .eyebrow {
+    margin: 0;
+    color: var(--color-accent-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .fit-note {
+    margin-top: var(--space-6);
+    font-size: var(--fs-sm);
+  }
+
+  .method-link {
+    font-size: var(--fs-sm);
+  }
+</style>

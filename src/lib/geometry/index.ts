@@ -46,3 +46,17 @@ export {
   type DiningOrientation,
   type DiningPlacedOrientation,
 } from './dining';
+export {
+  FIT_SERVICE_DEFINITIONS,
+  buildFitServicePlan,
+  getFitServiceDefinition,
+  getFitServiceDefaults,
+  getFitServiceModeForRoute,
+  type CompatibilityCheck,
+  type FitServiceDefinition,
+  type FitServiceField,
+  type FitServiceFieldType,
+  type FitServiceMode,
+  type FitServicePlan,
+  type FitServiceValues,
+} from './fit-services';

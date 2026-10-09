@@ -196,7 +196,9 @@ async function smokePage(pathname, scope) {
     (await evaluate('document.readyState')) === 'complete',
     `${pathname} did not finish loading.`,
   );
-  if (['/workspace/', '/bedroom/', '/will-it-fit/', '/dining/'].includes(pathname)) {
+  if (
+    ['/workspace/', '/bedroom/', '/will-it-fit/', '/dining/', '/fit-services/'].includes(pathname)
+  ) {
     assert(
       await evaluate('Boolean(document.querySelector("[data-fit-example-notice]:not([hidden])"))'),
       `${pathname}: the initial example result is not clearly labeled.`,
@@ -325,7 +327,47 @@ async function smokePage(pathname, scope) {
     );
   }
 
-  if (pathname !== '/will-it-fit/') {
+  if (pathname === '/fit-services/') {
+    const modeCases = [
+      ['appliance-install', '#service-openingWidth'],
+      ['delivery-route', '#service-frontDoorWidth'],
+      ['workspace-compatibility', '#service-armVesaPatterns'],
+      ['tv-fit', '#service-consoleWidth'],
+      ['home-gym', '#service-equipmentWidth'],
+      ['storage', '#service-spaceHeight'],
+      ['pool-room', '#service-cueLength'],
+    ];
+    for (const [mode, field] of modeCases) {
+      const outcome = await evaluate(`(() => {
+        const select = document.querySelector('#fit-service-mode');
+        select.value = ${JSON.stringify(mode)};
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        return { hasField: Boolean(document.querySelector(${JSON.stringify(field)})), state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), rows: document.querySelectorAll('#fit-services-table tbody tr').length };
+      })()`);
+      assert(
+        outcome.hasField && outcome.state === 'fits' && outcome.rows > 0,
+        `${pathname}: ${mode} did not render or calculate its example: ${JSON.stringify(outcome)}.`,
+      );
+    }
+    const wallTv = await evaluate(`(() => {
+      const select = document.querySelector('#fit-service-mode');
+      select.value = 'tv-fit';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      const setup = document.querySelector('#service-setup');
+      setup.value = 'wall';
+      setup.dispatchEvent(new Event('change', { bubbles: true }));
+      return { field: Boolean(document.querySelector('#service-wallAreaWidth')), state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), compatibility: document.querySelectorAll('[data-fit-service-compatibility] li[data-compatible="true"]').length };
+    })()`);
+    assert(
+      wallTv.field && wallTv.state === 'fits' && wallTv.compatibility === 2,
+      `${pathname}: wall-mounted TV mode did not update its conditional inputs/checks: ${JSON.stringify(wallTv)}.`,
+    );
+    await evaluate(
+      `(() => { const select = document.querySelector('#fit-service-mode'); select.value = 'appliance-install'; select.dispatchEvent(new Event('change', { bubbles: true })); })()`,
+    );
+  }
+
+  if (!['/will-it-fit/', '/fit-services/'].includes(pathname)) {
     const selector = `.${scope}__advanced > summary`;
     await tabUntil(selector);
     await press(' ', 'Space', 32);
@@ -456,9 +498,11 @@ async function smokePage(pathname, scope) {
     );
   }
 
-  if (['/workspace/', '/bedroom/', '/will-it-fit/', '/dining/'].includes(pathname)) {
+  if (
+    ['/workspace/', '/bedroom/', '/will-it-fit/', '/dining/', '/fit-services/'].includes(pathname)
+  ) {
     const stickyState = await evaluate(`(() => {
-      const summary = document.querySelector('#workspace-fitcheck-summary, #bedroom-fitcheck-summary, #universal-fit-summary, #dining-fitcheck-summary');
+      const summary = document.querySelector('#workspace-fitcheck-summary, #bedroom-fitcheck-summary, #universal-fit-summary, #dining-fitcheck-summary, #fit-services-summary');
       const sticky = document.querySelector('[data-fit-sticky]');
       return { summaryState: summary?.getAttribute('data-fit-state'), stickyState: sticky?.getAttribute('data-fit-state'), summaryLabel: summary?.querySelector('[data-field=label]')?.textContent?.trim(), stickyLabel: sticky?.querySelector('[data-field=sticky-label]')?.textContent?.trim() };
     })()`);
@@ -491,8 +535,10 @@ async function smokePage(pathname, scope) {
         ? '#room-width'
         : pathname === '/dining/'
           ? '#dining-room-width'
-          : '#fit-item-width';
-  await tabUntil(dimensionField);
+          : pathname === '/fit-services/'
+            ? '#service-itemWidth'
+            : '#fit-item-width';
+  await tabUntil(dimensionField, 40);
   await selectAll();
   await typeDigits('0');
   await press('Tab', 'Tab', 9);
@@ -546,6 +592,7 @@ try {
   await smokePage('/bedroom/', 'bedroom-fitcheck');
   await smokePage('/will-it-fit/', 'universal-fitcheck');
   await smokePage('/dining/', 'dining-fitcheck');
+  await smokePage('/fit-services/', 'fit-services');
   await cdp('Page.navigate', {
     url: new URL('/workspace/120cm-vs-140cm-desk/', baseUrl).toString(),
   });

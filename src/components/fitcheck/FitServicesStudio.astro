@@ -1,0 +1,246 @@
+---
+import AssumptionList from '../fit/AssumptionList.astro';
+import DimensionTable from '../fit/DimensionTable.astro';
+import FitSummary from '../fit/FitSummary.astro';
+import UnitToggle from '../fit/UnitToggle.astro';
+import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import {
+  FIT_SERVICE_DEFINITIONS,
+  buildFitServicePlan,
+  getFitServiceDefaults,
+} from '../../lib/geometry';
+import { formatMeasurement, parseLength } from '../../lib/units';
+
+const INITIAL_MODE = 'appliance-install';
+const initialDefinition = FIT_SERVICE_DEFINITIONS.find(
+  (definition) => definition.mode === INITIAL_MODE,
+)!;
+const initialPlan = buildFitServicePlan(INITIAL_MODE, getFitServiceDefaults(INITIAL_MODE));
+const initialResult = evaluateFit(initialPlan.checks, initialPlan.assumptions);
+const initialState = initialPlan.compatibility.some((check) => !check.compatible)
+  ? 'does_not_fit'
+  : initialResult.state;
+const initialRows = toDimensionDisplayRows(initialPlan.checks, {
+  ...initialResult,
+  state: initialState,
+});
+
+function escapeAttribute(value: string): string {
+  return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
+}
+
+const initialFields = initialDefinition.fields
+  .map((field) => {
+    const id = `service-${field.name}`;
+    const condition = field.showWhen
+      ? ` data-show-when-name="${escapeAttribute(field.showWhen.name)}" data-show-when-value="${escapeAttribute(field.showWhen.value)}" hidden`
+      : '';
+    const required = field.required === false || field.optional ? '' : ' required';
+    const value =
+      field.type === 'length'
+        ? formatMeasurement(Number(parseLengthDefault(field.defaultValue)))
+        : field.defaultValue;
+    let control: string;
+    if (field.type === 'select') {
+      control = `<select id="${id}" name="${field.name}" data-service-control="${field.type}"${required}>${(field.options ?? []).map((option) => `<option value="${escapeAttribute(option.value)}"${option.value === value ? ' selected' : ''}>${escapeAttribute(option.label)}</option>`).join('')}</select>`;
+    } else {
+      const type = field.type === 'length' || field.type === 'text' ? 'text' : 'number';
+      const inputMode = field.type === 'length' ? ' inputmode="decimal"' : '';
+      const min = field.min === undefined ? '' : ` min="${field.min}"`;
+      const max = field.max === undefined ? '' : ` max="${field.max}"`;
+      const step =
+        field.type === 'count' ? ' step="1"' : field.type === 'decimal' ? ' step="any"' : '';
+      control = `<input id="${id}" name="${field.name}" type="${type}"${inputMode}${min}${max}${step} value="${escapeAttribute(value)}" data-service-control="${field.type}"${required} aria-describedby="${id}-error" />`;
+    }
+    return `<div class="field" data-service-field data-name="${field.name}"${condition}><label for="${id}">${escapeAttribute(field.label)}</label>${control}<span class="field__error" id="${id}-error" role="alert"></span></div>`;
+  })
+  .join('');
+
+function parseLengthDefault(value: string): number {
+  const parsed = parseLength(value);
+  if (!parsed.ok) throw new Error(`Invalid default service length '${value}'.`);
+  return parsed.valueMm;
+}
+---
+
+<div class="fit-services" data-fit-services>
+  <form class="fit-services__form" data-fit-services-form novalidate>
+    <p class="fit-example-notice" data-fit-example-notice role="note">
+      <strong>Example setup.</strong> Values are illustrative examples, not defaults for a product,
+      manufacturer or local building standard. Replace them with measured dimensions.
+    </p>
+    <div class="field">
+      <label for="fit-service-mode">Choose a fit relationship</label>
+      <select id="fit-service-mode" name="mode">
+        {FIT_SERVICE_DEFINITIONS.map((definition) => (
+          <option value={definition.mode} selected={definition.mode === INITIAL_MODE}>
+            {definition.title}
+          </option>
+        ))}
+      </select>
+      <p class="field__note" data-fit-service-description>
+        {initialDefinition.description}
+      </p>
+    </div>
+    <div class="fit-services__fields field-grid" data-fit-service-fields set:html={initialFields} />
+    <p class="field__note">
+      Length entries accept mm, cm, m, inches or feet. Weight fields are in kg. Check the exact
+      product manual for model-dependent requirements.
+    </p>
+    <UnitToggle />
+  </form>
+
+  <section class="fit-services__result" aria-label="Fit services result">
+    <FitSummary
+      id="fit-services-summary"
+      resultId="fit-services-table"
+      state={initialState}
+      rows={initialRows}
+    />
+    <p class="fit-services__extra" data-fit-service-extra>
+      {initialPlan.capacity === undefined
+        ? initialDefinition.description
+        : `Estimated single-layer capacity: ${initialPlan.capacity}; requested ${initialPlan.capacityRequested}.`}
+    </p>
+    <ul
+      class="fit-services__compatibility"
+      data-fit-service-compatibility
+      aria-label="Compatibility checks"
+    >
+      {initialPlan.compatibility.map((check) => (
+        <li data-compatible={check.compatible}>
+          <strong>{check.compatible ? 'Compatible' : 'Check required'}:</strong> {check.label}.{' '}
+          {check.detail}
+        </li>
+      ))}
+    </ul>
+    <DimensionTable
+      id="fit-services-table"
+      rows={initialRows}
+      caption="Dimensions and compatibility envelopes for the selected Fit Services calculation"
+    />
+    <AssumptionList id="fit-services-assumptions" assumptions={initialPlan.assumptions} />
+  </section>
+</div>
+
+<script>
+  import '../../scripts/fit-services-studio';
+</script>
+
+<style>
+  .fit-services {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 62rem) {
+    .fit-services {
+      grid-template-columns: minmax(20rem, 0.9fr) minmax(0, 1.1fr);
+      align-items: start;
+    }
+  }
+
+  .fit-services__form,
+  .fit-services__result {
+    display: grid;
+    align-content: start;
+    gap: var(--space-5);
+    min-width: 0;
+  }
+
+  .fit-services__form {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+
+  .fit-example-notice {
+    margin: 0;
+    padding: var(--space-3);
+    border-left: 0.2rem solid var(--color-accent-1);
+    background: var(--color-surface);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+
+  .field[hidden] {
+    display: none;
+  }
+
+  .field label {
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+  }
+
+  .field input,
+  .field select {
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .field__error {
+    min-height: 1.2em;
+    color: var(--color-state-no-fit-fg);
+    font-size: var(--fs-xs);
+  }
+
+  .field__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    line-height: 1.5;
+  }
+
+  .fit-services__result > * {
+    min-width: 0;
+  }
+
+  .fit-services__extra {
+    margin: 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+
+  .fit-services__compatibility {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-left: var(--space-5);
+  }
+
+  .fit-services__compatibility:empty {
+    display: none;
+  }
+
+  .fit-services__compatibility li[data-compatible='false'] {
+    color: var(--color-state-no-fit-fg);
+  }
+
+  @media (min-width: 62rem) {
+    .fit-services__result {
+      position: sticky;
+      top: calc(var(--header-height, 4rem) + var(--space-4));
+    }
+  }
+
+  @media (max-width: 59.999rem) {
+    .fit-services {
+      padding-bottom: 4.5rem;
+    }
+  }
+</style>
