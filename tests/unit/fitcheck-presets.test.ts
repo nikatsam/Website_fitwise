@@ -8,10 +8,13 @@ import {
 } from '../../src/lib/fitcheck/presets';
 
 describe('sourced FitCheck presets', () => {
-  it('defaults to a named UK King frame, not a generic allowance', () => {
+  it('defaults to an editable global mattress example with no assumed frame', () => {
     const preset = BEDROOM_FIT_PRESETS.find((item) => item.key === DEFAULT_BEDROOM_FIT_PRESET_KEY);
-    expect(preset?.label).toContain('IKEA MALM Standard King frame');
-    expect(preset?.frameAllowanceMm).toEqual({ left: 80, right: 80, head: 45, foot: 45 });
+    expect(preset?.label).toContain('Custom mattress');
+    expect(preset?.market).toBe('global');
+    expect(preset?.mattressWidthMm).toBe(1600);
+    expect(preset?.mattressLengthMm).toBe(2000);
+    expect(preset?.frameAllowanceMm).toEqual({ left: 0, right: 0, head: 0, foot: 0 });
   });
 
   it('offers US mattress-only presets and UK measured-frame variants separately', () => {

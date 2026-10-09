@@ -26,6 +26,14 @@ async function makeBuiltFixture(options = {}) {
   const published = `<!doctype html><html lang="en"><head><title>Published</title><meta name="description" content="Published page">${canonical}${options.duplicateCanonical ? canonical : ''}<script type="application/ld+json">{"@type":"WebPage","url":"https://fitwise.stream/published/","name":"Published"}</script><script type="application/ld+json">{"@type":"BreadcrumbList","itemListElement":[{"position":1,"name":"Home","item":"https://fitwise.stream/"},{"position":2,"name":"${breadcrumbName}","item":"https://fitwise.stream${breadcrumbPath}"}]}</script></head><body><nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><span aria-current="page">${breadcrumbName}</span></li></ol></nav><h1>Published</h1></body></html>`;
   await writeFile(path.join(dir, 'index.html'), home, 'utf8');
   await writeFile(path.join(dir, 'published', 'index.html'), published, 'utf8');
+  if (options.missingSeoSignal) {
+    await mkdir(path.join(dir, 'unclassified'), { recursive: true });
+    await writeFile(
+      path.join(dir, 'unclassified', 'index.html'),
+      '<html><head><title>Unclassified</title></head><body><h1>Unclassified</h1></body></html>',
+      'utf8',
+    );
+  }
 
   const urls = ['https://fitwise.stream/', 'https://fitwise.stream/published/'];
   if (options.draftInSitemap) {
@@ -38,7 +46,9 @@ async function makeBuiltFixture(options = {}) {
     urls.push('https://fitwise.stream/draft/');
   }
 
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map((url) => `<url><loc>${url}</loc></url>`).join('')}</urlset>`;
+  const sitemap = options.malformedSitemap
+    ? '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://fitwise.stream/</urlset>'
+    : `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map((url) => `<url><loc>${url}</loc></url>`).join('')}</urlset>`;
   await writeFile(path.join(dir, 'sitemap.xml'), sitemap, 'utf8');
   await writeFile(
     path.join(dir, 'robots.txt'),
@@ -84,6 +94,20 @@ describe('offline built-output SEO validators', () => {
     const crumbResult = run(seoValidator, crumbDir);
     expect(crumbResult.status).not.toBe(0);
     expect(crumbResult.stderr).toContain('not present in the published sitemap');
+  });
+
+  it('rejects public HTML without an indexability signal', async () => {
+    const dir = await makeBuiltFixture({ missingSeoSignal: true });
+    const result = run(seoValidator, dir);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toMatch(/non-noindex HTML page must have exactly one self-canonical/i);
+  });
+
+  it('rejects malformed sitemap entries rather than accepting a partial urlset', async () => {
+    const dir = await makeBuiltFixture({ malformedSitemap: true });
+    const result = run(seoValidator, dir);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toMatch(/urlset root|complete url entries|only one loc/i);
   });
 
   it('rejects a broken internal anchor', async () => {

@@ -1,0 +1,393 @@
+---
+import AssumptionList from '../fit/AssumptionList.astro';
+import DimensionTable from '../fit/DimensionTable.astro';
+import FitSummary from '../fit/FitSummary.astro';
+import UnitToggle from '../fit/UnitToggle.astro';
+import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import { buildObjectFitPlan } from '../../lib/geometry';
+
+const DEFAULTS = {
+  itemName: 'Furniture item',
+  itemWidthMm: 800,
+  itemDepthMm: 600,
+  itemHeightMm: 900,
+  spaceWidthMm: 3000,
+  spaceDepthMm: 3500,
+  spaceHeightMm: 2500,
+  clearanceEachSideMm: 0,
+  doorwayWidthMm: 900,
+  doorwayHeightMm: 2000,
+  corridorWidthMm: 1000,
+  requestedQuantity: 1,
+  itemGapMm: 0,
+};
+
+const sample = buildObjectFitPlan({
+  objectWidthMm: DEFAULTS.itemWidthMm,
+  objectDepthMm: DEFAULTS.itemDepthMm,
+  objectHeightMm: DEFAULTS.itemHeightMm,
+  spaceWidthMm: DEFAULTS.spaceWidthMm,
+  spaceDepthMm: DEFAULTS.spaceDepthMm,
+  spaceHeightMm: DEFAULTS.spaceHeightMm,
+  clearanceEachSideMm: DEFAULTS.clearanceEachSideMm,
+  doorwayWidthMm: DEFAULTS.doorwayWidthMm,
+  doorwayHeightMm: DEFAULTS.doorwayHeightMm,
+  corridorWidthMm: DEFAULTS.corridorWidthMm,
+  requestedQuantity: DEFAULTS.requestedQuantity,
+  itemGapMm: DEFAULTS.itemGapMm,
+});
+const assumptions = [
+  'Example dimensions are editable placeholders, not a standard item, room, doorway or recommended clearance.',
+  'Room placement checks use rectangular footprints, two 90-degree floor orientations and an upright height check; they do not model irregular walls, alcoves, slopes or tilt.',
+  'The optional access check compares an upright narrow face and item height against the clear opening, plus the narrow face against corridor width. It does not simulate turning, diagonal carry, stairs, handles or packaging.',
+  'Quantity is a maximum rectangular single-layer grid estimate with one chosen gap between adjacent items; it excludes stacking, supports, access lanes and non-rectangular obstacles.',
+];
+const initialResult = evaluateFit(sample.checks, assumptions);
+const initialRows = toDimensionDisplayRows(sample.checks, initialResult);
+const initialOrientation =
+  sample.orientation === 'width-depth' ? 'width by depth' : 'depth by width';
+const initialReport = `Best floor orientation: ${initialOrientation}. Maximum single-layer grid estimate: ${sample.quantityCapacity} item(s).`;
+---
+
+<div class="universal-fitcheck" data-universal-fitcheck>
+  <form class="universal-fitcheck__form" data-universal-fitcheck-form novalidate>
+    <div class="universal-fitcheck__group">
+      <h2>Item dimensions</h2>
+      <p>Enter a name and measured outer dimensions, including packaging if checking delivery.</p>
+      <div class="field">
+        <label for="fit-item-name">Item name (optional)</label>
+        <input
+          id="fit-item-name"
+          name="itemName"
+          type="text"
+          value={DEFAULTS.itemName}
+          maxlength="80"
+        />
+      </div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="fit-item-width">Width</label>
+          <input
+            id="fit-item-width"
+            name="itemWidth"
+            type="text"
+            inputmode="decimal"
+            value="80 cm"
+            aria-describedby="fit-item-width-error"
+          />
+          <span class="field__error" id="fit-item-width-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="fit-item-depth">Depth</label>
+          <input
+            id="fit-item-depth"
+            name="itemDepth"
+            type="text"
+            inputmode="decimal"
+            value="60 cm"
+            aria-describedby="fit-item-depth-error"
+          />
+          <span class="field__error" id="fit-item-depth-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="fit-item-height">Height</label>
+          <input
+            id="fit-item-height"
+            name="itemHeight"
+            type="text"
+            inputmode="decimal"
+            value="90 cm"
+            aria-describedby="fit-item-height-error"
+          />
+          <span class="field__error" id="fit-item-height-error" role="alert"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="universal-fitcheck__group">
+      <h2>Destination space</h2>
+      <div class="field-grid">
+        <div class="field">
+          <label for="fit-space-width">Inside width</label>
+          <input
+            id="fit-space-width"
+            name="spaceWidth"
+            type="text"
+            inputmode="decimal"
+            value="3 m"
+            aria-describedby="fit-space-width-error"
+          />
+          <span class="field__error" id="fit-space-width-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="fit-space-depth">Inside depth</label>
+          <input
+            id="fit-space-depth"
+            name="spaceDepth"
+            type="text"
+            inputmode="decimal"
+            value="3.5 m"
+            aria-describedby="fit-space-depth-error"
+          />
+          <span class="field__error" id="fit-space-depth-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="fit-space-height">Inside height</label>
+          <input
+            id="fit-space-height"
+            name="spaceHeight"
+            type="text"
+            inputmode="decimal"
+            value="2.5 m"
+            aria-describedby="fit-space-height-error"
+          />
+          <span class="field__error" id="fit-space-height-error" role="alert"></span>
+        </div>
+      </div>
+      <p class="field__note">
+        Accepted units: mm, cm, m, inches, feet, or feet plus inches. Separate the number and unit
+        with an optional space.
+      </p>
+      <div class="field">
+        <label for="fit-clearance">Extra planning space on each side (optional)</label>
+        <input
+          id="fit-clearance"
+          name="clearance"
+          type="text"
+          inputmode="decimal"
+          value="0 mm"
+          aria-describedby="fit-clearance-error"
+        />
+        <span class="field__error" id="fit-clearance-error" role="alert"></span>
+      </div>
+      <div class="field">
+        <label for="fit-orientation">Floor orientation</label>
+        <select id="fit-orientation" name="orientation">
+          <option value="auto" selected>
+            Try both rectangular orientations
+          </option>
+          <option value="width-depth">Keep width along space width</option>
+          <option value="depth-width">Rotate 90 degrees</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="universal-fitcheck__group">
+      <h2>Access and quantity</h2>
+      <label class="check-option">
+        <input type="checkbox" id="fit-check-route" name="checkRoute" checked />
+        Check a doorway and corridor for upright passage
+      </label>
+      <div class="field-grid" data-fit-route-fields>
+        <div class="field">
+          <label for="fit-door-width">Clear doorway width</label>
+          <input
+            id="fit-door-width"
+            name="doorwayWidth"
+            type="text"
+            inputmode="decimal"
+            value="90 cm"
+            aria-describedby="fit-door-width-error"
+          />
+          <span class="field__error" id="fit-door-width-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="fit-door-height">Clear doorway height</label>
+          <input
+            id="fit-door-height"
+            name="doorwayHeight"
+            type="text"
+            inputmode="decimal"
+            value="2 m"
+            aria-describedby="fit-door-height-error"
+          />
+          <span class="field__error" id="fit-door-height-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="fit-corridor-width">Narrowest corridor width</label>
+          <input
+            id="fit-corridor-width"
+            name="corridorWidth"
+            type="text"
+            inputmode="decimal"
+            value="1 m"
+            aria-describedby="fit-corridor-width-error"
+          />
+          <span class="field__error" id="fit-corridor-width-error" role="alert"></span>
+        </div>
+      </div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="fit-quantity">Identical items to place</label>
+          <input
+            id="fit-quantity"
+            name="quantity"
+            type="number"
+            min="1"
+            step="1"
+            value={DEFAULTS.requestedQuantity}
+            aria-describedby="fit-quantity-error"
+          />
+          <span class="field__error" id="fit-quantity-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="fit-item-gap">Gap between items (optional)</label>
+          <input
+            id="fit-item-gap"
+            name="itemGap"
+            type="text"
+            inputmode="decimal"
+            value="0 mm"
+            aria-describedby="fit-item-gap-error"
+          />
+          <span class="field__error" id="fit-item-gap-error" role="alert"></span>
+        </div>
+      </div>
+    </div>
+
+    <UnitToggle />
+  </form>
+
+  <section class="universal-fitcheck__results" aria-label="Fit review">
+    <FitSummary id="universal-fit-summary" state={initialResult.state} rows={initialRows} />
+    <p class="universal-fitcheck__orientation" data-fit-orientation>
+      {initialReport}
+    </p>
+    <DimensionTable
+      id="universal-fit-table"
+      rows={initialRows}
+      caption="Required, recommended, available and remaining dimensions for the fit review"
+    />
+    <AssumptionList id="universal-fit-assumptions" assumptions={assumptions} />
+    <button type="button" class="copy-report" data-copy-fit-report>
+      Copy fit review
+    </button>
+    <p class="copy-report__status" data-copy-fit-status aria-live="polite"></p>
+  </section>
+</div>
+
+<script>
+  import '../../scripts/universal-fitcheck';
+</script>
+
+<style>
+  .universal-fitcheck {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 62rem) {
+    .universal-fitcheck {
+      grid-template-columns: minmax(18rem, 0.85fr) minmax(0, 1.15fr);
+      align-items: start;
+    }
+  }
+
+  .universal-fitcheck__form,
+  .universal-fitcheck__results {
+    display: grid;
+    align-content: start;
+    gap: var(--space-5);
+    min-width: 0;
+  }
+
+  .universal-fitcheck__form {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+
+  .universal-fitcheck__group {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .universal-fitcheck__group h2 {
+    margin: 0;
+    font-size: var(--fs-md);
+  }
+
+  .universal-fitcheck__group p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+
+  .field label {
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+  }
+
+  .field input,
+  .field select {
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .field__error {
+    min-height: 1.2em;
+    color: var(--color-state-no-fit-fg);
+    font-size: var(--fs-xs);
+  }
+
+  .field__note {
+    line-height: 1.5;
+  }
+
+  [data-fit-route-fields][hidden] {
+    display: none;
+  }
+
+  .check-option {
+    display: flex;
+    align-items: start;
+    gap: var(--space-2);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+  }
+
+  .universal-fitcheck__orientation {
+    margin: 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    font-size: var(--fs-sm);
+  }
+
+  .copy-report {
+    justify-self: start;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .copy-report__status {
+    margin: calc(-1 * var(--space-4)) 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+  }
+</style>

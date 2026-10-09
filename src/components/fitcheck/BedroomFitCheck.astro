@@ -12,30 +12,26 @@ import {
   computeBedFootprint,
 } from '../../lib/geometry';
 import { renderBedroomDiagramMarkup } from '../../lib/diagram';
-import {
-  BEDROOM_FIT_PRESETS,
-  DEFAULT_BEDROOM_FIT_PRESET_KEY,
-  HEMNES_BEDSIDE_PRESET,
-  HEMNES_DRAWER_PULL_OUT_MM,
-  PAX_DOOR_LEAF_WIDTH_MM,
-} from '../../lib/fitcheck/presets';
+import { BEDROOM_FIT_PRESETS, DEFAULT_BEDROOM_FIT_PRESET_KEY } from '../../lib/fitcheck/presets';
 
 const DEFAULTS = {
   roomWidthMm: 3000,
   roomLengthMm: 3600,
   bedPreset: DEFAULT_BEDROOM_FIT_PRESET_KEY,
   orientation: 'portrait' as const,
-  sideClearanceMm: 609.6,
-  footClearanceMm: 609.6,
+  sideClearanceMm: 600,
+  footClearanceMm: 600,
+  customMattressWidthMm: 1600,
+  customMattressLengthMm: 2000,
   nightstandCount: 0,
-  nightstandWidthMm: HEMNES_BEDSIDE_PRESET.overallWidthMm.valueMm,
-  nightstandDepthMm: HEMNES_BEDSIDE_PRESET.overallDepthMm.valueMm,
+  nightstandWidthMm: 450,
+  nightstandDepthMm: 400,
   includeWardrobeDoor: false,
-  wardrobeDoorLeafWidthMm: PAX_DOOR_LEAF_WIDTH_MM,
+  wardrobeDoorLeafWidthMm: 450,
   wardrobeDoorAngleDegrees: 90,
   wardrobeObstacleGapMm: 0,
   includeDresserDrawer: false,
-  dresserDrawerPullOutMm: HEMNES_DRAWER_PULL_OUT_MM,
+  dresserDrawerPullOutMm: 300,
   dresserObstacleGapMm: 0,
 };
 
@@ -66,8 +62,8 @@ const checks = buildBedRoomChecks({
 
 const assumptions = [
   `Bed preset: ${preset.label}. ${preset.note}`,
-  `Selected side-clearance target: ${DEFAULTS.sideClearanceMm} mm per side; selected FitWise foot allowance: ${DEFAULTS.footClearanceMm} mm. Adjust these to your room/use; the foot value is not a code minimum.`,
-  `Nightstands: ${DEFAULTS.nightstandCount}. The UK HEMNES example measures ${DEFAULTS.nightstandWidthMm} mm wide by ${DEFAULTS.nightstandDepthMm} mm deep; override the dimensions for your furniture. Tables are modeled flush beside the headboard with no inter-object gap.`,
+  `Selected side-clearance target: ${DEFAULTS.sideClearanceMm} mm per side; selected foot-clearance target: ${DEFAULTS.footClearanceMm} mm. Adjust these to your room/use; these are editable planning assumptions, not code minimums.`,
+  `Nightstands: ${DEFAULTS.nightstandCount}. Their ${DEFAULTS.nightstandWidthMm} × ${DEFAULTS.nightstandDepthMm} mm starting dimensions are editable placeholders. Tables are modeled flush beside the headboard with no inter-object gap.`,
   'The scale diagram shows the bed and bedside-table footprints only. Optional wardrobe/drawer checks compare user-measured gaps and are not drawn to scale.',
 ];
 
@@ -122,28 +118,30 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
 <div class="bedroom-fitcheck" data-bedroom-fitcheck data-diagram-id={DIAGRAM_ID}>
   <form class="bedroom-fitcheck__form" data-bedroom-fitcheck-form novalidate>
     <div class="field">
-      <label for="room-width">Room width (mm)</label>
+      <label for="room-width">Room inside width</label>
       <input
-        type="number"
+        type="text"
+        inputmode="decimal"
         id="room-width"
         name="roomWidthMm"
         min="1"
         step="1"
-        value={DEFAULTS.roomWidthMm}
+        value={`${DEFAULTS.roomWidthMm} mm`}
         aria-describedby="room-width-error"
       />
       <span class="field__error" id="room-width-error" role="alert"></span>
     </div>
 
     <div class="field">
-      <label for="room-length">Room length (mm)</label>
+      <label for="room-length">Room inside length</label>
       <input
-        type="number"
+        type="text"
+        inputmode="decimal"
         id="room-length"
         name="roomLengthMm"
         min="1"
         step="1"
-        value={DEFAULTS.roomLengthMm}
+        value={`${DEFAULTS.roomLengthMm} mm`}
         aria-describedby="room-length-error"
       />
       <span class="field__error" id="room-length-error" role="alert"></span>
@@ -159,9 +157,36 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
         ))}
       </select>
       <p class="field__note">
-        Choose mattress-only or a named frame example. No generic frame overhang is silently
-        applied.
+        Enter your actual mattress size or choose a market-specific reference. Named frame examples
+        use measured models; no generic frame overhang is silently applied.
       </p>
+    </div>
+
+    <div class="field-grid" data-custom-bed-fields>
+      <div class="field">
+        <label for="custom-bed-width">Custom mattress width (editable example)</label>
+        <input
+          type="text"
+          inputmode="decimal"
+          id="custom-bed-width"
+          name="customBedWidthMm"
+          value={`${DEFAULTS.customMattressWidthMm} mm`}
+          aria-describedby="custom-bed-width-error"
+        />
+        <span class="field__error" id="custom-bed-width-error" role="alert"></span>
+      </div>
+      <div class="field">
+        <label for="custom-bed-length">Custom mattress length (editable example)</label>
+        <input
+          type="text"
+          inputmode="decimal"
+          id="custom-bed-length"
+          name="customBedLengthMm"
+          value={`${DEFAULTS.customMattressLengthMm} mm`}
+          aria-describedby="custom-bed-length-error"
+        />
+        <span class="field__error" id="custom-bed-length-error" role="alert"></span>
+      </div>
     </div>
 
     <div class="field">
@@ -178,9 +203,10 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
       <summary>More assumptions</summary>
 
       <div class="field">
-        <label for="side-clearance">Selected side-clearance target (mm)</label>
+        <label for="side-clearance">Selected side-clearance target</label>
         <input
-          type="number"
+          type="text"
+          inputmode="decimal"
           id="side-clearance"
           name="sideClearanceMm"
           min="0"
@@ -192,9 +218,10 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
       </div>
 
       <div class="field">
-        <label for="foot-clearance">FitWise foot allowance (mm; assumption)</label>
+        <label for="foot-clearance">Selected foot-clearance target (assumption)</label>
         <input
-          type="number"
+          type="text"
+          inputmode="decimal"
           id="foot-clearance"
           name="footClearanceMm"
           min="0"
@@ -217,9 +244,10 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
       </div>
 
       <div class="field">
-        <label for="nightstand-width">Nightstand width each (mm; UK HEMNES example)</label>
+        <label for="nightstand-width">Measured nightstand width each</label>
         <input
-          type="number"
+          type="text"
+          inputmode="decimal"
           id="nightstand-width"
           name="nightstandWidthMm"
           min="1"
@@ -231,9 +259,10 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
       </div>
 
       <div class="field">
-        <label for="nightstand-depth">Nightstand depth each (mm; UK HEMNES example)</label>
+        <label for="nightstand-depth">Measured nightstand depth each</label>
         <input
-          type="number"
+          type="text"
+          inputmode="decimal"
           id="nightstand-depth"
           name="nightstandDepthMm"
           min="1"
@@ -252,9 +281,10 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
         </label>
         <div data-wardrobe-fields hidden>
           <div class="field">
-            <label for="wardrobe-door-width">Door leaf width (mm; US PAX/GRIMO example)</label>
+            <label for="wardrobe-door-width">Measured hinged door leaf width</label>
             <input
-              type="number"
+              type="text"
+              inputmode="decimal"
               id="wardrobe-door-width"
               name="wardrobeDoorWidthMm"
               min="1"
@@ -267,7 +297,8 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
           <div class="field">
             <label for="wardrobe-door-angle">Door opening angle (degrees, 0–90)</label>
             <input
-              type="number"
+              type="text"
+              inputmode="decimal"
               id="wardrobe-door-angle"
               name="wardrobeDoorAngleDegrees"
               min="0"
@@ -280,10 +311,11 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
           </div>
           <div class="field">
             <label for="wardrobe-obstacle-gap">
-              Measured gap from wardrobe face to bed/obstacle (mm)
+              Measured gap from wardrobe face to bed/obstacle
             </label>
             <input
-              type="number"
+              type="text"
+              inputmode="decimal"
               id="wardrobe-obstacle-gap"
               name="wardrobeObstacleGapMm"
               min="0"
@@ -300,9 +332,10 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
         </label>
         <div data-dresser-fields hidden>
           <div class="field">
-            <label for="dresser-drawer-pullout">Drawer pull-out (mm; UK HEMNES example)</label>
+            <label for="dresser-drawer-pullout">Measured drawer extension</label>
             <input
-              type="number"
+              type="text"
+              inputmode="decimal"
               id="dresser-drawer-pullout"
               name="dresserDrawerPullOutMm"
               min="1"
@@ -314,10 +347,11 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
           </div>
           <div class="field">
             <label for="dresser-obstacle-gap">
-              Measured gap from dresser front to bed/obstacle (mm)
+              Measured gap from dresser front to bed/obstacle
             </label>
             <input
-              type="number"
+              type="text"
+              inputmode="decimal"
               id="dresser-obstacle-gap"
               name="dresserObstacleGapMm"
               min="0"
@@ -332,6 +366,10 @@ const diagramSummary = `${DEFAULTS.roomWidthMm} by ${DEFAULTS.roomLengthMm} mm r
           walking allowance and are not drawn on the room diagram.
         </p>
       </fieldset>
+      <p class="field__note">
+        Enter dimensions as mm, cm, m, inches or feet (for example, 60 cm or 24 in). Product presets
+        are market-specific examples; custom dimensions work globally.
+      </p>
     </details>
 
     <UnitToggle />

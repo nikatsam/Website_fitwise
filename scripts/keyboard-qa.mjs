@@ -211,15 +211,17 @@ async function smokePage(pathname, scope) {
     `${pathname}: Enter did not activate the skip link.`,
   );
 
-  await tabUntil('[data-theme-toggle]');
-  const themeBefore = await evaluate(
-    'document.querySelector("[data-theme-toggle]").getAttribute("aria-pressed")',
-  );
-  await press(' ', 'Space', 32);
-  const themeAfter = await evaluate(
-    'document.querySelector("[data-theme-toggle]").getAttribute("aria-pressed")',
-  );
-  assert(themeBefore !== themeAfter, `${pathname}: Space did not toggle the theme button.`);
+  if (pathname !== '/will-it-fit/') {
+    await tabUntil('[data-theme-toggle]');
+    const themeBefore = await evaluate(
+      'document.querySelector("[data-theme-toggle]").getAttribute("aria-pressed")',
+    );
+    await press(' ', 'Space', 32);
+    const themeAfter = await evaluate(
+      'document.querySelector("[data-theme-toggle]").getAttribute("aria-pressed")',
+    );
+    assert(themeBefore !== themeAfter, `${pathname}: Space did not toggle the theme button.`);
+  }
 
   if (pathname === '/workspace/') {
     await tabUntil('#monitor-count');
@@ -245,8 +247,8 @@ async function smokePage(pathname, scope) {
   if (pathname === '/bedroom/') {
     await tabUntil('#bed-preset');
     assert(
-      (await evaluate('document.querySelector("#bed-preset").value')) === 'ent-bed-uk-king-frame',
-      `${pathname}: the default bed preset is not the sourced UK King frame.`,
+      (await evaluate('document.querySelector("#bed-preset").value')) === 'custom-mattress',
+      `${pathname}: the default bed preset is not globally editable custom dimensions.`,
     );
     await tabUntil('#orientation');
     await press('End', 'End', 35);
@@ -256,21 +258,23 @@ async function smokePage(pathname, scope) {
     );
   }
 
-  const selector = `.${scope}__advanced > summary`;
-  await tabUntil(selector);
-  await press(' ', 'Space', 32);
-  assert(
-    await evaluate(`document.querySelector(${JSON.stringify(selector)}).parentElement.open`),
-    `${pathname}: Space did not expand the assumptions disclosure.`,
-  );
-  await press(' ', 'Space', 32);
-  assert(
-    !(await evaluate(`document.querySelector(${JSON.stringify(selector)}).parentElement.open`)),
-    `${pathname}: Space did not collapse the assumptions disclosure.`,
-  );
+  if (pathname !== '/will-it-fit/') {
+    const selector = `.${scope}__advanced > summary`;
+    await tabUntil(selector);
+    await press(' ', 'Space', 32);
+    assert(
+      await evaluate(`document.querySelector(${JSON.stringify(selector)}).parentElement.open`),
+      `${pathname}: Space did not expand the assumptions disclosure.`,
+    );
+    await press(' ', 'Space', 32);
+    assert(
+      !(await evaluate(`document.querySelector(${JSON.stringify(selector)}).parentElement.open`)),
+      `${pathname}: Space did not collapse the assumptions disclosure.`,
+    );
 
-  // Reopen advanced controls to exercise the new depth/furniture inputs.
-  await press(' ', 'Space', 32);
+    // Reopen advanced controls to exercise the new depth/furniture inputs.
+    await press(' ', 'Space', 32);
+  }
 
   if (pathname === '/workspace/') {
     await tabUntil('#monitor-depth', 40);
@@ -344,6 +348,32 @@ async function smokePage(pathname, scope) {
     );
   }
 
+  if (pathname === '/will-it-fit/') {
+    await tabUntil('#fit-item-width');
+    await evaluate(
+      `(() => { const input = document.querySelector('#fit-item-width'); input.value = '1 m'; input.dispatchEvent(new Event('input', { bubbles: true })); })()`,
+    );
+    assert(
+      (await evaluate(
+        'document.querySelector("#universal-fit-table tr[data-dimension=space_width] [data-unit=metric]").textContent',
+      )) === '100.0 cm',
+      `${pathname}: unit-suffixed input was not converted into the calculation unit.`,
+    );
+    await tabUntil('#fit-check-route');
+    await press(' ', 'Space', 32);
+    assert(
+      await evaluate('document.querySelector("[data-fit-route-fields]").hidden'),
+      `${pathname}: disabling access checks did not hide doorway and corridor inputs.`,
+    );
+    const mobile = await evaluate(
+      '({ pageWidth: document.documentElement.scrollWidth, viewport: window.innerWidth })',
+    );
+    assert(
+      mobile.pageWidth <= mobile.viewport + 1,
+      `${pathname}: universal calculator causes horizontal overflow on mobile.`,
+    );
+  }
+
   await tabUntil('[data-unit-toggle]');
   const unitsBefore = await evaluate(
     'document.querySelector("[data-unit-toggle]").getAttribute("aria-pressed")',
@@ -359,7 +389,12 @@ async function smokePage(pathname, scope) {
     unitsBefore !== unitsAfter,
     `${pathname}: Space did not toggle units (${unitsBefore} -> ${unitsAfter}; active=${JSON.stringify(unitFocus)}).`,
   );
-  const dimensionField = pathname === '/workspace/' ? '#desk-width' : '#room-width';
+  const dimensionField =
+    pathname === '/workspace/'
+      ? '#desk-width'
+      : pathname === '/bedroom/'
+        ? '#room-width'
+        : '#fit-item-width';
   await tabUntil(dimensionField);
   await selectAll();
   await typeDigits('0');
@@ -412,6 +447,7 @@ try {
   await cdp('Runtime.enable');
   await smokePage('/workspace/', 'workspace-fitcheck');
   await smokePage('/bedroom/', 'bedroom-fitcheck');
+  await smokePage('/will-it-fit/', 'universal-fitcheck');
   console.log('Keyboard QA passed in headless Chrome using real Tab, Enter, and Space key events.');
 } catch (error) {
   console.error(`Keyboard QA failed: ${error.message}`);

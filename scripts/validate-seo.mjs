@@ -35,6 +35,7 @@ function decodeEntities(value) {
     .replaceAll('&lt;', '<')
     .replaceAll('&gt;', '>')
     .replaceAll('&quot;', '"')
+    .replaceAll('&apos;', "'")
     .replaceAll('&#39;', "'")
     .replaceAll('&#x27;', "'");
 }
@@ -99,7 +100,10 @@ for (const file of files) {
     );
     continue;
   }
-  if (canonicalTags.length === 0) continue;
+  if (canonicalTags.length === 0) {
+    errors.push(`${route}: non-noindex HTML page must have exactly one self-canonical.`);
+    continue;
+  }
 
   assert(
     canonicalTags.length === 1,
@@ -310,14 +314,28 @@ try {
   errors.push('dist/sitemap.xml is missing.');
 }
 if (sitemapXml) {
+  const rootMatch = sitemapXml.match(
+    /^<\?xml version="1\.0" encoding="UTF-8"\?>\s*<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">([\s\S]*)<\/urlset>\s*$/,
+  );
+  assert(Boolean(rootMatch), 'sitemap.xml must use the XML declaration and sitemap urlset root.');
+  const sitemapBody = rootMatch?.[1] ?? '';
+  const urlMatches = [...sitemapBody.matchAll(/<url>([\s\S]*?)<\/url>/g)];
+  const urlBlocks = urlMatches.map((match) => match[1]);
   assert(
-    /^<\?xml version="1\.0" encoding="UTF-8"\?>\s*<urlset\b[\s\S]*<\/urlset>\s*$/.test(sitemapXml),
-    'sitemap.xml is not a well-formed urlset document.',
+    sitemapBody.replace(/<url>[\s\S]*?<\/url>/g, '').trim() === '',
+    'sitemap.xml contains content outside complete url entries.',
   );
-  const urlBlocks = [...sitemapXml.matchAll(/<url>([\s\S]*?)<\/url>/g)].map((match) => match[1]);
-  sitemapUrls = urlBlocks.map((block) =>
-    decodeEntities(block.match(/<loc>([\s\S]*?)<\/loc>/)?.[1] ?? ''),
-  );
+  const entryData = urlBlocks.map((block) => {
+    const match = block.match(/^\s*<loc>([^<]*)<\/loc>\s*(?:<lastmod>([^<]*)<\/lastmod>\s*)?$/);
+    assert(Boolean(match), 'Each sitemap url must contain only one loc and optional lastmod.');
+    const loc = match?.[1] ?? '';
+    assert(
+      !/&(?!(?:amp|lt|gt|quot|apos);|#\d+;|#x[\da-f]+;)/i.test(loc),
+      `Sitemap loc '${loc}' contains an unescaped or invalid XML entity.`,
+    );
+    return { loc: decodeEntities(loc), lastmod: match?.[2] };
+  });
+  sitemapUrls = entryData.map(({ loc }) => loc);
   assert(urlBlocks.length === sitemapUrls.length, 'Each sitemap url entry must contain one loc.');
   assert(sitemapUrls.length <= 50_000, 'Sitemap exceeds the 50,000 URL limit.');
   assert(
@@ -325,9 +343,7 @@ if (sitemapXml) {
     'Sitemap exceeds 50 MB uncompressed.',
   );
   assert(new Set(sitemapUrls).size === sitemapUrls.length, 'Sitemap contains duplicate URLs.');
-  for (const block of urlBlocks) {
-    const loc = decodeEntities(block.match(/<loc>([\s\S]*?)<\/loc>/)?.[1] ?? '');
-    const lastmod = block.match(/<lastmod>([^<]+)<\/lastmod>/)?.[1];
+  for (const { loc, lastmod } of entryData) {
     if (lastmod) {
       assert(/^\d{4}-\d{2}-\d{2}$/.test(lastmod), `Sitemap has invalid lastmod '${lastmod}'.`);
       assert(

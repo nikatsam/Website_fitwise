@@ -56,6 +56,7 @@ const home = await html('/');
 checkPage('/', home, {
   heading: 'Will it fit?',
   includes: [
+    '/will-it-fit/',
     '/workspace/',
     '/bedroom/',
     '/methodology/',
@@ -63,6 +64,24 @@ checkPage('/', home, {
     'googletagmanager.com/gtag/js',
   ],
 });
+
+const universalFit = await html('/will-it-fit/');
+checkPage('/will-it-fit/', universalFit, {
+  heading: 'Will it fit?',
+  includes: [
+    'data-universal-fitcheck-form',
+    'fit-item-width',
+    'fit-door-width',
+    'fit-quantity',
+    'name="robots" content="noindex"',
+    'Accepted units:',
+    'feet plus inches',
+  ],
+});
+assert(
+  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(universalFit),
+  '/will-it-fit/: standalone calculator must remain noindex until editorial review.',
+);
 
 const workspace = await html('/workspace/');
 checkPage('/workspace/', workspace, {
@@ -287,5 +306,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `Route smoke tests passed: Home, workspace/bedroom hubs, ${dedicatedPages.length} dedicated pages, 404, sitemap, robots, and ${generatedIntentCount} generated/${deferredIntentCount} deferred/${draftIntentCount} draft PageIntents.`,
+  `Route smoke tests passed: Home, universal FitCheck, workspace/bedroom hubs, ${dedicatedPages.length} dedicated pages, 404, sitemap, robots, and ${generatedIntentCount} generated/${deferredIntentCount} deferred/${draftIntentCount} draft PageIntents.`,
 );

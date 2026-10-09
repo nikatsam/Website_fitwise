@@ -14,17 +14,15 @@ import {
 } from '../lib/geometry';
 import type { BedOrientation } from '../lib/geometry';
 import { renderBedroomDiagramMarkup } from '../lib/diagram';
-import { formatMetric, formatFeetInches } from '../lib/units';
-import {
-  BEDROOM_FIT_PRESETS,
-  DEFAULT_BEDROOM_FIT_PRESET_KEY,
-  HEMNES_BEDSIDE_PRESET,
-} from '../lib/fitcheck/presets';
+import { formatMetric, formatFeetInches, parseLength } from '../lib/units';
+import { BEDROOM_FIT_PRESETS, DEFAULT_BEDROOM_FIT_PRESET_KEY } from '../lib/fitcheck/presets';
 
 interface FormValues {
   roomWidthMm: number;
   roomLengthMm: number;
   bedPresetKey: string;
+  customMattressWidthMm: number;
+  customMattressLengthMm: number;
   orientation: BedOrientation;
   sideClearanceMm: number;
   footClearanceMm: number;
@@ -51,6 +49,8 @@ interface FieldSpec {
 const FIELDS: FieldSpec[] = [
   { id: 'room-width', min: 1, required: true, errorId: 'room-width-error' },
   { id: 'room-length', min: 1, required: true, errorId: 'room-length-error' },
+  { id: 'custom-bed-width', min: 1, required: false, errorId: 'custom-bed-width-error' },
+  { id: 'custom-bed-length', min: 1, required: false, errorId: 'custom-bed-length-error' },
   { id: 'side-clearance', min: 0, required: true, errorId: 'side-clearance-error' },
   { id: 'foot-clearance', min: 0, required: true, errorId: 'foot-clearance-error' },
   { id: 'nightstand-width', min: 1, required: false, errorId: 'nightstand-width-error' },
@@ -117,13 +117,20 @@ function setFieldError(field: FieldSpec, message: string): void {
 function readNumber(id: string): number | null {
   const input = document.getElementById(id) as HTMLInputElement | null;
   if (!input || input.value.trim() === '') return null;
-  const value = Number(input.value);
-  return Number.isFinite(value) ? value : NaN;
+  if (id === 'wardrobe-door-angle') {
+    const angle = Number(input.value);
+    return Number.isFinite(angle) ? angle : NaN;
+  }
+  const parsed = parseLength(input.value);
+  return parsed.ok ? parsed.valueMm : NaN;
 }
 
 function readAndValidateForm(): FormValues | null {
   let hasError = false;
   const values: Record<string, number> = {};
+  const bedPresetKey =
+    (document.getElementById('bed-preset') as HTMLSelectElement | null)?.value ??
+    DEFAULT_BEDROOM_FIT_PRESET_KEY;
   const nightstandCount = Number(
     (document.getElementById('nightstand-count') as HTMLSelectElement | null)?.value ?? '0',
   ) as 0 | 1 | 2;
@@ -135,6 +142,7 @@ function readAndValidateForm(): FormValues | null {
   for (const field of FIELDS) {
     if (
       (field.id.startsWith('nightstand-') && nightstandCount === 0) ||
+      (field.id.startsWith('custom-bed-') && bedPresetKey !== 'custom-mattress') ||
       (field.id.startsWith('wardrobe-') && !checkWardrobeDoor) ||
       (field.id.startsWith('dresser-') && !checkDresserDrawer)
     ) {
@@ -142,8 +150,10 @@ function readAndValidateForm(): FormValues | null {
       continue;
     }
     const raw = readNumber(field.id);
+    const required =
+      field.required || (field.id.startsWith('custom-bed-') && bedPresetKey === 'custom-mattress');
     if (raw === null) {
-      if (field.required) {
+      if (required) {
         setFieldError(field, 'Enter a value.');
         hasError = true;
       } else {
@@ -168,7 +178,7 @@ function readAndValidateForm(): FormValues | null {
   const bedPresetSelect = document.getElementById('bed-preset') as HTMLSelectElement | null;
   const orientationSelect = document.getElementById('orientation') as HTMLSelectElement | null;
 
-  const bedPresetKey = bedPresetSelect?.value ?? DEFAULT_BEDROOM_FIT_PRESET_KEY;
+  const selectedBedPresetKey = bedPresetSelect?.value ?? DEFAULT_BEDROOM_FIT_PRESET_KEY;
   const orientation: BedOrientation =
     orientationSelect?.value === 'landscape' ? 'landscape' : 'portrait';
 
@@ -222,20 +232,22 @@ function readAndValidateForm(): FormValues | null {
     hasError = true;
   }
 
-  if (!BEDROOM_FIT_PRESETS.some((preset) => preset.key === bedPresetKey)) return null;
+  if (!BEDROOM_FIT_PRESETS.some((preset) => preset.key === selectedBedPresetKey)) return null;
 
   if (hasError) return null;
 
   return {
     roomWidthMm: values['room-width']!,
     roomLengthMm: values['room-length']!,
-    bedPresetKey,
+    bedPresetKey: selectedBedPresetKey,
+    customMattressWidthMm: values['custom-bed-width'] ?? 1600,
+    customMattressLengthMm: values['custom-bed-length'] ?? 2000,
     orientation,
     sideClearanceMm: values['side-clearance']!,
     footClearanceMm: values['foot-clearance']!,
     nightstandCount,
-    nightstandWidthMm: values['nightstand-width'] ?? HEMNES_BEDSIDE_PRESET.overallWidthMm.valueMm,
-    nightstandDepthMm: values['nightstand-depth'] ?? HEMNES_BEDSIDE_PRESET.overallDepthMm.valueMm,
+    nightstandWidthMm: values['nightstand-width'] ?? 450,
+    nightstandDepthMm: values['nightstand-depth'] ?? 400,
     includeWardrobeDoor: checkWardrobeDoor,
     wardrobeDoorLeafWidthMm: values['wardrobe-door-width']!,
     wardrobeDoorAngleDegrees: values['wardrobe-door-angle']!,
@@ -323,8 +335,17 @@ function recompute(): void {
   const values = readAndValidateForm();
   if (!values) return;
 
-  const preset = BEDROOM_FIT_PRESETS.find((item) => item.key === values.bedPresetKey);
-  if (!preset) return;
+  const selectedPreset = BEDROOM_FIT_PRESETS.find((item) => item.key === values.bedPresetKey);
+  if (!selectedPreset) return;
+  const preset =
+    selectedPreset.key === 'custom-mattress'
+      ? {
+          ...selectedPreset,
+          mattressWidthMm: values.customMattressWidthMm,
+          mattressLengthMm: values.customMattressLengthMm,
+          note: `User-entered mattress dimensions: ${formatMetric(values.customMattressWidthMm)} × ${formatMetric(values.customMattressLengthMm)}.`,
+        }
+      : selectedPreset;
   const frameAllowance = preset.frameAllowanceMm;
   const nightstandWidthsMm = Array.from(
     { length: values.nightstandCount },
@@ -333,8 +354,8 @@ function recompute(): void {
 
   const assumptions = [
     `Bed preset: ${preset.label}. ${preset.note}`,
-    `Selected side-clearance target: ${values.sideClearanceMm} mm per side; selected FitWise foot allowance: ${values.footClearanceMm} mm. These are planning inputs, not code minimums.`,
-    `Nightstands: ${values.nightstandCount}; UK HEMNES example dimensions ${values.nightstandWidthMm} x ${values.nightstandDepthMm} mm. The count and measurements can be changed.`,
+    `Selected side-clearance target: ${formatMetric(values.sideClearanceMm)} per side; selected foot-clearance target: ${formatMetric(values.footClearanceMm)}. These are editable planning assumptions, not code minimums.`,
+    `Nightstands: ${values.nightstandCount}; user-entered dimensions ${formatMetric(values.nightstandWidthMm)} × ${formatMetric(values.nightstandDepthMm)}. These initial values are editable placeholders.`,
     ...(values.nightstandCount > 0
       ? [
           'Tables are assumed flush beside the bed at the headboard with no gap. Their depth stays within the bed-length envelope unless greater; separate table positions/gaps are not modeled.',
@@ -472,8 +493,11 @@ function updateFurnitureFieldVisibility(): void {
     (document.getElementById('check-dresser-drawer') as HTMLInputElement | null)?.checked ?? false;
   const wardrobeFields = document.querySelector<HTMLElement>('[data-wardrobe-fields]');
   const dresserFields = document.querySelector<HTMLElement>('[data-dresser-fields]');
+  const customBedFields = document.querySelector<HTMLElement>('[data-custom-bed-fields]');
+  const bedPreset = document.getElementById('bed-preset') as HTMLSelectElement | null;
   if (wardrobeFields) wardrobeFields.hidden = !wardrobeEnabled;
   if (dresserFields) dresserFields.hidden = !dresserEnabled;
+  if (customBedFields) customBedFields.hidden = bedPreset?.value !== 'custom-mattress';
 }
 
 function initBedroomFitCheck(): void {

@@ -30,3 +30,9 @@ export {
   buildDoorSwingCheck,
   buildDrawerPullOutCheck,
 } from './room-interactions';
+export {
+  buildObjectFitPlan,
+  type ObjectFitInput,
+  type ObjectFitPlan,
+  type ObjectOrientation,
+} from './object-fit';

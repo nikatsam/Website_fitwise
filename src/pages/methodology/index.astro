@@ -10,8 +10,44 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   <section class="wrapper section">
     <h1>Methodology</h1>
     <p>
-      Fitwise results are derived from sourced, provenance-tracked dimensions using a documented
-      fit-state engine. The full writeup is coming soon.
+      Fitwise uses millimetres as its internal calculation unit. Inputs may be typed as mm, cm, m,
+      inches or feet and inches; display units can be switched independently. Sourced product
+      measurements, geometry derived from explicit formulas and user-selected assumptions are kept
+      distinct.
+    </p>
+    <h2>Fit states</h2>
+    <ul>
+      <li>
+        <strong>Fits:</strong> every hard dimension and every selected clearance target is met.
+      </li>
+      <li>
+        <strong>Tight:</strong> physical footprints fit, but at least one selected target is short.
+      </li>
+      <li>
+        <strong>Does not fit:</strong> at least one physical or enabled access dimension exceeds the
+        available space.
+      </li>
+    </ul>
+    <h2>Generic item and access review</h2>
+    <p>
+      The universal calculator compares a rectangular item's width, depth and height with a room's
+      inside dimensions, testing the two axis-aligned floor orientations. Optional door and corridor
+      checks use an upright narrow face and item height. The model does not simulate tilting,
+      diagonal passage, turns, stairs, handles, packaging bulges, thresholds, sloping ceilings or
+      irregular room geometry. Measure the narrowest clear point along the full route.
+    </p>
+    <p>
+      Quantity output is a maximum single-layer rectangular grid estimate with the entered gap. It
+      does not model stacking, load limits, access lanes, supports or obstacles. Mattress and
+      workspace planners have their own explicit orientation and clearance assumptions.
+    </p>
+    <h2>What a result does not mean</h2>
+    <p>
+      A calculation is not a delivery guarantee, building-code determination, accessibility check,
+      safety assessment or ergonomic recommendation. Manufacturer dimensions can vary by model and
+      revision; verify the exact item's external dimensions and the site's clear openings before
+      buying, moving or installing it. Any clearance target not attributed to a specific source is a
+      user-selected planning preference, not a universal minimum.
     </p>
   </section>
 </BaseLayout>
@@ -19,6 +55,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 <style>
   .section {
     padding-block: var(--space-7);
-    min-height: 40vh;
+    max-width: 78rem;
+    line-height: 1.65;
+  }
+
+  h2 {
+    margin-top: var(--space-6);
   }
 </style>

@@ -4,7 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="Fitwise.stream — Know what fits before you buy"
-  description="Plan desks, monitors, beds and rooms using real dimensions and clearances. Fitwise shows whether it fits before you buy, arrange or move it."
+  description="Check whether furniture, appliances, equipment and room layouts fit using your measured dimensions. Enter metric or imperial units and review space, doorway and corridor constraints."
   canonicalPath="/"
   structuredData={[
     {
@@ -22,7 +22,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       url: 'https://fitwise.stream/',
       name: 'Fitwise.stream — Know what fits before you buy',
       description:
-        'Plan desks, monitors, beds and rooms using real dimensions and clearances. Fitwise shows whether it fits before you buy, arrange or move it.',
+        'Check whether furniture, appliances, equipment and room layouts fit using your measured dimensions. Enter metric or imperial units and review space, doorway and corridor constraints.',
       inLanguage: 'en',
       isPartOf: { '@id': 'https://fitwise.stream/#website' },
     },
@@ -35,6 +35,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <p class="hero__lede">Plan spaces using real dimensions and clearances.</p>
 
       <div class="hero__cards">
+        <a class="hero__card" href="/will-it-fit/">
+          <span class="hero__card-kicker">Object → Space → Route</span>
+          <span class="hero__card-title">Check any item, room and doorway</span>
+        </a>
         <a class="hero__card" href="/workspace/">
           <span class="hero__card-kicker">Object → Space</span>
           <span class="hero__card-title">Monitors into a desk</span>
@@ -49,7 +53,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   <section class="wrapper section">
     <h2>Workspace planning</h2>
-    <p>Compare desk and monitor dimensions, then check fit assumptions before choosing a setup.</p>
+    <p>
+      Check a workspace layout with your own dimensions, or compare sourced monitor and desk
+      examples.
+    </p>
     <a href="/workspace/">Browse workspace pages →</a>
     <nav class="reference-links" aria-label="Workspace sizing guides">
       <h3>Workspace sizing guides</h3>
@@ -77,7 +84,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   <section class="wrapper section">
     <h2>Bedroom planning</h2>
-    <p>Compare US and UK mattress sizes and see how recommended clearances change the room plan.</p>
+    <p>
+      Start with your own bed and room measurements. Market-specific mattress references are
+      available when useful, but the planner is not limited to them.
+    </p>
     <a href="/bedroom/">Browse bedroom pages →</a>
     <nav class="reference-links" aria-label="Bed size and room guides">
       <h3>Bed size and room guides</h3>
@@ -117,8 +127,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <section class="wrapper section">
     <h2>How Fitwise calculates fit</h2>
     <p>
-      Every result is derived from sourced, provenance-tracked dimensions — never guessed. See the
-      full methodology.
+      Sourced product dimensions are used where available; you can also enter your own measurements
+      in metric or imperial units. Calculations keep physical fit, optional clearance targets and
+      geometric assumptions separate. They are screening estimates, not guarantees or code checks.
     </p>
     <a href="/methodology/">Read the methodology →</a>
   </section>

@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import UniversalFitCheck from '../components/fitcheck/UniversalFitCheck.astro';
+---
+
+<BaseLayout
+  title="Will It Fit? Universal Space and Access Calculator — Fitwise.stream"
+  description="Check an item's measured width, depth and height against a room, doorway and corridor. Enter metric or imperial dimensions, compare orientations and estimate a single-layer quantity."
+  noindex
+>
+  <section class="page-heading wrapper">
+    <p class="eyebrow">Universal fit review</p>
+    <h1>Will it fit?</h1>
+    <p>
+      Check furniture, appliances, boxes or equipment against a destination space and delivery
+      route. Use the item's real outside dimensions and enter units you already use.
+    </p>
+  </section>
+  <section class="wrapper section">
+    <UniversalFitCheck />
+    <p class="fit-note">
+      This is a dimensional screening tool, not a delivery guarantee, building-code check,
+      accessibility assessment or ergonomic recommendation. Measure the narrowest clear openings and
+      account for packaging, handles, hinges, thresholds, turns and temporary obstacles yourself.
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .page-heading {
+    padding-block: var(--space-7) var(--space-3);
+  }
+
+  .page-heading h1 {
+    margin-block: var(--space-1) var(--space-3);
+    font-size: var(--fs-3xl);
+    letter-spacing: -0.035em;
+  }
+
+  .page-heading > p:last-child,
+  .fit-note {
+    max-width: 72ch;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+  }
+
+  .eyebrow {
+    margin: 0;
+    color: var(--color-accent-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .fit-note {
+    margin-top: var(--space-6);
+    font-size: var(--fs-sm);
+  }
+</style>
