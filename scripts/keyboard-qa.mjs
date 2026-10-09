@@ -196,7 +196,7 @@ async function smokePage(pathname, scope) {
     (await evaluate('document.readyState')) === 'complete',
     `${pathname} did not finish loading.`,
   );
-  if (['/workspace/', '/bedroom/', '/will-it-fit/'].includes(pathname)) {
+  if (['/workspace/', '/bedroom/', '/will-it-fit/', '/dining/'].includes(pathname)) {
     assert(
       await evaluate('Boolean(document.querySelector("[data-fit-example-notice]:not([hidden])"))'),
       `${pathname}: the initial example result is not clearly labeled.`,
@@ -226,7 +226,7 @@ async function smokePage(pathname, scope) {
   );
 
   if (pathname === '/workspace/') {
-    await tabUntil('[data-theme-toggle]');
+    await tabUntil('[data-theme-toggle]', 32);
     const themeBefore = await evaluate(
       'document.querySelector("[data-theme-toggle]").getAttribute("aria-pressed")',
     );
@@ -310,6 +310,19 @@ async function smokePage(pathname, scope) {
       deviceScaleFactor: 1,
       mobile: true,
     });
+  }
+
+  if (pathname === '/dining/') {
+    await tabUntil('#dining-orientation');
+    await press('End', 'End', 35);
+    assert(
+      (await evaluate('document.querySelector("#dining-orientation").value')) === 'depth-width',
+      `${pathname}: keyboard could not rotate the dining table layout.`,
+    );
+    assert(
+      await evaluate('document.querySelector("[data-fit-example-notice]").hidden'),
+      `${pathname}: example notice did not clear after changing dining orientation.`,
+    );
   }
 
   if (pathname !== '/will-it-fit/') {
@@ -443,9 +456,9 @@ async function smokePage(pathname, scope) {
     );
   }
 
-  if (['/workspace/', '/bedroom/', '/will-it-fit/'].includes(pathname)) {
+  if (['/workspace/', '/bedroom/', '/will-it-fit/', '/dining/'].includes(pathname)) {
     const stickyState = await evaluate(`(() => {
-      const summary = document.querySelector('#workspace-fitcheck-summary, #bedroom-fitcheck-summary, #universal-fit-summary');
+      const summary = document.querySelector('#workspace-fitcheck-summary, #bedroom-fitcheck-summary, #universal-fit-summary, #dining-fitcheck-summary');
       const sticky = document.querySelector('[data-fit-sticky]');
       return { summaryState: summary?.getAttribute('data-fit-state'), stickyState: sticky?.getAttribute('data-fit-state'), summaryLabel: summary?.querySelector('[data-field=label]')?.textContent?.trim(), stickyLabel: sticky?.querySelector('[data-field=sticky-label]')?.textContent?.trim() };
     })()`);
@@ -476,7 +489,9 @@ async function smokePage(pathname, scope) {
       ? '#desk-width'
       : pathname === '/bedroom/'
         ? '#room-width'
-        : '#fit-item-width';
+        : pathname === '/dining/'
+          ? '#dining-room-width'
+          : '#fit-item-width';
   await tabUntil(dimensionField);
   await selectAll();
   await typeDigits('0');
@@ -530,6 +545,7 @@ try {
   await smokePage('/workspace/', 'workspace-fitcheck');
   await smokePage('/bedroom/', 'bedroom-fitcheck');
   await smokePage('/will-it-fit/', 'universal-fitcheck');
+  await smokePage('/dining/', 'dining-fitcheck');
   await cdp('Page.navigate', {
     url: new URL('/workspace/120cm-vs-140cm-desk/', baseUrl).toString(),
   });

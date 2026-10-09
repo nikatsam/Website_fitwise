@@ -39,3 +39,10 @@ export {
   type ObjectFitPlan,
   type ObjectOrientation,
 } from './object-fit';
+export {
+  buildDiningFitPlan,
+  type DiningFitInput,
+  type DiningFitPlan,
+  type DiningOrientation,
+  type DiningPlacedOrientation,
+} from './dining';

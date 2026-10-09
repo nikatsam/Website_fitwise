@@ -57,6 +57,7 @@ checkPage('/', home, {
   heading: 'Will it fit?',
   includes: [
     '/will-it-fit/',
+    '/dining/',
     '/workspace/',
     '/bedroom/',
     '/about/',
@@ -89,6 +90,24 @@ checkPage('/will-it-fit/', universalFit, {
 assert(
   /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(universalFit),
   '/will-it-fit/: standalone calculator must remain noindex until editorial review.',
+);
+
+const dining = await html('/dining/');
+checkPage('/dining/', dining, {
+  heading: 'Will the dining table and chairs fit?',
+  includes: [
+    'data-dining-fitcheck-form',
+    'Example setup.',
+    'data-fit-sticky',
+    'dining-fitcheck-table',
+    'Rectangular tables only',
+    'user-selected space beyond the pulled-out chair envelope',
+    'name="robots" content="noindex"',
+  ],
+});
+assert(
+  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(dining),
+  '/dining/: early utility page must remain noindex until source and search-demand review.',
 );
 
 const aboutAndSources = await html('/about/');
@@ -385,5 +404,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `Route smoke tests passed: Home, universal FitCheck, workspace/bedroom hubs, ${dedicatedPages.length} dedicated pages, 404, sitemap, robots, and ${generatedIntentCount} generated/${deferredIntentCount} deferred/${draftIntentCount} draft PageIntents.`,
+  `Route smoke tests passed: Home, universal and dining FitChecks, workspace/bedroom hubs, ${dedicatedPages.length} dedicated pages, 404, sitemap, robots, and ${generatedIntentCount} generated/${deferredIntentCount} deferred/${draftIntentCount} draft PageIntents.`,
 );

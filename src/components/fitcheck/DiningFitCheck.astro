@@ -1,0 +1,362 @@
+---
+import AssumptionList from '../fit/AssumptionList.astro';
+import DimensionTable from '../fit/DimensionTable.astro';
+import FitSummary from '../fit/FitSummary.astro';
+import UnitToggle from '../fit/UnitToggle.astro';
+import ScaleDiagram from '../diagram/ScaleDiagram.astro';
+import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import { buildDiningFitPlan } from '../../lib/geometry';
+import { renderDiningDiagramMarkup } from '../../lib/diagram';
+import { formatMeasurement } from '../../lib/units';
+
+const DIAGRAM_ID = 'dining-fitcheck-diagram';
+const DIAGRAM_WIDTH = 640;
+const DIAGRAM_HEIGHT = 440;
+const DEFAULTS = {
+  roomWidthMm: 4000,
+  roomLengthMm: 4500,
+  tableWidthMm: 900,
+  tableLengthMm: 1800,
+  chairWidthMm: 450,
+  chairEnvelopeDepthMm: 550,
+  chairsPerLongSide: 2,
+  chairsPerEnd: 1,
+  walkingClearanceMm: 600,
+  orientation: 'auto' as const,
+};
+const initialPlan = buildDiningFitPlan(DEFAULTS);
+const assumptions = [
+  'Example values are illustrative placeholders, not recommended dining dimensions or a standard table/chair size.',
+  'The hard footprint treats each chair envelope as a measured rectangle outside the table edge. It does not model chair angles, table legs, pedestal bases, chair overlap, or mixed chair sizes.',
+  'The extra walking target is user-selected space beyond the pulled-out chair envelope; it is not a sourced or universal aisle minimum.',
+  'Seat-width rows compare measured outside chair width with the table edge length. They do not decide comfortable seats per person or account for place settings.',
+];
+const initialResult = evaluateFit(initialPlan.checks, assumptions);
+const rows = toDimensionDisplayRows(initialPlan.checks, initialResult);
+const diagramMarkup = renderDiningDiagramMarkup({
+  diagramId: DIAGRAM_ID,
+  ...DEFAULTS,
+  orientation: initialPlan.orientation,
+});
+const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMeasurement(DEFAULTS.roomLengthMm)} room, ${formatMeasurement(DEFAULTS.tableWidthMm)} by ${formatMeasurement(DEFAULTS.tableLengthMm)} rectangular table, ${initialPlan.seats} sample seats, and ${formatMeasurement(DEFAULTS.walkingClearanceMm)} user-selected circulation target.`;
+---
+
+<div class="dining-fitcheck" data-dining-fitcheck data-diagram-id={DIAGRAM_ID}>
+  <form class="dining-fitcheck__form" data-dining-fitcheck-form novalidate>
+    <p class="fit-example-notice" data-fit-example-notice role="note">
+      <strong>Example setup.</strong> Room, table, chair and circulation values are editable
+      examples. Replace them with your own measured furniture and selected movement space.
+    </p>
+
+    <section class="dining-fitcheck__group" aria-labelledby="dining-table-heading">
+      <h2 id="dining-table-heading">1. Table dimensions</h2>
+      <div class="field-grid">
+        <div class="field">
+          <label for="dining-table-width">Table width</label>
+          <input
+            id="dining-table-width"
+            name="tableWidthMm"
+            type="text"
+            inputmode="decimal"
+            value={formatMeasurement(DEFAULTS.tableWidthMm)}
+            aria-describedby="dining-table-width-error"
+          />
+          <span class="field__error" id="dining-table-width-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="dining-table-length">Table length</label>
+          <input
+            id="dining-table-length"
+            name="tableLengthMm"
+            type="text"
+            inputmode="decimal"
+            value={formatMeasurement(DEFAULTS.tableLengthMm)}
+            aria-describedby="dining-table-length-error"
+          />
+          <span class="field__error" id="dining-table-length-error" role="alert"></span>
+        </div>
+      </div>
+      <p class="field__note">
+        Rectangular tables only in this first version. Use the table's outer edge-to-edge
+        dimensions.
+      </p>
+    </section>
+
+    <section class="dining-fitcheck__group" aria-labelledby="dining-room-heading">
+      <h2 id="dining-room-heading">2. Dining space</h2>
+      <div class="field-grid">
+        <div class="field">
+          <label for="dining-room-width">Inside room width</label>
+          <input
+            id="dining-room-width"
+            name="roomWidthMm"
+            type="text"
+            inputmode="decimal"
+            value={formatMeasurement(DEFAULTS.roomWidthMm)}
+            aria-describedby="dining-room-width-error"
+          />
+          <span class="field__error" id="dining-room-width-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="dining-room-length">Inside room length</label>
+          <input
+            id="dining-room-length"
+            name="roomLengthMm"
+            type="text"
+            inputmode="decimal"
+            value={formatMeasurement(DEFAULTS.roomLengthMm)}
+            aria-describedby="dining-room-length-error"
+          />
+          <span class="field__error" id="dining-room-length-error" role="alert"></span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="dining-orientation">Table orientation</label>
+        <select id="dining-orientation" name="orientation">
+          <option value="auto" selected>
+            Try both 90-degree orientations
+          </option>
+          <option value="width-depth">Keep table width along room width</option>
+          <option value="depth-width">Rotate table 90 degrees</option>
+        </select>
+      </div>
+    </section>
+
+    <details class="dining-fitcheck__advanced">
+      <summary>3. Seating and circulation options</summary>
+      <div class="dining-fitcheck__group">
+        <div class="field-grid">
+          <div class="field">
+            <label for="dining-chairs-long">Chairs per long side</label>
+            <input
+              id="dining-chairs-long"
+              name="chairsPerLongSide"
+              type="number"
+              min="0"
+              max="6"
+              step="1"
+              value={DEFAULTS.chairsPerLongSide}
+              aria-describedby="dining-chairs-long-error"
+            />
+            <span class="field__error" id="dining-chairs-long-error" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="dining-chairs-end">Chairs at each end</label>
+            <input
+              id="dining-chairs-end"
+              name="chairsPerEnd"
+              type="number"
+              min="0"
+              max="2"
+              step="1"
+              value={DEFAULTS.chairsPerEnd}
+              aria-describedby="dining-chairs-end-error"
+            />
+            <span class="field__error" id="dining-chairs-end-error" role="alert"></span>
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label for="dining-chair-width">Measured chair width</label>
+            <input
+              id="dining-chair-width"
+              name="chairWidthMm"
+              type="text"
+              inputmode="decimal"
+              value={formatMeasurement(DEFAULTS.chairWidthMm)}
+              aria-describedby="dining-chair-width-error"
+            />
+            <span class="field__error" id="dining-chair-width-error" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="dining-chair-depth">Pulled-out chair envelope from table edge</label>
+            <input
+              id="dining-chair-depth"
+              name="chairEnvelopeDepthMm"
+              type="text"
+              inputmode="decimal"
+              value={formatMeasurement(DEFAULTS.chairEnvelopeDepthMm)}
+              aria-describedby="dining-chair-depth-error"
+            />
+            <span class="field__error" id="dining-chair-depth-error" role="alert"></span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="dining-walking-clearance">
+            Extra user-selected walking space beyond pulled-out chairs
+          </label>
+          <input
+            id="dining-walking-clearance"
+            name="walkingClearanceMm"
+            type="text"
+            inputmode="decimal"
+            value={formatMeasurement(DEFAULTS.walkingClearanceMm)}
+            aria-describedby="dining-walking-clearance-error"
+          />
+          <span class="field__error" id="dining-walking-clearance-error" role="alert"></span>
+        </div>
+        <p class="field__note">
+          Enter widths in mm, cm, m, inches or feet. Chair and circulation values are your
+          measurements and choices, not general standards.
+        </p>
+      </div>
+    </details>
+
+    <UnitToggle />
+  </form>
+
+  <section class="dining-fitcheck__result" aria-label="Dining fit result">
+    <FitSummary
+      id="dining-fitcheck-summary"
+      resultId="dining-fitcheck-table"
+      state={initialResult.state}
+      rows={rows}
+    />
+    <p class="dining-fitcheck__orientation" data-dining-orientation>
+      {initialPlan.seats} seats in the selected layout;{' '}
+      {initialPlan.orientation === 'width-depth'
+        ? 'table width runs along room width'
+        : 'table is rotated 90 degrees'}
+      .
+    </p>
+    <ScaleDiagram
+      id={DIAGRAM_ID}
+      widthPx={DIAGRAM_WIDTH}
+      heightPx={DIAGRAM_HEIGHT}
+      summary={diagramSummary}
+    >
+      <Fragment set:html={diagramMarkup} />
+    </ScaleDiagram>
+    <DimensionTable
+      id="dining-fitcheck-table"
+      rows={rows}
+      caption="Dining room table, chair envelope, seat width and selected circulation dimensions"
+    />
+    <AssumptionList id="dining-fitcheck-assumptions" assumptions={initialResult.assumptions} />
+  </section>
+</div>
+
+<script>
+  import '../../scripts/dining-fitcheck';
+</script>
+
+<style>
+  .dining-fitcheck {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 62rem) {
+    .dining-fitcheck {
+      grid-template-columns: minmax(20rem, 0.9fr) minmax(0, 1.1fr);
+      align-items: start;
+    }
+  }
+
+  .dining-fitcheck__form,
+  .dining-fitcheck__result {
+    display: grid;
+    align-content: start;
+    gap: var(--space-5);
+    min-width: 0;
+  }
+
+  .dining-fitcheck__form {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+
+  .fit-example-notice {
+    margin: 0;
+    padding: var(--space-3);
+    border-left: 0.2rem solid var(--color-accent-1);
+    background: var(--color-surface);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+  }
+
+  .dining-fitcheck__group {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .dining-fitcheck__group h2 {
+    margin: 0;
+    font-size: var(--fs-md);
+  }
+
+  .dining-fitcheck__advanced > summary {
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .dining-fitcheck__advanced[open] > .dining-fitcheck__group {
+    margin-top: var(--space-3);
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+
+  .field label {
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+  }
+
+  .field input,
+  .field select {
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .field__error {
+    min-height: 1.2em;
+    color: var(--color-state-no-fit-fg);
+    font-size: var(--fs-xs);
+  }
+
+  .field__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    line-height: 1.5;
+  }
+
+  .dining-fitcheck__orientation {
+    margin: 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    font-size: var(--fs-sm);
+  }
+
+  @media (min-width: 62rem) {
+    .dining-fitcheck__result {
+      position: sticky;
+      top: calc(var(--header-height, 4rem) + var(--space-4));
+    }
+  }
+
+  @media (max-width: 59.999rem) {
+    .dining-fitcheck {
+      padding-bottom: 4.5rem;
+    }
+  }
+</style>
