@@ -59,7 +59,13 @@ checkPage('/', home, {
     '/will-it-fit/',
     '/workspace/',
     '/bedroom/',
+    '/about/',
     '/methodology/',
+    'Object → Room',
+    'Objects → Room',
+    'Objects → Surface',
+    'Object → Opening',
+    'Operating clearance',
     'G-J10W58E2ZL',
     'googletagmanager.com/gtag/js',
   ],
@@ -70,6 +76,8 @@ checkPage('/will-it-fit/', universalFit, {
   heading: 'Will it fit?',
   includes: [
     'data-universal-fitcheck-form',
+    'Example setup.',
+    'data-fit-sticky',
     'fit-item-width',
     'fit-door-width',
     'fit-quantity',
@@ -83,11 +91,28 @@ assert(
   '/will-it-fit/: standalone calculator must remain noindex until editorial review.',
 );
 
+const aboutAndSources = await html('/about/');
+checkPage('/about/', aboutAndSources, {
+  heading: 'Dimension-based fit tools, with assumptions made visible',
+  includes: [
+    'id="data-sources"',
+    'id="corrections"',
+    'No public correction-submission contact is configured yet.',
+    'record confidence',
+  ],
+});
+assert(
+  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(aboutAndSources),
+  '/about/: editorial/trust page must remain noindex until owner-reviewed for publication.',
+);
+
 const workspace = await html('/workspace/');
 checkPage('/workspace/', workspace, {
   heading: 'Will your monitors fit your desk?',
   includes: [
     'data-workspace-fitcheck-form',
+    'Example setup.',
+    'data-fit-sticky',
     'workspace-fitcheck-table',
     'data-fit-state',
     '/workspace/monitor-size-chart/',
@@ -99,6 +124,8 @@ checkPage('/bedroom/', bedroom, {
   heading: 'Will your bed fit your room?',
   includes: [
     'data-bedroom-fitcheck-form',
+    'Example setup.',
+    'data-fit-sticky',
     'bedroom-fitcheck-table',
     '/bedroom/us-bed-size-dimensions/',
     '/bedroom/uk-bed-size-dimensions/',
@@ -114,7 +141,16 @@ const dedicatedPages = [
   {
     route: '/workspace/120cm-vs-140cm-desk/',
     heading: '120cm vs 140cm desk',
-    includes: ['121.6 cm', '-1.6 cm', '+18.4 cm', '129.2 cm', '-9.2 cm', '+10.8 cm'],
+    includes: [
+      '121.6 cm',
+      '-1.6 cm',
+      '+18.4 cm',
+      '129.2 cm',
+      '-9.2 cm',
+      '+10.8 cm',
+      'data-label="120.0 cm"',
+      'data-label="140.0 cm"',
+    ],
   },
   {
     route: '/workspace/monitor-size-chart/',

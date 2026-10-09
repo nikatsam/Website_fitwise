@@ -2,7 +2,7 @@
 
 **Audit scope:** planner product behavior, global measurement support, content assumptions, SEO and sitemap pipeline, dependencies, build/route validation, accessibility smoke checks, and deployment boundary.
 
-**Audit result:** Local implementation and validation pass. The new universal calculator and related global-input improvements are not yet pushed or deployed to production.
+**Audit result:** The global calculator was deployed earlier. The two calculation/precision P0 fixes described in the 9 October follow-up below are now live. A further mobile/trust-navigation pass is locally verified and not yet deployed.
 
 ## Product and Calculations
 
@@ -42,9 +42,9 @@
 
 ## Verification Evidence
 
-- `npm run verify` passed: Astro typecheck (0 errors), ESLint, Prettier, 197 tests across 24 files, static build of 44 pages, SEO validation (4 sitemap URLs/4 canonical pages), internal-link validation (43 HTML routes/4 indexable URLs), route checks, content checks, and offline infrastructure validation.
+- `npm run verify` passed: Astro typecheck (0 errors), ESLint, Prettier, 200 tests across 24 files, static build of 45 pages, SEO validation (4 sitemap URLs/4 canonical pages), internal-link validation (44 HTML routes/4 indexable URLs), route checks, content checks, and offline infrastructure validation.
 - Dataset build validation: 0 errors and 0 warnings.
-- `npm run qa:keyboard -- http://127.0.0.1:4322` passed in headless mobile Chrome for `/workspace/`, `/bedroom/`, and `/will-it-fit/`. This covered skip-link focus, tab navigation, keyboard-operated controls, unit toggle, form validation, global unit-suffixed input conversion, optional route visibility, and mobile overflow.
+- `npm run qa:keyboard -- http://127.0.0.1:4322` passed in headless Chrome for `/workspace/`, `/bedroom/`, and `/will-it-fit/` at mobile widths, with an additional desktop bedroom-layout check. It covers skip-link focus, tab navigation, keyboard-operated controls, unit toggle, form validation, global unit-suffixed input conversion, optional route visibility, example notices, sticky-result synchronization, and mobile overflow.
 - `npm audit --audit-level=moderate` returned no advisories.
 - Generated `/will-it-fit/` output contains the expected form and `noindex`; the SEO validator confirmed four indexable canonicals and sitemap entries remain unchanged.
 
@@ -55,4 +55,17 @@
 - Search demand and index eligibility cannot be assessed without Search Console access and a human SERP review. Utility and draft routes should remain noindex until evidence supports a separate editorial release.
 - GA4 remains active by owner decision. Privacy notice and consent handling are still an owner/compliance follow-up, not a resolved item or legal conclusion.
 - `tseslint.config` emits a TypeScript deprecation hint in `eslint.config.js`; typecheck still reports zero errors and ESLint passes.
-- Production release was not run as part of this request. The tested changes exist only in the local worktree until separately pushed and deployed through the confirmed production workflow.
+- Search demand and index eligibility cannot be assessed without Search Console access and a human SERP review. Utility and draft routes should remain noindex until evidence supports a separate editorial release.
+
+## 9 October Follow-Up
+
+- Fixed the dual-27 calculation disagreement across the workspace calculator, the 120/140 cm comparison, the dedicated two-27 page, the 140 cm layout matrix and the generated family page. All now use `buildWorkspaceConfigurationCheck`; derived screen-only widths are rounded consistently to the nearest millimetre before calculation.
+- The shared dual-27 model is 1,216 mm physical width and 1,292 mm recommended width. The 120 cm desk has −16 mm physical and −92 mm recommended margin; the 140 cm desk has +184 mm physical and +108 mm recommended margin. The comparison now shows signed margins rather than an absolute shortfall.
+- Added the canonical `formatMeasurement()` API and routed public dimension rendering through it. Regression cases cover `1930.3999999999999 → 1930.4 mm`, `1215.999999999 → 1216 mm`, and `3047.999999999 → 3048 mm`.
+- The route validator now asserts the same 121.6 cm physical and 129.2 cm recommended outputs across five generated pages and rejects floating-point artifacts in the cited bedroom routes.
+- Changes were committed as `06043e2` and deployed by workflow `37982399345`. Live checks confirmed all five comparison routes returned HTTP 200 with consistent values; the 10×10 and 10×12 bedroom routes returned HTTP 200 without floating-point leakage.
+- Live `robots.txt` and `sitemap.xml` return HTTP 200; robots references the sitemap and the sitemap remains four URLs. Search Console queries and index status remain unverified because owner credentials are unavailable.
+- A follow-up local UX pass labels starter calculations as examples, adds a mobile-persistent result link, keeps desktop result panels sticky, progressively collapses the universal tool's optional route/quantity inputs, and renders comparison rows as mobile cards. The homepage now starts from fit relationships. `/about/` exposes the source registry and correction standard in the footer; it remains noindex pending owner/editorial review, and explicitly states that no correction contact is configured. This UX pass has not been pushed or deployed yet.
+- Visible breadcrumbs and `BreadcrumbList` JSON-LD are present on the sampled indexable guide; a route regression now checks both. The original crawl's missing-breadcrumb observation did not reproduce in the generated page.
+- Privacy/consent, a real correction-submission channel, an About byline/ownership statement, and publication review of the sources page remain open owner decisions. No privacy or contact details were invented.
+- The 9 October local follow-up again passes `npm run verify` (200 tests, 45 pages, 44 internal HTML routes, four indexable URLs) and mobile keyboard QA plus desktop bedroom layout checks. The current uncommitted UX changes are not live.

@@ -30,16 +30,12 @@ const sample = buildObjectFitPlan({
   spaceDepthMm: DEFAULTS.spaceDepthMm,
   spaceHeightMm: DEFAULTS.spaceHeightMm,
   clearanceEachSideMm: DEFAULTS.clearanceEachSideMm,
-  doorwayWidthMm: DEFAULTS.doorwayWidthMm,
-  doorwayHeightMm: DEFAULTS.doorwayHeightMm,
-  corridorWidthMm: DEFAULTS.corridorWidthMm,
   requestedQuantity: DEFAULTS.requestedQuantity,
   itemGapMm: DEFAULTS.itemGapMm,
 });
 const assumptions = [
   'Example dimensions are editable placeholders, not a standard item, room, doorway or recommended clearance.',
   'Room placement checks use rectangular footprints, two 90-degree floor orientations and an upright height check; they do not model irregular walls, alcoves, slopes or tilt.',
-  'The optional access check compares an upright narrow face and item height against the clear opening, plus the narrow face against corridor width. It does not simulate turning, diagonal carry, stairs, handles or packaging.',
   'Quantity is a maximum rectangular single-layer grid estimate with one chosen gap between adjacent items; it excludes stacking, supports, access lanes and non-rectangular obstacles.',
 ];
 const initialResult = evaluateFit(sample.checks, assumptions);
@@ -51,8 +47,12 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
 
 <div class="universal-fitcheck" data-universal-fitcheck>
   <form class="universal-fitcheck__form" data-universal-fitcheck-form novalidate>
+    <p class="fit-example-notice" data-fit-example-notice role="note">
+      <strong>Example setup.</strong> These starter dimensions are illustrative. Enter the item's
+      measured outer size and your actual space before relying on the fit review.
+    </p>
     <div class="universal-fitcheck__group">
-      <h2>Item dimensions</h2>
+      <h2>1. Item dimensions</h2>
       <p>Enter a name and measured outer dimensions, including packaging if checking delivery.</p>
       <div class="field">
         <label for="fit-item-name">Item name (optional)</label>
@@ -105,7 +105,7 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
     </div>
 
     <div class="universal-fitcheck__group">
-      <h2>Destination space</h2>
+      <h2>2. Destination space</h2>
       <div class="field-grid">
         <div class="field">
           <label for="fit-space-width">Inside width</label>
@@ -172,84 +172,92 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
       </div>
     </div>
 
-    <div class="universal-fitcheck__group">
-      <h2>Access and quantity</h2>
-      <label class="check-option">
-        <input type="checkbox" id="fit-check-route" name="checkRoute" checked />
-        Check a doorway and corridor for upright passage
-      </label>
-      <div class="field-grid" data-fit-route-fields>
-        <div class="field">
-          <label for="fit-door-width">Clear doorway width</label>
-          <input
-            id="fit-door-width"
-            name="doorwayWidth"
-            type="text"
-            inputmode="decimal"
-            value="90 cm"
-            aria-describedby="fit-door-width-error"
-          />
-          <span class="field__error" id="fit-door-width-error" role="alert"></span>
+    <details class="universal-fitcheck__optional">
+      <summary>3. Optional access route and quantity</summary>
+      <div class="universal-fitcheck__group">
+        <h2>Access and quantity</h2>
+        <label class="check-option">
+          <input type="checkbox" id="fit-check-route" name="checkRoute" />
+          Check a doorway and corridor for upright passage
+        </label>
+        <div class="field-grid" data-fit-route-fields hidden>
+          <div class="field">
+            <label for="fit-door-width">Clear doorway width</label>
+            <input
+              id="fit-door-width"
+              name="doorwayWidth"
+              type="text"
+              inputmode="decimal"
+              value="90 cm"
+              aria-describedby="fit-door-width-error"
+            />
+            <span class="field__error" id="fit-door-width-error" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="fit-door-height">Clear doorway height</label>
+            <input
+              id="fit-door-height"
+              name="doorwayHeight"
+              type="text"
+              inputmode="decimal"
+              value="2 m"
+              aria-describedby="fit-door-height-error"
+            />
+            <span class="field__error" id="fit-door-height-error" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="fit-corridor-width">Narrowest corridor width</label>
+            <input
+              id="fit-corridor-width"
+              name="corridorWidth"
+              type="text"
+              inputmode="decimal"
+              value="1 m"
+              aria-describedby="fit-corridor-width-error"
+            />
+            <span class="field__error" id="fit-corridor-width-error" role="alert"></span>
+          </div>
         </div>
-        <div class="field">
-          <label for="fit-door-height">Clear doorway height</label>
-          <input
-            id="fit-door-height"
-            name="doorwayHeight"
-            type="text"
-            inputmode="decimal"
-            value="2 m"
-            aria-describedby="fit-door-height-error"
-          />
-          <span class="field__error" id="fit-door-height-error" role="alert"></span>
-        </div>
-        <div class="field">
-          <label for="fit-corridor-width">Narrowest corridor width</label>
-          <input
-            id="fit-corridor-width"
-            name="corridorWidth"
-            type="text"
-            inputmode="decimal"
-            value="1 m"
-            aria-describedby="fit-corridor-width-error"
-          />
-          <span class="field__error" id="fit-corridor-width-error" role="alert"></span>
+        <div class="field-grid">
+          <div class="field">
+            <label for="fit-quantity">Identical items to place</label>
+            <input
+              id="fit-quantity"
+              name="quantity"
+              type="number"
+              min="1"
+              step="1"
+              value={DEFAULTS.requestedQuantity}
+              aria-describedby="fit-quantity-error"
+            />
+            <span class="field__error" id="fit-quantity-error" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="fit-item-gap">Gap between items (optional)</label>
+            <input
+              id="fit-item-gap"
+              name="itemGap"
+              type="text"
+              inputmode="decimal"
+              value="0 mm"
+              aria-describedby="fit-item-gap-error"
+            />
+            <span class="field__error" id="fit-item-gap-error" role="alert"></span>
+          </div>
         </div>
       </div>
-      <div class="field-grid">
-        <div class="field">
-          <label for="fit-quantity">Identical items to place</label>
-          <input
-            id="fit-quantity"
-            name="quantity"
-            type="number"
-            min="1"
-            step="1"
-            value={DEFAULTS.requestedQuantity}
-            aria-describedby="fit-quantity-error"
-          />
-          <span class="field__error" id="fit-quantity-error" role="alert"></span>
-        </div>
-        <div class="field">
-          <label for="fit-item-gap">Gap between items (optional)</label>
-          <input
-            id="fit-item-gap"
-            name="itemGap"
-            type="text"
-            inputmode="decimal"
-            value="0 mm"
-            aria-describedby="fit-item-gap-error"
-          />
-          <span class="field__error" id="fit-item-gap-error" role="alert"></span>
-        </div>
-      </div>
-    </div>
+    </details>
 
     <UnitToggle />
   </form>
 
   <section class="universal-fitcheck__results" aria-label="Fit review">
-    <FitSummary id="universal-fit-summary" state={initialResult.state} rows={initialRows} />
+    <FitSummary
+      id="universal-fit-summary"
+      resultId="universal-fit-table"
+      state={initialResult.state}
+      rows={initialRows}
+    />
     <p class="universal-fitcheck__orientation" data-fit-orientation>
       {initialReport}
     </p>
@@ -296,6 +304,20 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface-raised);
+  }
+
+  .fit-example-notice {
+    margin: 0;
+    padding: var(--space-3);
+    border-left: 0.2rem solid var(--color-accent-1);
+    background: var(--color-surface);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+  }
+
+  .universal-fitcheck__optional > summary {
+    cursor: pointer;
+    font-weight: 700;
   }
 
   .universal-fitcheck__group {
@@ -372,6 +394,19 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
     border-radius: var(--radius-md);
     background: var(--color-surface-raised);
     font-size: var(--fs-sm);
+  }
+
+  @media (min-width: 62rem) {
+    .universal-fitcheck__results {
+      position: sticky;
+      top: calc(var(--header-height, 4rem) + var(--space-4));
+    }
+  }
+
+  @media (max-width: 59.999rem) {
+    .universal-fitcheck {
+      padding-bottom: 4.5rem;
+    }
   }
 
   .copy-report {

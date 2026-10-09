@@ -87,6 +87,10 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
 
 <div class="workspace-fitcheck" data-workspace-fitcheck data-diagram-id={DIAGRAM_ID}>
   <form class="workspace-fitcheck__form" data-workspace-fitcheck-form novalidate>
+    <p class="fit-example-notice" data-fit-example-notice role="note">
+      <strong>Example setup.</strong> Starter dimensions are illustrative; change them to your
+      measured equipment and desk before relying on the result.
+    </p>
     <div class="field">
       <label for="desk-width">Desk width (mm)</label>
       <input
@@ -253,7 +257,12 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
   </form>
 
   <div class="workspace-fitcheck__result">
-    <FitSummary id="workspace-fitcheck-summary" state={result.state} rows={rows} />
+    <FitSummary
+      id="workspace-fitcheck-summary"
+      resultId="workspace-fitcheck-table"
+      state={result.state}
+      rows={rows}
+    />
 
     <ScaleDiagram
       id={DIAGRAM_ID}
@@ -294,10 +303,20 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
   .workspace-fitcheck__form {
     display: grid;
     gap: var(--space-4);
+    min-width: 0;
     padding: var(--space-4);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface-raised);
+  }
+
+  .fit-example-notice {
+    margin: 0;
+    padding: var(--space-3);
+    border-left: 0.2rem solid var(--color-accent-1);
+    background: var(--color-surface);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
   }
 
   .field {
@@ -349,5 +368,19 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
   .workspace-fitcheck__result {
     display: grid;
     gap: var(--space-5);
+    min-width: 0;
+  }
+
+  @media (min-width: 60rem) {
+    .workspace-fitcheck__result {
+      position: sticky;
+      top: calc(var(--header-height, 4rem) + var(--space-4));
+    }
+  }
+
+  @media (max-width: 59.999rem) {
+    .workspace-fitcheck {
+      padding-bottom: 4.5rem;
+    }
   }
 </style>

@@ -12,9 +12,11 @@ interface Props {
   rows: DimensionDisplayRow[];
   /** Stable root id so client scripts can update this summary in place (e.g. T012 FitCheck). */
   id?: string;
+  /** Optional dimension-table target for the mobile sticky result bar. */
+  resultId?: string;
 }
 
-const { state, rows, id } = Astro.props;
+const { state, rows, id, resultId } = Astro.props;
 const { icon, label } = FIT_STATE_BADGE_COPY[state];
 const primary = selectSummaryDimension(rows);
 const { hardFailures, recommendationFailures } = getFailedDimensionRows(rows);
@@ -51,6 +53,32 @@ const { hardFailures, recommendationFailures } = getFailedDimensionRows(rows);
       </>
     )}
   </p>
+  {resultId && (
+    <a
+      class="fit-summary__mobile-link"
+      data-fit-sticky
+      data-fit-state={state}
+      href={`#${resultId}`}
+      aria-label={`Fit result: ${label}. View dimension details.`}
+    >
+      <span class="fit-summary__mobile-status">
+        <span aria-hidden="true" data-field="sticky-icon">
+          {icon}
+        </span>
+        <strong data-field="sticky-label">{label}</strong>
+      </span>
+      <span class="fit-summary__mobile-detail" data-field="sticky-detail">
+        {state === 'fits' && primary && (
+          <>
+            <UnitValue mm={Math.max(0, primary.marginMm)} /> spare
+          </>
+        )}
+        {state === 'tight' && 'Clearance short'}
+        {state === 'does_not_fit' && 'Review dimensions'}
+      </span>
+      <span>View details ↑</span>
+    </a>
+  )}
 </div>
 
 <style>
@@ -108,5 +136,64 @@ const { hardFailures, recommendationFailures } = getFailedDimensionRows(rows);
     margin: 0;
     color: inherit;
     opacity: 0.92;
+  }
+
+  .fit-summary__mobile-link {
+    display: none;
+  }
+
+  @media (max-width: 59.999rem) {
+    .fit-summary__mobile-link {
+      position: fixed;
+      z-index: 100;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      min-height: 3.75rem;
+      padding: var(--space-3) max(var(--space-4), env(safe-area-inset-left, 0px))
+        calc(var(--space-3) + env(safe-area-inset-bottom, 0px))
+        max(var(--space-4), env(safe-area-inset-right, 0px));
+      border-top: 1px solid var(--color-border);
+      background: var(--color-surface-raised);
+      color: var(--color-text-primary);
+      box-shadow: 0 -0.25rem 1rem rgb(0 0 0 / 12%);
+      font-size: var(--fs-sm);
+      text-decoration: none;
+    }
+
+    .fit-summary__mobile-link[data-fit-state='fits'] {
+      background: var(--color-state-fit-bg);
+      color: var(--color-state-fit-fg);
+    }
+
+    .fit-summary__mobile-link[data-fit-state='tight'] {
+      background: var(--color-state-tight-bg);
+      color: var(--color-state-tight-fg);
+    }
+
+    .fit-summary__mobile-link[data-fit-state='does_not_fit'] {
+      background: var(--color-state-no-fit-bg);
+      color: var(--color-state-no-fit-fg);
+    }
+
+    .fit-summary__mobile-status {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .fit-summary__mobile-detail {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    :global(body:has(.fit-summary__mobile-link)) {
+      padding-bottom: 4.5rem;
+    }
   }
 </style>

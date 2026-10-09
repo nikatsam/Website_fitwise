@@ -252,6 +252,22 @@ function recompute(): void {
     if (iconEl) iconEl.textContent = copy.icon;
     if (labelEl) labelEl.textContent = copy.label;
     if (detailEl) detailEl.innerHTML = renderDetailHtml(result.state, rows);
+    const sticky = summaryEl.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
+    if (sticky) {
+      sticky.dataset.fitState = result.state;
+      sticky.setAttribute('aria-label', `Fit result: ${copy.label}. View dimension details.`);
+      sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = copy.icon;
+      sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = copy.label;
+      const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
+      if (stickyDetail) {
+        stickyDetail.innerHTML =
+          result.state === 'fits'
+            ? `${unitValueHtml(Math.max(0, summaryRow.marginMm))} spare`
+            : result.state === 'tight'
+              ? 'Clearance short'
+              : 'Review dimensions';
+      }
+    }
   }
 
   // Patch DimensionTable.
@@ -312,8 +328,19 @@ function initWorkspaceFitCheck(): void {
   if (!form) return;
 
   form.addEventListener('submit', (event) => event.preventDefault());
-  form.addEventListener('input', recompute);
-  form.addEventListener('change', recompute);
+  const handleChange = (event: Event) => {
+    const target = event.target;
+    if (
+      (target instanceof HTMLInputElement && target.type !== 'checkbox') ||
+      target instanceof HTMLSelectElement
+    ) {
+      const exampleNotice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
+      if (exampleNotice) exampleNotice.hidden = true;
+    }
+    recompute();
+  };
+  form.addEventListener('input', handleChange);
+  form.addEventListener('change', handleChange);
 }
 
 initWorkspaceFitCheck();

@@ -160,6 +160,27 @@ function renderSummary(
   summary.querySelector<HTMLElement>('[data-field="label"]')!.textContent =
     FIT_STATE_BADGE_COPY[state].label;
   summary.querySelector<HTMLElement>('[data-field="detail"]')!.innerHTML = detail;
+  const sticky = summary.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
+  if (sticky) {
+    sticky.dataset.fitState = state;
+    sticky.setAttribute(
+      'aria-label',
+      `Fit result: ${FIT_STATE_BADGE_COPY[state].label}. View dimension details.`,
+    );
+    sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent =
+      FIT_STATE_BADGE_COPY[state].icon;
+    sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent =
+      FIT_STATE_BADGE_COPY[state].label;
+    const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
+    if (stickyDetail) {
+      stickyDetail.innerHTML =
+        state === 'fits' && primary
+          ? `${unitHtml(Math.max(0, primary.marginMm))} spare`
+          : state === 'tight'
+            ? 'Clearance short'
+            : 'Review dimensions';
+    }
+  }
 }
 
 function recompute(): void {
@@ -227,10 +248,21 @@ function init(): void {
       clearError('fit-corridor-width');
     }
   };
-  form.addEventListener('input', recompute);
-  form.addEventListener('change', () => {
-    updateRouteVisibility();
+  const handleChange = (event: Event) => {
+    const target = event.target;
+    if (
+      (target instanceof HTMLInputElement && target.type !== 'checkbox') ||
+      target instanceof HTMLSelectElement
+    ) {
+      const exampleNotice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
+      if (exampleNotice) exampleNotice.hidden = true;
+    }
     recompute();
+  };
+  form.addEventListener('input', handleChange);
+  form.addEventListener('change', (event) => {
+    updateRouteVisibility();
+    handleChange(event);
   });
   form.addEventListener('submit', (event) => event.preventDefault());
   document.querySelector('[data-copy-fit-report]')?.addEventListener('click', async () => {

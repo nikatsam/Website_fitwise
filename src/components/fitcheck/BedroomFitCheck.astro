@@ -118,6 +118,10 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
 
 <div class="bedroom-fitcheck" data-bedroom-fitcheck data-diagram-id={DIAGRAM_ID}>
   <form class="bedroom-fitcheck__form" data-bedroom-fitcheck-form novalidate>
+    <p class="fit-example-notice" data-fit-example-notice role="note">
+      <strong>Example setup.</strong> The custom mattress and room dimensions start with editable
+      sample values. Replace them with measurements from your room and bed.
+    </p>
     <div class="field">
       <label for="room-width">Room inside width</label>
       <input
@@ -377,7 +381,12 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
   </form>
 
   <div class="bedroom-fitcheck__result">
-    <FitSummary id="bedroom-fitcheck-summary" state={result.state} rows={rows} />
+    <FitSummary
+      id="bedroom-fitcheck-summary"
+      resultId="bedroom-fitcheck-table"
+      state={result.state}
+      rows={rows}
+    />
 
     <ScaleDiagram
       id={DIAGRAM_ID}
@@ -419,10 +428,20 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
     display: grid;
     gap: var(--space-4);
     min-width: 0;
+    min-width: 0;
     padding: var(--space-4);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface-raised);
+  }
+
+  .fit-example-notice {
+    margin: 0;
+    padding: var(--space-3);
+    border-left: 0.2rem solid var(--color-accent-1);
+    background: var(--color-surface);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
   }
 
   .field {
@@ -513,5 +532,18 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
   .bedroom-fitcheck__result > *,
   .bedroom-fitcheck__result .scale-diagram {
     min-width: 0;
+  }
+
+  @media (min-width: 60rem) {
+    .bedroom-fitcheck__result {
+      position: sticky;
+      top: calc(var(--header-height, 4rem) + var(--space-4));
+    }
+  }
+
+  @media (max-width: 59.999rem) {
+    .bedroom-fitcheck {
+      padding-bottom: 4.5rem;
+    }
   }
 </style>

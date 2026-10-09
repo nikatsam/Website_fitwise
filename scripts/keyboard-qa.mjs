@@ -196,6 +196,20 @@ async function smokePage(pathname, scope) {
     (await evaluate('document.readyState')) === 'complete',
     `${pathname} did not finish loading.`,
   );
+  if (['/workspace/', '/bedroom/', '/will-it-fit/'].includes(pathname)) {
+    assert(
+      await evaluate('Boolean(document.querySelector("[data-fit-example-notice]:not([hidden])"))'),
+      `${pathname}: the initial example result is not clearly labeled.`,
+    );
+    const mobileResult = await evaluate(`(() => {
+      const link = document.querySelector('[data-fit-sticky]');
+      return link && { position: getComputedStyle(link).position, href: link.getAttribute('href') };
+    })()`);
+    assert(
+      mobileResult?.position === 'fixed' && mobileResult.href?.includes('-table'),
+      `${pathname}: the mobile fit result is not persistently available: ${JSON.stringify(mobileResult)}.`,
+    );
+  }
 
   await press('Tab', 'Tab', 9);
   const firstTabFocus = await evaluate(
@@ -211,7 +225,7 @@ async function smokePage(pathname, scope) {
     `${pathname}: Enter did not activate the skip link.`,
   );
 
-  if (pathname !== '/will-it-fit/') {
+  if (pathname === '/workspace/') {
     await tabUntil('[data-theme-toggle]');
     const themeBefore = await evaluate(
       'document.querySelector("[data-theme-toggle]").getAttribute("aria-pressed")',
@@ -242,6 +256,10 @@ async function smokePage(pathname, scope) {
       )) === 4,
       `${pathname}: monitor-count selection did not update the diagram.`,
     );
+    assert(
+      await evaluate('document.querySelector("[data-fit-example-notice]").hidden'),
+      `${pathname}: example notice did not clear after editing a measurement control.`,
+    );
   }
 
   if (pathname === '/bedroom/') {
@@ -255,6 +273,10 @@ async function smokePage(pathname, scope) {
     assert(
       (await evaluate('document.querySelector("#orientation").value')) === 'landscape',
       `${pathname}: keyboard could not change bed orientation.`,
+    );
+    assert(
+      await evaluate('document.querySelector("[data-fit-example-notice]").hidden'),
+      `${pathname}: example notice did not clear after changing the bed orientation.`,
     );
     const detail = await evaluate(
       'document.querySelector("#bedroom-fitcheck-summary [data-field=detail]").textContent',
@@ -271,13 +293,15 @@ async function smokePage(pathname, scope) {
     });
     const desktopLayout = await evaluate(`(() => {
       const form = document.querySelector('.bedroom-fitcheck__form').getBoundingClientRect();
-      const result = document.querySelector('.bedroom-fitcheck__result').getBoundingClientRect();
+      const resultElement = document.querySelector('.bedroom-fitcheck__result');
+      const result = resultElement.getBoundingClientRect();
       const controls = [...document.querySelectorAll('.bedroom-fitcheck__form input, .bedroom-fitcheck__form select, .bedroom-fitcheck__form button')];
-      return { formRight: form.right, resultLeft: result.left, maxControlRight: Math.max(...controls.map((el) => el.getBoundingClientRect().right)) };
+      return { formRight: form.right, resultLeft: result.left, resultPosition: getComputedStyle(resultElement).position, maxControlRight: Math.max(...controls.map((el) => el.getBoundingClientRect().right)) };
     })()`);
     assert(
       desktopLayout.maxControlRight <= desktopLayout.formRight + 1 &&
-        desktopLayout.resultLeft >= desktopLayout.formRight,
+        desktopLayout.resultLeft >= desktopLayout.formRight &&
+        desktopLayout.resultPosition === 'sticky',
       `${pathname}: desktop form controls or result overlap: ${JSON.stringify(desktopLayout)}.`,
     );
     await cdp('Emulation.setDeviceMetricsOverride', {
@@ -389,7 +413,22 @@ async function smokePage(pathname, scope) {
       )) === '100.0 cm',
       `${pathname}: unit-suffixed input was not converted into the calculation unit.`,
     );
+    assert(
+      await evaluate('document.querySelector("[data-fit-example-notice]").hidden'),
+      `${pathname}: example notice did not clear after changing an item measurement.`,
+    );
+    await tabUntil('.universal-fitcheck__optional > summary');
+    await press(' ', 'Space', 32);
+    assert(
+      await evaluate('document.querySelector(".universal-fitcheck__optional").open'),
+      `${pathname}: keyboard could not expand optional access and quantity settings.`,
+    );
     await tabUntil('#fit-check-route');
+    await press(' ', 'Space', 32);
+    assert(
+      !(await evaluate('document.querySelector("[data-fit-route-fields]").hidden')),
+      `${pathname}: enabling access checks did not reveal doorway and corridor inputs.`,
+    );
     await press(' ', 'Space', 32);
     assert(
       await evaluate('document.querySelector("[data-fit-route-fields]").hidden'),
@@ -401,6 +440,19 @@ async function smokePage(pathname, scope) {
     assert(
       mobile.pageWidth <= mobile.viewport + 1,
       `${pathname}: universal calculator causes horizontal overflow on mobile.`,
+    );
+  }
+
+  if (['/workspace/', '/bedroom/', '/will-it-fit/'].includes(pathname)) {
+    const stickyState = await evaluate(`(() => {
+      const summary = document.querySelector('#workspace-fitcheck-summary, #bedroom-fitcheck-summary, #universal-fit-summary');
+      const sticky = document.querySelector('[data-fit-sticky]');
+      return { summaryState: summary?.getAttribute('data-fit-state'), stickyState: sticky?.getAttribute('data-fit-state'), summaryLabel: summary?.querySelector('[data-field=label]')?.textContent?.trim(), stickyLabel: sticky?.querySelector('[data-field=sticky-label]')?.textContent?.trim() };
+    })()`);
+    assert(
+      stickyState.summaryState === stickyState.stickyState &&
+        stickyState.summaryLabel === stickyState.stickyLabel,
+      `${pathname}: sticky status is not synchronized with the full result: ${JSON.stringify(stickyState)}.`,
     );
   }
 
@@ -478,6 +530,25 @@ try {
   await smokePage('/workspace/', 'workspace-fitcheck');
   await smokePage('/bedroom/', 'bedroom-fitcheck');
   await smokePage('/will-it-fit/', 'universal-fitcheck');
+  await cdp('Page.navigate', {
+    url: new URL('/workspace/120cm-vs-140cm-desk/', baseUrl).toString(),
+  });
+  const comparisonDeadline = Date.now() + 15_000;
+  while (Date.now() < comparisonDeadline) {
+    if ((await evaluate('document.readyState')) === 'complete') break;
+    await delay(50);
+  }
+  const comparisonMobile = await evaluate(`(() => {
+    const cell = document.querySelector('.comparison-table tbody td');
+    return { cellDisplay: cell && getComputedStyle(cell).display, hasRowLabel: Boolean(cell?.getAttribute('data-label')), pageWidth: document.documentElement.scrollWidth, viewport: window.innerWidth };
+  })()`);
+  assert(
+    comparisonMobile.cellDisplay === 'flex' &&
+      comparisonMobile.hasRowLabel &&
+      comparisonMobile.pageWidth <= comparisonMobile.viewport + 1,
+    `Desk comparison does not use a readable mobile card layout: ${JSON.stringify(comparisonMobile)}.`,
+  );
+  console.log('Mobile comparison table passed card-layout and overflow checks.');
   console.log('Keyboard QA passed in headless Chrome using real Tab, Enter, and Space key events.');
 } catch (error) {
   console.error(`Keyboard QA failed: ${error.message}`);
