@@ -59,3 +59,7 @@ Build interaction-quality verticals before growing page counts. Keep early tools
 |    Later | Vehicle → garage                       | Vehicle/Garage Fit      | Custom-measurement mode deployed; vehicle specification catalog and driveway/maneuvering model remain deferred                                    |
 
 All eight current priorities are represented in interactive tools. Dining has its own route; the other modes, including a custom-measured Vehicle/Garage check, are grouped at `/fit-services/`. Both utility routes are noindex pending source and human SERP review; the sitemap remains unchanged. A sourced vehicle catalog and maneuvering model remain later due to high data cost. Do not create the whole cluster as thin SEO pages; extend shared calculations, add regression fixtures and source exact product limits before any indexable content.
+
+## Garden Fit Vertical
+
+`/garden/` is a separate noindex multi-service tool for structure-to-plot and reverse candidate sizing, gazebo post-to-post dining layout, shed storage, greenhouse staging/aisle, hot-tub service zones, outdoor kitchens and play-equipment use zones. Rectangular geometry, user/manual inputs and explicit exclusions are the initial scope. Planning permission, structural suitability, safety and environmental conditions are deliberately not inferred. Search intent, model-specific source coverage and human SERP review are still required before any Garden URLs become indexable.
