@@ -125,6 +125,7 @@ checkPage('/fit-services/', fitServices, {
     'home-gym',
     'storage',
     'pool-room',
+    'vehicle-garage',
     'name="robots" content="noindex"',
   ],
 });

@@ -17,6 +17,7 @@ describe('Fit Services studio calculations', () => {
       'home-gym',
       'storage',
       'pool-room',
+      'vehicle-garage',
     ]);
   });
 
@@ -91,6 +92,17 @@ describe('Fit Services studio calculations', () => {
     expect(plan.checks.find((check) => check.dimension === 'pool_room_length')?.minimumMm).toBe(
       5400,
     );
+    expect(evaluateFit(plan.checks).state).toBe('fits');
+  });
+
+  it('separates vehicle body fit, garage-door passage and open-door access space', () => {
+    const plan = buildFitServicePlan('vehicle-garage', getFitServiceDefaults('vehicle-garage'));
+    const width = plan.checks.find((check) => check.dimension === 'vehicle_garage_width');
+    const opening = plan.checks.find((check) => check.dimension === 'vehicle_door_opening_width');
+    expect(width?.minimumMm).toBe(1900);
+    expect(width?.recommendedMm).toBe(3300);
+    expect(opening?.minimumMm).toBe(1900);
+    expect(opening?.availableMm).toBe(2400);
     expect(evaluateFit(plan.checks).state).toBe('fits');
   });
 

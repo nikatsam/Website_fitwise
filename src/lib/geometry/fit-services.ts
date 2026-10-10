@@ -9,7 +9,8 @@ export type FitServiceMode =
   | 'tv-fit'
   | 'home-gym'
   | 'storage'
-  | 'pool-room';
+  | 'pool-room'
+  | 'vehicle-garage';
 
 export type FitServiceFieldType = 'length' | 'count' | 'decimal' | 'text' | 'select';
 
@@ -279,6 +280,41 @@ export const FIT_SERVICE_DEFINITIONS: FitServiceDefinition[] = [
       length('roomWidth', 'Room inside width', '4400 mm'),
       length('roomLength', 'Room inside length', '5500 mm'),
       length('extraClearance', 'Additional space beyond cue length (user selected)', '0 mm', true),
+    ],
+  },
+  {
+    mode: 'vehicle-garage',
+    title: 'Vehicle → garage and access space',
+    description:
+      'Compare your measured vehicle, garage opening and parking space, then add door-access and overhead zones you choose.',
+    fields: [
+      length(
+        'vehicleWidth',
+        'Vehicle outside width in parking configuration (include mirrors/accessories as measured)',
+        '1900 mm',
+      ),
+      length('vehicleLength', 'Vehicle outside length', '4800 mm'),
+      length('vehicleHeight', 'Vehicle outside height (include roof equipment)', '1800 mm'),
+      length('garageWidth', 'Garage clear inside width', '3600 mm'),
+      length('garageLength', 'Garage clear inside depth', '6000 mm'),
+      length('garageHeight', 'Garage clear ceiling height', '2400 mm'),
+      length('garageOpeningWidth', 'Garage door clear opening width', '2400 mm'),
+      length('garageOpeningHeight', 'Garage door clear opening height', '2200 mm'),
+      length(
+        'doorProjection',
+        'Vehicle door projection beyond body on each side (measured)',
+        '400 mm',
+        true,
+      ),
+      length('sideAccess', 'Extra access space beyond open door (user selected)', '300 mm', true),
+      length(
+        'frontClearance',
+        'Extra space in front of parked vehicle (user selected)',
+        '500 mm',
+        true,
+      ),
+      length('rearClearance', 'Extra space behind parked vehicle (user selected)', '500 mm', true),
+      length('overheadClearance', 'Extra overhead space (user/manual selected)', '200 mm', true),
     ],
   },
 ];
@@ -736,6 +772,63 @@ export function buildFitServicePlan(
         assumptions: [
           'Cue length is the measured cue used for play. The envelope reserves cue length at each table edge.',
           'The extra margin is user-selected. The model does not simulate angled shots, player stance, cue elevation, table pockets or other furniture.',
+        ],
+      };
+    }
+    case 'vehicle-garage': {
+      const width = positive(values, 'vehicleWidth');
+      const length = positive(values, 'vehicleLength');
+      const height = positive(values, 'vehicleHeight');
+      const doorProjection = nonNegative(values, 'doorProjection');
+      const sideAccess = nonNegative(values, 'sideAccess');
+      const frontClearance = nonNegative(values, 'frontClearance');
+      const rearClearance = nonNegative(values, 'rearClearance');
+      const overheadClearance = nonNegative(values, 'overheadClearance');
+      const doorAccessWidth = width + (doorProjection + sideAccess) * 2;
+      if (!Number.isFinite(doorAccessWidth)) {
+        throw new RangeError('Vehicle door-access envelope must remain finite.');
+      }
+      return {
+        checks: [
+          dimension(
+            'vehicle_garage_width',
+            'vehicle and open-door access width',
+            width,
+            positive(values, 'garageWidth'),
+            doorAccessWidth,
+          ),
+          dimension(
+            'vehicle_garage_length',
+            'parked vehicle length and selected front/rear space',
+            length,
+            positive(values, 'garageLength'),
+            length + frontClearance + rearClearance,
+          ),
+          dimension(
+            'vehicle_garage_height',
+            'vehicle height and selected overhead space',
+            height,
+            positive(values, 'garageHeight'),
+            height + overheadClearance,
+          ),
+          dimension(
+            'vehicle_door_opening_width',
+            'vehicle width at garage door opening',
+            width,
+            positive(values, 'garageOpeningWidth'),
+          ),
+          dimension(
+            'vehicle_door_opening_height',
+            'vehicle height at garage door opening',
+            height,
+            positive(values, 'garageOpeningHeight'),
+          ),
+        ],
+        compatibility: [],
+        assumptions: [
+          'Vehicle dimensions are user-entered for the actual mirror/accessory configuration. Fitwise has no vehicle specification database in this mode.',
+          'Door projection and extra access/parking/overhead space are user-selected measurements, not universal parking, safety or accessibility standards.',
+          'The check does not model driveway approach angle, steering path, ramps, lift equipment, garage-door tracks, mirrors folding, or opening/closing maneuvers.',
         ],
       };
     }

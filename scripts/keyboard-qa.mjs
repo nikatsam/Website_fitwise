@@ -336,6 +336,7 @@ async function smokePage(pathname, scope) {
       ['home-gym', '#service-equipmentWidth'],
       ['storage', '#service-spaceHeight'],
       ['pool-room', '#service-cueLength'],
+      ['vehicle-garage', '#service-garageOpeningWidth'],
     ];
     for (const [mode, field] of modeCases) {
       const outcome = await evaluate(`(() => {
