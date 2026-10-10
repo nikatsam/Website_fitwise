@@ -241,6 +241,7 @@ const dedicatedPages = [
       '129.2 cm',
       '-9.2 cm',
       '+10.8 cm',
+      'Target margin after selected clearance',
       'data-label="120.0 cm"',
       'data-label="140.0 cm"',
     ],
