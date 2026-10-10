@@ -96,3 +96,11 @@
 - `npm run verify` passes with 189 tests, a 43-page build, 42 validated internal-link routes and the four-URL sitemap. Headless mobile keyboard QA exercises monitor count/aspect/depth, bed orientation, bedside tables, wardrobe/drawer checks, and confirms dynamic rows stay in the mobile card layout without page overflow. Mobile Lighthouse scores 100 for performance/accessibility/best-practices; SEO score 66 is expected for the intentional noindex.
 - Final local Lighthouse LCP was 1.2 s (Workspace) and 1.1 s (Bedroom), CLS 0. Replaced far-offscreen skip-link positioning with a transform-based focus reveal after the mobile keyboard check exposed first-Tab focus loss.
 - Commit `623d8bd` was deployed by workflow `37838761910`. Live keyboard QA passed on both planners; indexability and sitemap membership remain unchanged.
+
+## Feature Indexing Release — 2026-10-10
+
+- Owner-authorized feature-indexing release: commit `a9f10fe` deployed by workflow `38039995713`. The sitemap now lists 41 canonical URLs covering the root tools, Garden and Fit Services hubs, and dedicated appliance, delivery-route, workspace-compatibility, TV, gym, storage, pool/game-room and vehicle/garage landings.
+- All 41 live sitemap URLs were visited in headless Chrome at mobile width. Checks confirmed HTTP 200, a matching self-canonical, no `noindex`, a visible breadcrumb with BreadcrumbList JSON-LD, no horizontal overflow, and no long floating-point values in visible text.
+- `npm run verify` passes with 219 tests, a 73-page build, 72 internal routes, SEO/content/route/infrastructure validation and zero dataset warnings. The updated fit summaries distinguish physical margin from margin after the selected target.
+- Live `robots.txt` and `sitemap.xml` return HTTP 200; robots points to the apex sitemap. IndexNow notification succeeded. Optional Google Search Console authentication/sitemap submission was skipped because owner credentials are not configured; actual search indexing is not confirmed or guaranteed.
+- Feature pages rely on user-entered dimensions and clearly labeled examples. Manufacturer-specific installation/weight/VESA/play-use limits must be checked against current model manuals; the pages do not assert universal safety or code clearances.

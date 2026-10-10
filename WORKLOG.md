@@ -23,7 +23,7 @@
 - Implementation progress: **100%**
 - Deployment progress: **100%**
 - Current active task: **None**
-- Next task: **Revisit deferred GA4 consent and future planner refinements**
+- Next task: **Owner: confirm Search Console coverage and privacy/consent policy**
 
 ## Task tracker
 
@@ -58,6 +58,12 @@
 | T027 | 🟩 DONE |     5% | 2026-10-08 | Audit fixes and measured furniture/monitor guides deployed; 169 tests and live noindex/sitemap checks passed     |
 | T028 | 🟩 DONE |     2% | 2026-10-08 | SEO metadata audit complete; reciprocal hreflang deployed/live-verified; four-URL sitemap retained               |
 | T029 | 🟩 DONE |     4% | 2026-10-08 | Expanded planners deployed; 189 tests, live keyboard QA, mobile Lighthouse and route checks passed               |
+
+## Post-T029 Release Log
+
+| Date       | Change                                                                                                                                                                 | Verification / deployment                                                                                                                                                                                                                                           |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-10 | Published 41 feature URLs with canonical, visible breadcrumbs and BreadcrumbList metadata; separated physical/target margins; added Garden and dedicated mode landings | Commit `a9f10fe`, deploy run `38039995713`; `npm run verify` passes with 219 tests, 73-page build, 72 internal routes; live headless Chrome crawled all 41 sitemap URLs. IndexNow notified; optional GSC submission skipped because credentials are not configured. |
 
 ## Session log
 
