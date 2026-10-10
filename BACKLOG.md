@@ -56,10 +56,14 @@ Build interaction-quality verticals before growing page counts. Keep early tools
 |        6 | Equipment → gym room                   | Home Gym Fit            | Studio mode deployed; physical footprint separated from user/manual-selected operating zones                                                      |
 |        7 | Objects → storage                      | Storage planning        | Studio mode deployed; one-layer grid capacity and aisle target only; no stacking or packing-optimality claim                                      |
 |        8 | Pool/game table → room                 | Pool/game-room fit      | Studio mode deployed; entered cue-length envelope only; no angled-shot/player-stance solver                                                       |
-|    Later | Vehicle → garage                       | Vehicle/Garage Fit      | Custom-measurement mode deployed; vehicle specification catalog and driveway/maneuvering model remain deferred                                    |
+|    Later | Vehicle → garage                       | Vehicle/Garage Fit      | Custom-measurement mode is live; authoritative vehicle specifications and driveway/maneuvering simulation remain deferred                         |
 
 All eight current priorities, plus Garden and a custom-measured Vehicle/Garage check, now have dedicated crawlable feature URLs. They are indexable with self-canonicals, visible breadcrumbs and BreadcrumbList data, and appear in the 41-URL sitemap. Their examples use user-entered dimensions rather than unverified product catalogs. Search Console query data remains unavailable; these routes were published at the owner's explicit direction, not because a ranking or indexing outcome is guaranteed. A sourced vehicle specification catalog and precise driveway/maneuvering model remain deferred due to data/geometry cost. Do not create the whole cluster as thin pages; extend shared calculations, add regression fixtures and source exact product limits before further expansion.
 
 ## Garden Fit Vertical
 
 `/garden/` is a separate multi-service vertical for structure-to-plot and reverse candidate sizing, gazebo post-to-post dining layout, shed storage, greenhouse staging/aisle, hot-tub service zones, outdoor kitchens and play-equipment use zones. The root and service URLs are indexable but remain custom-input tools with explicit limits. Planning permission, structural suitability, safety and environmental conditions are deliberately not inferred; play use-zones require exact manufacturer data.
+
+## Next Product Milestone: Multi-Fit Engine
+
+The next differentiating product should place several axis-aligned, measured rectangles in one space with fixed obstacles and explicitly selected clearances. Start with **Shed Multi-Fit**: lawn mower, bicycles, shelving and wheelbarrow in one shed, with a user-selected aisle; show one deterministic arrangement or state that none of the tested arrangements passes. Then reuse the engine for Living Room Fit, Garden Office interior planning, Laundry Room Fit and Patio/Balcony Fit. Keep the model constrained and explain tested orientations; do not call it an optimizer or CAD simulator.

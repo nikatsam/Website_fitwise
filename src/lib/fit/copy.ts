@@ -15,4 +15,5 @@ export const FIT_STATE_BADGE_COPY: Record<FitState, FitStateBadgeCopy> = {
   fits: { icon: '✓', label: 'Fits' },
   tight: { icon: '△', label: 'Tight fit' },
   does_not_fit: { icon: '✕', label: 'Does not fit' },
+  needs_information: { icon: '?', label: 'Needs information' },
 };

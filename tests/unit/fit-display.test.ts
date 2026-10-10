@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   evaluateFit,
+  FIT_STATE_BADGE_COPY,
   getFailedDimensionRows,
   selectSummaryDimension,
   toDimensionDisplayRows,
@@ -96,5 +97,12 @@ describe('toDimensionDisplayRows', () => {
 
   it('chooses the tightest target margin even when physical margins are larger', () => {
     expect(selectSummaryDimension(rows)?.dimension).toBe('left');
+  });
+
+  it('has a distinct Needs information label for unverified manual inputs', () => {
+    expect(FIT_STATE_BADGE_COPY.needs_information).toEqual({
+      icon: '?',
+      label: 'Needs information',
+    });
   });
 });

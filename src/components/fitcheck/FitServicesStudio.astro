@@ -31,15 +31,28 @@ const initialDefinition = serviceDefinitions.find(
 const initialValues = getFitServiceDefaults(INITIAL_MODE);
 const initialPlan = buildFitServicePlan(INITIAL_MODE, initialValues);
 const initialResult = evaluateFit(initialPlan.checks, initialPlan.assumptions);
-const initialState = initialPlan.compatibility.some((check) => !check.compatible)
+const initialState = !initialResult.hardFit
   ? 'does_not_fit'
   : initialPlan.reviewRequired && initialPlan.reviewRequired.length > 0
-    ? 'tight'
-    : initialResult.state;
+    ? 'needs_information'
+    : initialPlan.compatibility.some((check) => !check.compatible)
+      ? 'does_not_fit'
+      : initialResult.state;
 const initialRows = toDimensionDisplayRows(initialPlan.checks, {
   ...initialResult,
   state: initialState,
 });
+const initialVisibleFields = initialDefinition.fields.filter(
+  (field) => !field.showWhen || initialValues[field.showWhen.name] === field.showWhen.value,
+);
+const initialUnitNotes = [
+  ...(initialVisibleFields.some((field) => field.type === 'length')
+    ? ['Length fields accept mm, cm, m, inches or feet.']
+    : []),
+  ...(initialVisibleFields.some((field) => field.type === 'decimal')
+    ? ['Weight fields use kg.']
+    : []),
+];
 
 function escapeAttribute(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
@@ -103,9 +116,8 @@ const initialFields = initialDefinition.fields
       </div>
     )}
     <div class="fit-services__fields field-grid" data-fit-service-fields set:html={initialFields} />
-    <p class="field__note">
-      Length entries accept mm, cm, m, inches or feet. Weight fields are in kg. Check the exact
-      product manual for model-dependent requirements.
+    <p class="field__note" data-fit-service-unit-note hidden={initialUnitNotes.length === 0}>
+      {initialUnitNotes.join(' ')}
     </p>
     <UnitToggle />
   </form>
@@ -116,6 +128,7 @@ const initialFields = initialDefinition.fields
       resultId="fit-services-table"
       state={initialState}
       rows={initialRows}
+      needsInformation={initialPlan.reviewRequired}
     />
     <p class="fit-services__extra" data-fit-service-extra>
       {initialPlan.extra ?? initialDefinition.description}

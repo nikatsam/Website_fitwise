@@ -51,6 +51,11 @@ describe('Fit Services studio calculations', () => {
     expect(width?.recommendedMm).toBe(700);
     expect(width?.availableMm).toBe(630);
     expect(evaluateFit(plan.checks).state).toBe('tight');
+    expect(plan.reviewRequired).toHaveLength(1);
+
+    values.clearanceSource = 'exact-manual';
+    values.clearanceManualReference = 'Example appliance manual, clearance section';
+    expect(buildFitServicePlan('appliance-install', values).reviewRequired).toEqual([]);
   });
 
   it('reports route bottlenecks at doors and conservative turn envelopes', () => {
@@ -71,6 +76,8 @@ describe('Fit Services studio calculations', () => {
     const values = getFitServiceDefaults('workspace-compatibility');
     const compatible = buildFitServicePlan('workspace-compatibility', values);
     expect(compatible.compatibility.every((check) => check.compatible)).toBe(true);
+    expect(compatible.reviewRequired).toHaveLength(1);
+    values.compatibilitySource = 'personally-checked';
     values.monitorVesa = '200x200';
     values.monitorWeight = 14;
     const incompatible = buildFitServicePlan('workspace-compatibility', values);
@@ -87,6 +94,10 @@ describe('Fit Services studio calculations', () => {
     const wallPlan = buildFitServicePlan('tv-fit', wallValues);
     expect(evaluateFit(wallPlan.checks).hardFit).toBe(true);
     expect(wallPlan.compatibility.every((check) => check.compatible)).toBe(true);
+    expect(wallPlan.reviewRequired).toHaveLength(1);
+    wallValues.mountDataSource = 'exact-manual';
+    wallValues.mountManualReference = 'TV and mount manuals, mounting section';
+    expect(buildFitServicePlan('tv-fit', wallValues).reviewRequired).toEqual([]);
   });
 
   it('keeps gym operating clearances separate from equipment footprint', () => {
@@ -131,5 +142,17 @@ describe('Fit Services studio calculations', () => {
     const values = getFitServiceDefaults('storage');
     values.requestedQuantity = 0;
     expect(() => buildFitServicePlan('storage', values)).toThrow(RangeError);
+  });
+
+  it('requires a verified manufacturer use zone before treating play equipment as complete', () => {
+    const values = getFitServiceDefaults('garden-play-equipment');
+    expect(buildFitServicePlan('garden-play-equipment', values).reviewRequired).toHaveLength(1);
+    values.useZoneSource = 'manual';
+    values.manualReference = 'Exact play set manual, use-zone table';
+    values.useZoneLeft = 1800;
+    values.useZoneRight = 1800;
+    values.useZoneFront = 1800;
+    values.useZoneRear = 1800;
+    expect(buildFitServicePlan('garden-play-equipment', values).reviewRequired).toEqual([]);
   });
 });

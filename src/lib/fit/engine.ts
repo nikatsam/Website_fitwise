@@ -1,6 +1,6 @@
 import type { Millimetres } from '../../types';
 
-export type FitState = 'fits' | 'tight' | 'does_not_fit';
+export type FitState = 'fits' | 'tight' | 'does_not_fit' | 'needs_information';
 
 /**
  * One clearance/footprint check along a single named dimension (e.g. the

@@ -350,27 +350,56 @@ async function smokePage(pathname, scope) {
   }
 
   if (pathname === '/fit-services/') {
+    const defaultAppliance = await evaluate(`(() => {
+      const summary = document.querySelector('#fit-services-summary');
+      const detail = summary?.querySelector('[data-field=detail]')?.textContent ?? '';
+      return { state: summary?.getAttribute('data-fit-state'), detail };
+    })()`);
+    assert(
+      defaultAppliance.state === 'needs_information' &&
+        defaultAppliance.detail.includes('clearance source/reference') &&
+        !defaultAppliance.detail.includes('short on .'),
+      `${pathname}: default appliance example must ask for manual information instead of reporting a false tight-fit result: ${JSON.stringify(defaultAppliance)}.`,
+    );
     const modeCases = [
-      ['appliance-install', '#service-openingWidth'],
-      ['delivery-route', '#service-frontDoorWidth'],
-      ['workspace-compatibility', '#service-armVesaPatterns'],
-      ['tv-fit', '#service-consoleWidth'],
-      ['home-gym', '#service-equipmentWidth'],
-      ['storage', '#service-spaceHeight'],
-      ['pool-room', '#service-cueLength'],
-      ['vehicle-garage', '#service-garageOpeningWidth'],
+      ['appliance-install', '#service-openingWidth', 'needs_information'],
+      ['delivery-route', '#service-frontDoorWidth', 'fits'],
+      ['workspace-compatibility', '#service-armVesaPatterns', 'needs_information'],
+      ['tv-fit', '#service-consoleWidth', 'fits'],
+      ['home-gym', '#service-equipmentWidth', 'fits'],
+      ['storage', '#service-spaceHeight', 'fits'],
+      ['pool-room', '#service-cueLength', 'fits'],
+      ['vehicle-garage', '#service-garageOpeningWidth', 'fits'],
     ];
-    for (const [mode, field] of modeCases) {
+    for (const [mode, field, expectedState] of modeCases) {
       const outcome = await evaluate(`(() => {
         const select = document.querySelector('#fit-service-mode');
         select.value = ${JSON.stringify(mode)};
         select.dispatchEvent(new Event('change', { bubbles: true }));
-        return { hasField: Boolean(document.querySelector(${JSON.stringify(field)})), state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), rows: document.querySelectorAll('#fit-services-table tbody tr').length };
+        return { hasField: Boolean(document.querySelector(${JSON.stringify(field)})), state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), rows: document.querySelectorAll('#fit-services-table tbody tr').length, unitNote: document.querySelector('[data-fit-service-unit-note]')?.textContent?.trim() };
       })()`);
       assert(
-        outcome.hasField && outcome.state === 'fits' && outcome.rows > 0,
+        outcome.hasField && outcome.state === expectedState && outcome.rows > 0,
         `${pathname}: ${mode} did not render or calculate its example: ${JSON.stringify(outcome)}.`,
       );
+      if (mode === 'appliance-install') {
+        assert(
+          outcome.unitNote?.includes('Length fields accept') && !outcome.unitNote.includes('kg'),
+          `${pathname}: appliance helper copy must not mention absent weight fields.`,
+        );
+      }
+      if (mode === 'workspace-compatibility') {
+        assert(
+          outcome.unitNote?.includes('Weight fields use kg'),
+          `${pathname}: workspace mode must label its kilogram fields.`,
+        );
+      }
+      if (mode === 'tv-fit') {
+        assert(
+          !outcome.unitNote?.includes('kg'),
+          `${pathname}: stand mode should not show wall-mount weight helper copy.`,
+        );
+      }
     }
     const wallTv = await evaluate(`(() => {
       const select = document.querySelector('#fit-service-mode');
@@ -379,11 +408,28 @@ async function smokePage(pathname, scope) {
       const setup = document.querySelector('#service-setup');
       setup.value = 'wall';
       setup.dispatchEvent(new Event('change', { bubbles: true }));
-      return { field: Boolean(document.querySelector('#service-wallAreaWidth')), state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), compatibility: document.querySelectorAll('[data-fit-service-compatibility] li[data-compatible="true"]').length };
+      return { field: Boolean(document.querySelector('#service-wallAreaWidth')), sourceField: Boolean(document.querySelector('#service-mountDataSource')), state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), compatibility: document.querySelectorAll('[data-fit-service-compatibility] li[data-compatible="true"]').length, unitNote: document.querySelector('[data-fit-service-unit-note]')?.textContent?.trim() };
     })()`);
     assert(
-      wallTv.field && wallTv.state === 'fits' && wallTv.compatibility === 2,
+      wallTv.field &&
+        wallTv.sourceField &&
+        wallTv.state === 'needs_information' &&
+        wallTv.compatibility === 2 &&
+        wallTv.unitNote?.includes('Weight fields use kg'),
       `${pathname}: wall-mounted TV mode did not update its conditional inputs/checks: ${JSON.stringify(wallTv)}.`,
+    );
+    const verifiedWallTv = await evaluate(`(() => {
+      const source = document.querySelector('#service-mountDataSource');
+      source.value = 'exact-manual';
+      source.dispatchEvent(new Event('change', { bubbles: true }));
+      const reference = document.querySelector('#service-mountManualReference');
+      reference.value = 'Exact TV and mount manual reference';
+      reference.dispatchEvent(new Event('input', { bubbles: true }));
+      return document.querySelector('#fit-services-summary').getAttribute('data-fit-state');
+    })()`);
+    assert(
+      verifiedWallTv === 'fits',
+      `${pathname}: verified TV mount data did not clear the needs-information state.`,
     );
     await evaluate(
       `(() => { const select = document.querySelector('#fit-service-mode'); select.value = 'appliance-install'; select.dispatchEvent(new Event('change', { bubbles: true })); })()`,
@@ -409,6 +455,17 @@ async function smokePage(pathname, scope) {
       })()`);
       assert(hasExpectedField, `${pathname}: ${mode} did not render fields and results.`);
     }
+    const playReview = await evaluate(`(() => {
+      const select = document.querySelector('#fit-service-mode');
+      select.value = 'garden-play-equipment';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      return { state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), review: document.querySelector('[data-fit-service-review]')?.textContent?.trim() };
+    })()`);
+    assert(
+      playReview.state === 'needs_information' &&
+        playReview.review?.includes('Manufacturer use-zone dimensions'),
+      `${pathname}: play equipment must not show an unverified safety zone as Fits/Tight: ${JSON.stringify(playReview)}.`,
+    );
     const reverseSizing = await evaluate(`(() => {
       const select = document.querySelector('#fit-service-mode');
       select.value = 'garden-structure';

@@ -4,6 +4,7 @@ import {
   selectSummaryDimension,
   toDimensionDisplayRows,
   type DimensionDisplayRow,
+  type FitState,
 } from '../lib/fit';
 import { buildDiningFitPlan, type DiningOrientation } from '../lib/geometry';
 import { renderDiningDiagramMarkup } from '../lib/diagram';
@@ -119,10 +120,7 @@ function renderRows(rows: DimensionDisplayRow[]): void {
     .join('');
 }
 
-function renderDetail(
-  state: 'fits' | 'tight' | 'does_not_fit',
-  rows: DimensionDisplayRow[],
-): string {
+function renderDetail(state: FitState, rows: DimensionDisplayRow[]): string {
   const hardFailures = rows.filter((row) => !row.hardFit);
   const targetFailures = rows.filter((row) => !row.recommendedFit);
   const primary = selectSummaryDimension(rows);
@@ -131,6 +129,9 @@ function renderDetail(
   }
   if (state === 'tight') {
     return `The physical table/chair envelope fits, but selected circulation space is short on ${targetFailures.map((row) => `${row.label} by ${unitHtml(Math.abs(row.targetMarginMm))}`).join(', ')}.`;
+  }
+  if (state === 'needs_information') {
+    return 'Needs more information before this fit can be confirmed.';
   }
   return `Does not fit physically: ${hardFailures.map((row) => `${row.label} short by ${unitHtml(Math.abs(row.physicalMarginMm))}`).join(', ')}.`;
 }

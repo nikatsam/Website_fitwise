@@ -15,9 +15,11 @@ interface Props {
   id?: string;
   /** Optional dimension-table target for the mobile sticky result bar. */
   resultId?: string;
+  /** Required manufacturer/manual data that is not yet verified. */
+  needsInformation?: string[];
 }
 
-const { state, rows, id, resultId } = Astro.props;
+const { state, rows, id, resultId, needsInformation = [] } = Astro.props;
 const { icon, label } = FIT_STATE_BADGE_COPY[state];
 const primary = selectSummaryDimension(rows);
 const { hardFailures, recommendationFailures } = getFailedDimensionRows(rows);
@@ -60,6 +62,12 @@ const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
         . See the table for each dimension's physical and target margins.
       </>
     )}
+    {state === 'needs_information' && (
+      <>
+        Physical footprint can be shown, but fit is not confirmed. Needed before a complete result:{' '}
+        {needsInformation.join('; ')}.
+      </>
+    )}
   </p>
   {resultId && (
     <a
@@ -83,6 +91,7 @@ const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
         )}
         {state === 'tight' && 'Target short'}
         {state === 'does_not_fit' && 'Physical short'}
+        {state === 'needs_information' && 'Manual data needed'}
       </span>
       <span>View details ↑</span>
     </a>
@@ -112,6 +121,12 @@ const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
   .fit-summary[data-fit-state='does_not_fit'] {
     background: var(--color-state-no-fit-bg);
     color: var(--color-state-no-fit-fg);
+    border-color: transparent;
+  }
+
+  .fit-summary[data-fit-state='needs_information'] {
+    background: var(--color-state-tight-bg);
+    color: var(--color-state-tight-fg);
     border-color: transparent;
   }
 
@@ -186,6 +201,11 @@ const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
     .fit-summary__mobile-link[data-fit-state='does_not_fit'] {
       background: var(--color-state-no-fit-bg);
       color: var(--color-state-no-fit-fg);
+    }
+
+    .fit-summary__mobile-link[data-fit-state='needs_information'] {
+      background: var(--color-state-tight-bg);
+      color: var(--color-state-tight-fg);
     }
 
     .fit-summary__mobile-status {

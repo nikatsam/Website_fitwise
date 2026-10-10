@@ -13,6 +13,7 @@ import {
   selectSummaryDimension,
   toDimensionDisplayRows,
   type DimensionDisplayRow,
+  type FitState,
 } from '../lib/fit';
 import { formatMeasurement, parseLength } from '../lib/units';
 
@@ -80,6 +81,26 @@ function updateConditionalFields(): void {
     const current = form.querySelector<HTMLSelectElement>(`[name="${selectName}"]`)?.value;
     wrapper.hidden = current !== expectedValue;
   }
+  updateUnitNote(form);
+}
+
+function updateUnitNote(form: HTMLFormElement): void {
+  const note = form.querySelector<HTMLElement>('[data-fit-service-unit-note]');
+  if (!note) return;
+  const controls = [...form.querySelectorAll<HTMLElement>('[data-service-field]')]
+    .filter((wrapper) => !wrapper.hidden)
+    .map((wrapper) => wrapper.querySelector<HTMLElement>('[data-service-control]'))
+    .filter((control): control is HTMLElement => control !== null);
+  const hints = [
+    ...(controls.some((control) => control.dataset.serviceControl === 'length')
+      ? ['Length fields accept mm, cm, m, inches or feet.']
+      : []),
+    ...(controls.some((control) => control.dataset.serviceControl === 'decimal')
+      ? ['Weight fields use kg.']
+      : []),
+  ];
+  note.textContent = hints.join(' ');
+  note.hidden = hints.length === 0;
 }
 
 function readForm(): { mode: FitServiceMode; values: FitServiceValues } | null {
@@ -204,7 +225,7 @@ function refreshCandidates(candidates: ReturnType<typeof buildFitServicePlan>['c
 }
 
 function updateSummary(
-  state: 'fits' | 'tight' | 'does_not_fit',
+  state: FitState,
   rows: DimensionDisplayRow[],
   compatibility: ReturnType<typeof buildFitServicePlan>['compatibility'],
   reviewRequired: string[],
@@ -224,10 +245,9 @@ function updateSummary(
       detail = `Tightest constraint: ${primary.label}. Physical space remaining: ${formatDualUnit(primary.physicalMarginMm)}. After your selected target: ${formatDualUnit(primary.targetMarginMm)}.`;
     }
   } else if (state === 'tight') {
-    detail =
-      reviewRequired.length > 0
-        ? `Physical fit is only a partial result. More information is required: ${reviewRequired.map(escapeHtml).join(', ')}`
-        : `Physical space remains, but selected targets are short on ${targetFailures.map((row) => `${row.label} by ${formatDualUnit(Math.abs(row.targetMarginMm))}`).join(', ')}.`;
+    detail = `Physical space remains, but selected targets are short on ${targetFailures.map((row) => `${row.label} by ${formatDualUnit(Math.abs(row.targetMarginMm))}`).join(', ')}.`;
+  } else if (state === 'needs_information') {
+    detail = `Physical fit may be checked, but required manufacturer information is missing: ${reviewRequired.map(escapeHtml).join(', ')}.`;
   } else {
     const reasons = hardFailures.map(
       (row) => `${row.label} short by ${formatDualUnit(Math.abs(row.physicalMarginMm))}`,
@@ -248,8 +268,8 @@ function updateSummary(
     sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = copy.icon;
     sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = copy.label;
     sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]')!.innerHTML =
-      reviewRequired.length > 0
-        ? 'Manual check required'
+      state === 'needs_information'
+        ? 'Manual information needed'
         : state === 'fits'
           ? `${formatDualUnit(Math.max(0, selectSummaryDimension(rows)?.targetMarginMm ?? 0))} after target`
           : state === 'tight'
@@ -288,7 +308,13 @@ function recompute(): void {
   const result = evaluateFit(plan.checks, plan.assumptions);
   const incompatible = plan.compatibility.some((check) => !check.compatible);
   const reviewRequired = plan.reviewRequired ?? [];
-  const state = incompatible ? 'does_not_fit' : reviewRequired.length > 0 ? 'tight' : result.state;
+  const state = !result.hardFit
+    ? 'does_not_fit'
+    : reviewRequired.length > 0
+      ? 'needs_information'
+      : incompatible
+        ? 'does_not_fit'
+        : result.state;
   const rows = toDimensionDisplayRows(plan.checks, { ...result, state });
   updateSummary(state, rows, plan.compatibility, reviewRequired);
   formatDimensionRows(rows);
@@ -331,6 +357,7 @@ function init(): void {
   const initialMode = getFitServiceModeForRoute(modeControl.value);
   if (!initialMode) return;
   renderFields(initialMode);
+  updateUnitNote(form);
 
   modeControl.addEventListener('change', () => {
     if (modeControl.tagName !== 'SELECT') return;

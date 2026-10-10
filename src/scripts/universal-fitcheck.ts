@@ -4,6 +4,7 @@ import {
   FIT_STATE_BADGE_COPY,
   selectSummaryDimension,
   type DimensionDisplayRow,
+  type FitState,
 } from '../lib/fit';
 import { buildObjectFitPlan, type ObjectOrientation } from '../lib/geometry';
 import { formatMeasurement, parseLength } from '../lib/units';
@@ -141,10 +142,7 @@ function renderRows(rows: DimensionDisplayRow[]): void {
     .join('');
 }
 
-function renderSummary(
-  state: 'fits' | 'tight' | 'does_not_fit',
-  rows: DimensionDisplayRow[],
-): void {
+function renderSummary(state: FitState, rows: DimensionDisplayRow[]): void {
   const summary = document.getElementById('universal-fit-summary');
   if (!summary) return;
   const primary = selectSummaryDimension(rows);
@@ -155,6 +153,8 @@ function renderSummary(
     detail = `Tightest constraint: ${primary.label}. Physical space remaining: ${unitHtml(primary.physicalMarginMm)}. After your selected target: ${unitHtml(primary.targetMarginMm)}.`;
   } else if (state === 'tight') {
     detail = `Physical space remains, but selected targets are short on ${targetFailures.map((row) => `${row.label} by ${unitHtml(Math.abs(row.targetMarginMm))}`).join(', ')}.`;
+  } else if (state === 'needs_information') {
+    detail = 'Needs more information before this fit can be confirmed.';
   } else if (state === 'does_not_fit') {
     detail = `Does not fit physically: ${hardFailures.map((row) => `${row.label} short by ${unitHtml(Math.abs(row.physicalMarginMm))}`).join(', ')}.`;
   }

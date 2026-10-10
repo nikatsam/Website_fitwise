@@ -133,6 +133,20 @@ export const FIT_SERVICE_DEFINITIONS: FitServiceDefinition[] = [
       length('sideClearance', 'Manual-required clearance on each side', '0 mm', true),
       length('rearClearance', 'Manual-required rear/service clearance', '0 mm', true),
       length('topClearance', 'Manual-required top clearance', '0 mm', true),
+      select('clearanceSource', 'Installation-clearance source', 'unknown', [
+        { label: 'Unknown / not checked', value: 'unknown' },
+        { label: 'Exact model manual', value: 'exact-manual' },
+        { label: 'Manufacturer specification page', value: 'manufacturer-page' },
+        { label: 'My own selected allowance', value: 'my-selected-allowance' },
+      ]),
+      text('clearanceManualReference', 'Exact manual/model reference', 'not entered', {
+        name: 'clearanceSource',
+        value: 'exact-manual',
+      }),
+      text('clearanceSpecReference', 'Manufacturer specification URL/reference', 'not entered', {
+        name: 'clearanceSource',
+        value: 'manufacturer-page',
+      }),
     ],
   },
   {
@@ -176,6 +190,30 @@ export const FIT_SERVICE_DEFINITIONS: FitServiceDefinition[] = [
         'armVesaPatterns',
         'Exact VESA patterns supported by arm (comma separated)',
         '75x75, 100x100',
+      ),
+      select('compatibilitySource', 'VESA/load data source', 'unknown', [
+        { label: 'Unknown / not checked', value: 'unknown' },
+        { label: 'Exact monitor/arm manuals', value: 'exact-manual' },
+        { label: 'Manufacturer specification pages', value: 'manufacturer-page' },
+        { label: 'Read directly from both products', value: 'personally-checked' },
+      ]),
+      text(
+        'compatibilityManualReference',
+        'Exact monitor and arm manual reference',
+        'not entered',
+        {
+          name: 'compatibilitySource',
+          value: 'exact-manual',
+        },
+      ),
+      text(
+        'compatibilitySpecReference',
+        'Manufacturer specification URLs/references',
+        'not entered',
+        {
+          name: 'compatibilitySource',
+          value: 'manufacturer-page',
+        },
       ),
     ],
   },
@@ -235,6 +273,20 @@ export const FIT_SERVICE_DEFINITIONS: FitServiceDefinition[] = [
         '200x200, 400x300, 400x400',
         { name: 'setup', value: 'wall' },
       ),
+      select('mountDataSource', 'Wall-mount VESA/load source', 'unknown', [
+        { label: 'Unknown / not checked', value: 'unknown' },
+        { label: 'Exact TV/mount manuals', value: 'exact-manual' },
+        { label: 'Manufacturer specification pages', value: 'manufacturer-page' },
+        { label: 'Read directly from both products', value: 'personally-checked' },
+      ]),
+      text('mountManualReference', 'Exact TV and mount manual reference', 'not entered', {
+        name: 'mountDataSource',
+        value: 'exact-manual',
+      }),
+      text('mountPageReference', 'TV and mount specification URLs/references', 'not entered', {
+        name: 'mountDataSource',
+        value: 'manufacturer-page',
+      }),
     ],
   },
   {
@@ -453,6 +505,20 @@ export const FIT_SERVICE_DEFINITIONS: FitServiceDefinition[] = [
       length('serviceSide', 'Manual-required service space on each side', '500 mm', true),
       length('serviceFront', 'Manual-required access at the service panel', '800 mm', true),
       length('coverLiftHeight', 'Cover-removal/lift space above tub (manual/user)', '500 mm', true),
+      select('serviceSpaceSource', 'Service/cover-space source', 'unknown', [
+        { label: 'Unknown / not checked', value: 'unknown' },
+        { label: 'Exact model manual', value: 'exact-manual' },
+        { label: 'Manufacturer specification page', value: 'manufacturer-page' },
+        { label: 'My own selected allowance', value: 'my-selected-allowance' },
+      ]),
+      text('serviceManualReference', 'Exact tub manual reference', 'not entered', {
+        name: 'serviceSpaceSource',
+        value: 'exact-manual',
+      }),
+      text('serviceSpecReference', 'Manufacturer specification URL/reference', 'not entered', {
+        name: 'serviceSpaceSource',
+        value: 'manufacturer-page',
+      }),
     ],
   }),
   gardenDefinition({
@@ -640,6 +706,23 @@ export function buildFitServicePlan(
       const side = nonNegative(values, 'sideClearance');
       const rear = nonNegative(values, 'rearClearance');
       const top = nonNegative(values, 'topClearance');
+      const clearanceSource = textValue(values, 'clearanceSource');
+      const clearanceReference =
+        clearanceSource === 'exact-manual'
+          ? textValue(values, 'clearanceManualReference')
+          : clearanceSource === 'manufacturer-page'
+            ? textValue(values, 'clearanceSpecReference')
+            : '';
+      const referenceVerified =
+        clearanceReference.trim().length > 0 &&
+        clearanceReference.trim().toLowerCase() !== 'not entered';
+      const reviewRequired =
+        clearanceSource === 'unknown' ||
+        (['exact-manual', 'manufacturer-page'].includes(clearanceSource) && !referenceVerified)
+          ? [
+              'Installation clearance source/reference is not verified; physical fit is only a partial result.',
+            ]
+          : [];
       return {
         checks: [
           dimension(
@@ -668,8 +751,14 @@ export function buildFitServicePlan(
         assumptions: [
           'Opening values are clear usable interior dimensions, not outside cabinet dimensions.',
           'Installation clearances are user-entered from the exact model manual. Zero means no extra installation margin was included; Fitwise supplies no default safety or ventilation minimum.',
+          ...(clearanceSource === 'my-selected-allowance'
+            ? [
+                'The clearance is your own selected allowance, not a manufacturer-verified installation requirement.',
+              ]
+            : []),
           'This mode does not model hoses, plugs, doors, packaging or delivery route.',
         ],
+        reviewRequired,
       };
     }
     case 'delivery-route': {
@@ -758,6 +847,16 @@ export function buildFitServicePlan(
       const armMaxLoad = positive(values, 'armMaxLoad');
       const monitorVesa = textValue(values, 'monitorVesa');
       const armVesaPatterns = textValue(values, 'armVesaPatterns');
+      const compatibilitySource = textValue(values, 'compatibilitySource');
+      const compatibilityReference =
+        compatibilitySource === 'exact-manual'
+          ? textValue(values, 'compatibilityManualReference')
+          : compatibilitySource === 'manufacturer-page'
+            ? textValue(values, 'compatibilitySpecReference')
+            : '';
+      const compatibilityReferenceProvided =
+        compatibilityReference.trim().length > 0 &&
+        compatibilityReference.trim().toLowerCase() !== 'not entered';
       if (clampMin > clampMax) throw new RangeError('Clamp minimum cannot exceed clamp maximum.');
       return {
         checks: [
@@ -786,8 +885,21 @@ export function buildFitServicePlan(
         assumptions: [
           'Use the monitor without its stand for weight and outer dimensions; the entered arm-base depth is added to the monitor depth on the desk.',
           'VESA compatibility requires an exact pattern match in the supported-pattern list. Confirm adapters, fasteners and model-specific limits with the manuals.',
+          ...(compatibilitySource === 'personally-checked'
+            ? [
+                'VESA and load values were marked personally checked; Fitwise did not retrieve product specifications.',
+              ]
+            : []),
           'The result does not model arm reach, joint collision, edge clamp shape or wall clearance.',
         ],
+        reviewRequired:
+          compatibilitySource === 'unknown' ||
+          (['exact-manual', 'manufacturer-page'].includes(compatibilitySource) &&
+            !compatibilityReferenceProvided)
+            ? [
+                'VESA pattern and arm load must be verified against the exact monitor and arm data before compatibility is confirmed.',
+              ]
+            : [],
       };
     }
     case 'tv-fit': {
@@ -849,6 +961,15 @@ export function buildFitServicePlan(
         const mountPatterns = textValue(values, 'mountVesaPatterns');
         const tvWeight = positive(values, 'tvWeight');
         const mountMax = positive(values, 'mountMaxLoad');
+        const mountDataSource = textValue(values, 'mountDataSource');
+        const mountReference =
+          mountDataSource === 'exact-manual'
+            ? textValue(values, 'mountManualReference')
+            : mountDataSource === 'manufacturer-page'
+              ? textValue(values, 'mountPageReference')
+              : '';
+        const mountReferenceProvided =
+          mountReference.trim().length > 0 && mountReference.trim().toLowerCase() !== 'not entered';
         return {
           checks: [
             dimension(
@@ -879,7 +1000,18 @@ export function buildFitServicePlan(
           assumptions: [
             'TV outside width and height, mount limits and VESA pattern must be taken from the exact model manuals.',
             'The wall check is rectangular only and does not establish stud, substrate, fastener or electrical suitability.',
+            ...(mountDataSource === 'personally-checked'
+              ? [
+                  'VESA and load values were marked personally checked; Fitwise did not retrieve product specifications.',
+                ]
+              : []),
           ],
+          reviewRequired:
+            mountDataSource === 'unknown' ||
+            (['exact-manual', 'manufacturer-page'].includes(mountDataSource) &&
+              !mountReferenceProvided)
+              ? ['VESA and mount-load values are not verified against exact product data.']
+              : [],
         };
       }
       throw new RangeError(`Unsupported TV setup '${setup}'.`);
@@ -1121,15 +1253,21 @@ export function buildFitServicePlan(
         (candidate) => {
           const checks = buildChecks(candidate.widthMm, candidate.depthMm);
           const result = evaluateFit(checks);
+          const state: FitServiceCandidate['state'] =
+            result.state === 'needs_information' ? 'tight' : result.state;
           return {
             ...candidate,
             checks,
-            state: result.state,
+            state,
             area: candidate.widthMm * candidate.depthMm,
           };
         },
       );
-      const rank = { fits: 0, tight: 1, does_not_fit: 2 } as const;
+      const rank: Record<FitServiceCandidate['state'], number> = {
+        fits: 0,
+        tight: 1,
+        does_not_fit: 2,
+      };
       candidates.sort((a, b) => rank[a.state] - rank[b.state] || b.area - a.area);
       const best = candidates[0]!;
       const maxBodyWidth = Math.max(
@@ -1295,6 +1433,15 @@ export function buildFitServicePlan(
       const side = nonNegative(values, 'serviceSide');
       const front = nonNegative(values, 'serviceFront');
       const overhead = nonNegative(values, 'coverLiftHeight');
+      const source = textValue(values, 'serviceSpaceSource');
+      const reference =
+        source === 'exact-manual'
+          ? textValue(values, 'serviceManualReference')
+          : source === 'manufacturer-page'
+            ? textValue(values, 'serviceSpecReference')
+            : '';
+      const referenceProvided =
+        reference.trim().length > 0 && reference.trim().toLowerCase() !== 'not entered';
       return {
         checks: [
           dimension(
@@ -1324,7 +1471,17 @@ export function buildFitServicePlan(
           'Service-panel and cover-removal clearances must come from the exact tub manual; zeros omit those optional targets.',
           'No filled-water weight, base strength, drainage, electrical or access-path assessment is made.',
           'The extra cover lift space is user/manual selected, not a generic overhead minimum.',
+          ...(source === 'my-selected-allowance'
+            ? ['Clearances are personal targets, not manufacturer-verified service requirements.']
+            : []),
         ],
+        reviewRequired:
+          source === 'unknown' ||
+          (['exact-manual', 'manufacturer-page'].includes(source) && !referenceProvided)
+            ? [
+                'Hot-tub service and cover instructions are not verified against an exact model source.',
+              ]
+            : [],
       };
     }
     case 'garden-outdoor-kitchen': {

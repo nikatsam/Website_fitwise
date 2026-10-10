@@ -173,6 +173,11 @@ checkPage('/methodology/reference-conventions/', referenceConventions, {
 });
 
 const workspace = await html('/workspace/');
+const footerMarkup = workspace.match(/<footer\b[\s\S]*?<\/footer>/i)?.[0] ?? '';
+assert(
+  [...footerMarkup.matchAll(/href="\/garden\/"/g)].length === 1,
+  'Global footer must link to Garden Fit exactly once.',
+);
 checkPage('/workspace/', workspace, {
   heading: 'Will your monitors fit your desk?',
   includes: [
