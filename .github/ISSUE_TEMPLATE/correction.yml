@@ -1,0 +1,49 @@
+name: Report a Fitwise correction
+description: Report a measurement, source or calculation issue on a Fitwise page
+title: '[Correction] '
+body:
+  - type: input
+    id: page-url
+    attributes:
+      label: Page URL
+      description: Paste the exact Fitwise page URL where you found the issue.
+      placeholder: https://fitwise.stream/...
+    validations:
+      required: true
+  - type: input
+    id: item-model
+    attributes:
+      label: Item, model or measurement
+      description: Include the exact product/model or dimension name where applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: current-and-expected
+    attributes:
+      label: Current result and proposed correction
+      description: Explain what appears incorrect and what you believe is correct.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: source-url
+    attributes:
+      label: Source or manual URL
+      description: Link the current manufacturer documentation or other primary source if available.
+    validations:
+      required: false
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide calculator inputs and steps needed to reproduce a calculation issue.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: I have not included a private address or other personal information.
+          required: true

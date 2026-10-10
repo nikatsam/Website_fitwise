@@ -165,9 +165,10 @@ function formatDimensionRows(rows: DimensionDisplayRow[]): void {
       ) => `<tr data-dimension="${row.dimension}" data-hard-fit="${row.hardFit}" data-recommended-fit="${row.recommendedFit}">
         <th scope="row" data-label="Dimension">${row.label}</th>
         <td data-label="Required">${formatDualUnit(row.requiredMm)}</td>
-        <td data-label="Recommended">${formatDualUnit(row.recommendedMm)}</td>
+        <td data-label="Target">${formatDualUnit(row.recommendedMm)}</td>
         <td data-label="Available">${formatDualUnit(row.availableMm)}</td>
-        <td data-label="Margin"><span>${row.marginMm < 0 ? '−' : ''}</span>${formatDualUnit(Math.abs(row.marginMm))}</td>
+        <td data-label="Physical margin"><span>${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}</span>${formatDualUnit(Math.abs(row.physicalMarginMm))}</td>
+        <td data-label="Target margin"><span>${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}</span>${formatDualUnit(Math.abs(row.targetMarginMm))}</td>
       </tr>`,
     )
     .join('');
@@ -190,17 +191,28 @@ function refreshCompatibility(
     .join('');
 }
 
+function refreshCandidates(candidates: ReturnType<typeof buildFitServicePlan>['candidates']): void {
+  const list = document.querySelector<HTMLUListElement>('[data-fit-service-candidates]');
+  if (!list) return;
+  list.innerHTML = (candidates ?? [])
+    .map(
+      (candidate) =>
+        `<li data-candidate-state="${candidate.state}"><strong>${escapeHtml(candidate.label)}:</strong> ${escapeHtml(candidate.detail)}</li>`,
+    )
+    .join('');
+}
+
 function updateSummary(
   state: 'fits' | 'tight' | 'does_not_fit',
   rows: DimensionDisplayRow[],
   compatibility: ReturnType<typeof buildFitServicePlan>['compatibility'],
+  reviewRequired: string[],
 ): void {
   const summary = document.getElementById('fit-services-summary');
   if (!summary) return;
   const copy = FIT_STATE_BADGE_COPY[state];
-  const failed = rows
-    .filter((row) => (state === 'does_not_fit' ? !row.hardFit : !row.recommendedFit))
-    .map((row) => row.label);
+  const hardFailures = rows.filter((row) => !row.hardFit);
+  const targetFailures = rows.filter((row) => !row.recommendedFit);
   const incompatible = compatibility
     .filter((check) => !check.compatible)
     .map((check) => check.label);
@@ -208,13 +220,18 @@ function updateSummary(
   if (state === 'fits') {
     const primary = selectSummaryDimension(rows);
     if (primary) {
-      detail = `Fits the selected dimensions — approximately ${formatDualUnit(Math.max(0, primary.marginMm))} remains on ${primary.label}.`;
+      detail = `Tightest constraint: ${primary.label}. Physical space remaining: ${formatDualUnit(primary.physicalMarginMm)}. After your selected target: ${formatDualUnit(primary.targetMarginMm)}.`;
     }
   } else if (state === 'tight') {
-    detail = `Physical dimensions fit, but selected clearances are short on ${failed.join(', ')}.`;
+    detail =
+      reviewRequired.length > 0
+        ? `Physical fit is only a partial result. More information is required: ${reviewRequired.map(escapeHtml).join(', ')}`
+        : `Physical space remains, but selected targets are short on ${targetFailures.map((row) => `${row.label} by ${formatDualUnit(Math.abs(row.targetMarginMm))}`).join(', ')}.`;
   } else {
-    const reasons = [...failed, ...incompatible];
-    detail = `Does not fit or is incompatible: ${reasons.join(', ')}.`;
+    const reasons = hardFailures.map(
+      (row) => `${row.label} short by ${formatDualUnit(Math.abs(row.physicalMarginMm))}`,
+    );
+    detail = `Does not fit or is incompatible: ${[...reasons, ...incompatible].join(', ')}.`;
   }
   summary.dataset.fitState = state;
   summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent = copy.icon;
@@ -230,11 +247,15 @@ function updateSummary(
     sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = copy.icon;
     sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = copy.label;
     sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]')!.innerHTML =
-      state === 'fits'
-        ? `${formatDualUnit(Math.max(0, selectSummaryDimension(rows)?.marginMm ?? 0))} spare`
-        : state === 'tight'
-          ? 'Clearance short'
-          : 'Review dimensions';
+      reviewRequired.length > 0
+        ? 'Manual check required'
+        : state === 'fits'
+          ? `${formatDualUnit(Math.max(0, selectSummaryDimension(rows)?.targetMarginMm ?? 0))} after target`
+          : state === 'tight'
+            ? `Target short ${formatDualUnit(Math.abs(selectSummaryDimension(targetFailures)?.targetMarginMm ?? 0))}`
+            : hardFailures.length > 0
+              ? `Physical short ${formatDualUnit(Math.abs(selectSummaryDimension(hardFailures)?.physicalMarginMm ?? 0))}`
+              : 'Compatibility check';
   }
 }
 
@@ -265,11 +286,17 @@ function recompute(): void {
   const plan = buildFitServicePlan(form.mode, form.values);
   const result = evaluateFit(plan.checks, plan.assumptions);
   const incompatible = plan.compatibility.some((check) => !check.compatible);
-  const state = incompatible ? 'does_not_fit' : result.state;
+  const reviewRequired = plan.reviewRequired ?? [];
+  const state = incompatible ? 'does_not_fit' : reviewRequired.length > 0 ? 'tight' : result.state;
   const rows = toDimensionDisplayRows(plan.checks, { ...result, state });
-  updateSummary(state, rows, plan.compatibility);
+  updateSummary(state, rows, plan.compatibility, reviewRequired);
   formatDimensionRows(rows);
   refreshCompatibility(plan.compatibility);
+  refreshCandidates(plan.candidates);
+  const reviewList = document.querySelector<HTMLUListElement>('[data-fit-service-review]');
+  if (reviewList) {
+    reviewList.innerHTML = reviewRequired.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+  }
   const assumptions = document.querySelector<HTMLElement>(
     '#fit-services-assumptions [data-field="items"]',
   );
@@ -278,10 +305,13 @@ function recompute(): void {
   }
   const extra = document.querySelector<HTMLElement>('[data-fit-service-extra]');
   if (extra) {
-    extra.textContent =
-      plan.capacity === undefined
-        ? getFitServiceDefinition(form.mode).description
-        : `Estimated single-layer capacity: ${plan.capacity}; requested ${plan.capacityRequested}.`;
+    const parts = [plan.extra ?? getFitServiceDefinition(form.mode).description];
+    if (plan.capacity !== undefined) {
+      parts.push(
+        `Estimated single-layer capacity: ${plan.capacity}; requested ${plan.capacityRequested}.`,
+      );
+    }
+    extra.textContent = parts.join(' ');
   }
 }
 
@@ -291,7 +321,8 @@ function init(): void {
   if (!form || !modeControl) return;
 
   const requestedMode = getFitServiceModeForRoute(new URLSearchParams(location.search).get('mode'));
-  if (requestedMode) modeControl.value = requestedMode;
+  const pageModes = new Set(Array.from(modeControl.options, (option) => option.value));
+  if (requestedMode && pageModes.has(requestedMode)) modeControl.value = requestedMode;
   const initialMode = getFitServiceModeForRoute(modeControl.value);
   if (!initialMode) return;
   renderFields(initialMode);

@@ -1,0 +1,131 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Measurement and Reference Conventions — Fitwise.stream"
+  description="Public definitions for Fitwise measurement types, provenance, internal reference values, rounding and user-selected clearances."
+  noindex
+>
+  <section class="page-heading wrapper">
+    <p class="eyebrow">Methodology</p>
+    <h1>Measurement and reference conventions</h1>
+    <p>
+      This page explains how to read Fitwise dimensions and where internal reference values differ
+      from product measurements or published standards.
+    </p>
+  </section>
+  <section class="wrapper section">
+    <h2>Measurement types</h2>
+    <dl class="conventions">
+      <div>
+        <dt>Exact</dt>
+        <dd>A value transcribed from the cited source or exact model documentation.</dd>
+      </div>
+      <div>
+        <dt>Nominal</dt>
+        <dd>
+          A marketed or conventional size label. It may not equal the item's outside dimensions.
+        </dd>
+      </div>
+      <div>
+        <dt>Typical</dt>
+        <dd>A representative example, not a guarantee for every model or configuration.</dd>
+      </div>
+      <div>
+        <dt>Recommended</dt>
+        <dd>
+          A sourced recommendation or an explicitly labeled Fitwise planning target. Check the
+          accompanying note to distinguish them.
+        </dd>
+      </div>
+      <div>
+        <dt>Derived</dt>
+        <dd>A calculation from named source dimensions or a stated geometric formula.</dd>
+      </div>
+    </dl>
+    <h2>Internal reference values</h2>
+    <p>
+      Some examples use round-number reference dimensions or comfort targets when no single external
+      standard applies. These are Fitwise modeling conventions, not product specifications, laws,
+      building-code values or universal ergonomic minimums. When the UI asks for a user-selected
+      clearance, the result uses that input and does not claim it is a standard.
+    </p>
+    <h2>Units, precision and rounding</h2>
+    <p>
+      Geometry is calculated internally in millimetres. Inputs may use mm, cm, m, inches or feet;
+      visible dimensions pass through the shared measurement formatter. Rounding is for display only
+      and does not change intermediate geometry. Screen-panel dimensions derived from diagonal and
+      aspect ratio are estimates rounded to the nearest millimetre and are not overall device
+      widths.
+    </p>
+    <h2>How to interpret results</h2>
+    <p>
+      “Physical margin” is available space minus the hard footprint. “Target margin” is available
+      space minus the selected or sourced recommended envelope. A positive physical margin does not
+      mean a clearance target is met; compare both columns. Planning permission, installation
+      requirements, structural suitability and safety are not evaluated unless a tool explicitly
+      says otherwise—and no generic local regulation is inferred.
+    </p>
+    <p>
+      <a href="/methodology/">Return to calculation methodology</a>.
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .page-heading {
+    padding-block: var(--space-7) var(--space-3);
+  }
+
+  .page-heading h1 {
+    margin-block: var(--space-1) var(--space-3);
+    font-size: var(--fs-3xl);
+    letter-spacing: -0.035em;
+  }
+
+  .page-heading > p:last-child,
+  .section > p {
+    max-width: 78ch;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+  }
+
+  .eyebrow {
+    margin: 0;
+    color: var(--color-accent-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .section {
+    padding-block: var(--space-6);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .conventions {
+    display: grid;
+    gap: var(--space-2);
+    max-width: 78ch;
+  }
+
+  .conventions div {
+    display: grid;
+    grid-template-columns: minmax(6rem, 0.3fr) minmax(0, 1fr);
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .conventions dt {
+    font-weight: 700;
+  }
+
+  .conventions dd {
+    margin: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+</style>

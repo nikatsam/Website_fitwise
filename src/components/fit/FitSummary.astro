@@ -6,6 +6,7 @@ import {
   selectSummaryDimension,
 } from '../../lib/fit';
 import UnitValue from './UnitValue.astro';
+import { formatMeasurement } from '../../lib/units';
 
 interface Props {
   state: FitState;
@@ -20,6 +21,7 @@ const { state, rows, id, resultId } = Astro.props;
 const { icon, label } = FIT_STATE_BADGE_COPY[state];
 const primary = selectSummaryDimension(rows);
 const { hardFailures, recommendationFailures } = getFailedDimensionRows(rows);
+const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
 ---
 
 <div class="fit-summary" data-fit-state={state} id={id}>
@@ -35,21 +37,27 @@ const { hardFailures, recommendationFailures } = getFailedDimensionRows(rows);
   <p class="fit-summary__detail" data-field="detail" aria-live="polite" aria-atomic="true">
     {state === 'fits' && primary && (
       <>
-        Fits the selected dimensions — approximately <UnitValue mm={primary.marginMm} /> remains on{' '}
-        {primary.label}.
+        Fits. Tightest constraint: {primary.label}. Physical space remaining:{' '}
+        <UnitValue mm={primary.physicalMarginMm} />. After your selected target:{' '}
+        <UnitValue mm={primary.targetMarginMm} />.
       </>
     )}
     {state === 'tight' && (
       <>
-        The physical footprints fit, but selected clearance targets are short on{' '}
-        {recommendationFailures.map((row) => row.label).join(', ')}. See the table for margins.
+        Physical space remains, but selected targets are short on{' '}
+        {recommendationFailures
+          .map((row) => `${row.label} by ${formatUnit(Math.abs(row.targetMarginMm))}`)
+          .join(', ')}
+        . See physical and target margins below.
       </>
     )}
     {state === 'does_not_fit' && (
       <>
         Does not fit — the available space is short for{' '}
-        {hardFailures.map((row) => row.label).join(', ')}. See the table for each dimension's
-        margin.
+        {hardFailures
+          .map((row) => `${row.label} by ${formatUnit(Math.abs(row.physicalMarginMm))}`)
+          .join(', ')}
+        . See the table for each dimension's physical and target margins.
       </>
     )}
   </p>
@@ -70,11 +78,11 @@ const { hardFailures, recommendationFailures } = getFailedDimensionRows(rows);
       <span class="fit-summary__mobile-detail" data-field="sticky-detail">
         {state === 'fits' && primary && (
           <>
-            <UnitValue mm={Math.max(0, primary.marginMm)} /> spare
+            <UnitValue mm={Math.max(0, primary.targetMarginMm)} /> after target
           </>
         )}
-        {state === 'tight' && 'Clearance short'}
-        {state === 'does_not_fit' && 'Review dimensions'}
+        {state === 'tight' && 'Target short'}
+        {state === 'does_not_fit' && 'Physical short'}
       </span>
       <span>View details ↑</span>
     </a>

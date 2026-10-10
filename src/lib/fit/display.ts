@@ -7,7 +7,8 @@ export interface DimensionDisplayRow {
   requiredMm: Millimetres;
   recommendedMm: Millimetres;
   availableMm: Millimetres;
-  marginMm: Millimetres;
+  physicalMarginMm: Millimetres;
+  targetMarginMm: Millimetres;
   hardFit: boolean;
   recommendedFit: boolean;
 }
@@ -16,7 +17,21 @@ export interface DimensionDisplayRow {
 export function selectSummaryDimension(
   rows: DimensionDisplayRow[],
 ): DimensionDisplayRow | undefined {
-  return rows.find((row) => !row.hardFit) ?? rows.find((row) => !row.recommendedFit) ?? rows[0];
+  const hardFailures = rows.filter((row) => !row.hardFit);
+  if (hardFailures.length > 0) {
+    return hardFailures.reduce((tightest, row) =>
+      row.physicalMarginMm < tightest.physicalMarginMm ? row : tightest,
+    );
+  }
+  const targetFailures = rows.filter((row) => !row.recommendedFit);
+  if (targetFailures.length > 0) {
+    return targetFailures.reduce((tightest, row) =>
+      row.targetMarginMm < tightest.targetMarginMm ? row : tightest,
+    );
+  }
+  return rows.reduce((tightest, row) =>
+    row.targetMarginMm < tightest.targetMarginMm ? row : tightest,
+  );
 }
 
 export function getFailedDimensionRows(rows: DimensionDisplayRow[]) {
@@ -49,7 +64,8 @@ export function toDimensionDisplayRows(
       requiredMm: check.minimumMm,
       recommendedMm: check.recommendedMm ?? check.minimumMm,
       availableMm: check.availableMm,
-      marginMm: dimensionResult.marginMm,
+      physicalMarginMm: dimensionResult.marginMm,
+      targetMarginMm: dimensionResult.recommendedMarginMm,
       hardFit: dimensionResult.hardFit,
       recommendedFit: dimensionResult.recommendedFit,
     };

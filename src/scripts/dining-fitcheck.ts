@@ -110,9 +110,10 @@ function renderRows(rows: DimensionDisplayRow[]): void {
       ) => `<tr data-dimension="${row.dimension}" data-hard-fit="${row.hardFit}" data-recommended-fit="${row.recommendedFit}">
         <th scope="row" data-label="Dimension">${row.label}</th>
         <td data-label="Required">${unitHtml(row.requiredMm)}</td>
-        <td data-label="Recommended">${unitHtml(row.recommendedMm)}</td>
+        <td data-label="Target">${unitHtml(row.recommendedMm)}</td>
         <td data-label="Available">${unitHtml(row.availableMm)}</td>
-        <td data-label="Margin"><span data-field="margin-sign">${row.marginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.marginMm))}</td>
+        <td data-label="Physical margin">${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}${unitHtml(Math.abs(row.physicalMarginMm))}</td>
+        <td data-label="Target margin">${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}${unitHtml(Math.abs(row.targetMarginMm))}</td>
       </tr>`,
     )
     .join('');
@@ -122,17 +123,16 @@ function renderDetail(
   state: 'fits' | 'tight' | 'does_not_fit',
   rows: DimensionDisplayRow[],
 ): string {
-  const failures = rows
-    .filter((row) => (state === 'does_not_fit' ? !row.hardFit : !row.recommendedFit))
-    .map((row) => row.label);
+  const hardFailures = rows.filter((row) => !row.hardFit);
+  const targetFailures = rows.filter((row) => !row.recommendedFit);
   const primary = selectSummaryDimension(rows);
   if (state === 'fits' && primary) {
-    return `Fits the selected dimensions — approximately ${unitHtml(Math.max(0, primary.marginMm))} remains on ${primary.label}.`;
+    return `Tightest constraint: ${primary.label}. Physical space remaining: ${unitHtml(primary.physicalMarginMm)}. After your selected target: ${unitHtml(primary.targetMarginMm)}.`;
   }
   if (state === 'tight') {
-    return `The physical table/chair envelope fits, but selected circulation space is short on ${failures.join(', ')}.`;
+    return `The physical table/chair envelope fits, but selected circulation space is short on ${targetFailures.map((row) => `${row.label} by ${unitHtml(Math.abs(row.targetMarginMm))}`).join(', ')}.`;
   }
-  return `Does not fit the checked dimensions: ${failures.join(', ')}.`;
+  return `Does not fit physically: ${hardFailures.map((row) => `${row.label} short by ${unitHtml(Math.abs(row.physicalMarginMm))}`).join(', ')}.`;
 }
 
 function renderAssumptions(
@@ -206,10 +206,10 @@ function recompute(): void {
       sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = copy.label;
       sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]')!.innerHTML =
         result.state === 'fits'
-          ? `${unitHtml(Math.max(0, selectSummaryDimension(rows)?.marginMm ?? 0))} spare`
+          ? `${unitHtml(Math.max(0, selectSummaryDimension(rows)?.targetMarginMm ?? 0))} after target`
           : result.state === 'tight'
-            ? 'Circulation short'
-            : 'Review dimensions';
+            ? `Target short ${unitHtml(Math.abs(selectSummaryDimension(rows)?.targetMarginMm ?? 0))}`
+            : `Physical short ${unitHtml(Math.abs(selectSummaryDimension(rows)?.physicalMarginMm ?? 0))}`;
     }
   }
   renderRows(rows);

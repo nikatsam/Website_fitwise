@@ -9,6 +9,7 @@ import { buildBreadcrumb } from '../../lib/content';
 import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
 import { buildWorkspaceWidthCheck, computeConfigurationWidth } from '../../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../../lib/diagram';
+import { formatMeasurement } from '../../lib/units';
 
 const deskWidthMm = 1600;
 const gapMm = 20;
@@ -26,7 +27,7 @@ const check = buildWorkspaceWidthCheck({
 const assumptions = [
   'Monitor width: approximate screen-only width for two 24" 16:9 displays; actual device is typically wider due to bezel.',
   'Laptop width: approximate 15" laptop footprint on a stand.',
-  `Gap between items: ${gapMm} mm.`,
+  `Gap between items: ${formatMeasurement(gapMm)}.`,
   'Diagram shows two illustrative item slots; the table and totals above account for all three items.',
 ];
 const result = evaluateFit([check], assumptions);
@@ -66,7 +67,7 @@ const breadcrumb = buildBreadcrumb('/dev/dual-monitors-and-laptop-desk-size/', '
       diagramId={diagramId}
       diagramWidthPx={640}
       diagramHeightPx={360}
-      diagramSummary={`Two monitors plus a laptop on a ${deskWidthMm} mm desk, ${gapMm} mm gaps, ${sideMarginMm} mm recommended side clearance.`}
+      diagramSummary={`Two monitors plus a laptop on a ${formatMeasurement(deskWidthMm)} desk, ${formatMeasurement(gapMm)} gaps, ${formatMeasurement(sideMarginMm)} recommended side clearance.`}
       diagramMarkup={diagramMarkup}
       tableCaption="Desk width breakdown: required, recommended, available and margin"
       assumptions={result.assumptions}

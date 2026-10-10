@@ -9,7 +9,11 @@ import {
 
 describe('Fit Services studio calculations', () => {
   it('exposes all seven requested fit relationships', () => {
-    expect(FIT_SERVICE_DEFINITIONS.map((definition) => definition.mode)).toEqual([
+    expect(
+      FIT_SERVICE_DEFINITIONS.filter(
+        (definition) => (definition.category ?? 'core') === 'core',
+      ).map((definition) => definition.mode),
+    ).toEqual([
       'appliance-install',
       'delivery-route',
       'workspace-compatibility',
@@ -18,6 +22,22 @@ describe('Fit Services studio calculations', () => {
       'storage',
       'pool-room',
       'vehicle-garage',
+    ]);
+  });
+
+  it('groups the Garden Fit vertical into its own multi-service studio', () => {
+    expect(
+      FIT_SERVICE_DEFINITIONS.filter((definition) => definition.category === 'garden').map(
+        (definition) => definition.mode,
+      ),
+    ).toEqual([
+      'garden-structure',
+      'garden-patio-dining',
+      'garden-shed-storage',
+      'garden-greenhouse',
+      'garden-hot-tub',
+      'garden-outdoor-kitchen',
+      'garden-play-equipment',
     ]);
   });
 

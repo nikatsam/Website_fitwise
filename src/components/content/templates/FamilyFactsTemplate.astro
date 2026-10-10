@@ -31,38 +31,140 @@ interface Props {
 }
 
 const { breadcrumb, h1, intro, sections, sources, relatedPages } = Astro.props;
+const resultFor = (section: Section) =>
+  section.facts.find((fact) => fact.label === 'Fit result')?.valueText ?? 'See measurements';
+const orientationResults = sections.map((section) => {
+  const match = section.title.match(/^(.*?) — (portrait|landscape) orientation$/);
+  return match
+    ? {
+        group: match[1]!,
+        orientation: match[2] as 'portrait' | 'landscape',
+        result: resultFor(section),
+      }
+    : null;
+});
+const isOrientationMatrix =
+  sections.length >= 4 && orientationResults.every((item) => item !== null);
+const orientationSummaryRows = [
+  ...new Set(orientationResults.filter(Boolean).map((item) => item!.group)),
+].map((group) => ({
+  label: group,
+  portrait:
+    orientationResults.find((item) => item?.group === group && item.orientation === 'portrait')
+      ?.result ?? '—',
+  landscape:
+    orientationResults.find((item) => item?.group === group && item.orientation === 'landscape')
+      ?.result ?? '—',
+}));
+const genericSummaryRows = sections.map((section) => ({
+  label: section.title,
+  result: resultFor(section),
+}));
 ---
 
 <PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
   <p>{intro}</p>
-  {sections.map((section, sectionIndex) => (
-    <section class="family-facts" aria-labelledby={`family-section-${sectionIndex}`}>
-      <h2 id={`family-section-${sectionIndex}`}>{section.title}</h2>
-      {section.intro && <p>{section.intro}</p>}
-      <dl class="family-facts__list">
-        {section.facts.map((fact) => (
-          <div class="family-facts__row">
-            <dt>{fact.label}</dt>
-            <dd>
-              {fact.valueMm !== undefined && <UnitValue mm={fact.valueMm} />}
-              {fact.valueText}
-              {fact.note && <span class="family-facts__note">{fact.note}</span>}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {section.assumptions && section.assumptions.length > 0 && (
-        <details class="family-facts__assumptions">
-          <summary>Assumptions for {section.title.toLowerCase()}</summary>
-          <ul>
-            {section.assumptions.map((assumption) => (
-              <li>{assumption}</li>
+  {sections.length > 1 && (
+    <section class="family-facts__quick" aria-labelledby="family-quick-results">
+      <h2 id="family-quick-results">Quick result matrix</h2>
+      {isOrientationMatrix ? (
+        <table class="family-facts__matrix" data-family-facts-matrix>
+          <caption>
+            Fit result by bed and orientation; expand a result below for full dimensions and
+            assumptions.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Bed</th>
+              <th scope="col">Portrait</th>
+              <th scope="col">Landscape</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orientationSummaryRows.map((row) => (
+              <tr>
+                <th scope="row">{row.label}</th>
+                <td data-label="Portrait">{row.portrait}</td>
+                <td data-label="Landscape">{row.landscape}</td>
+              </tr>
             ))}
-          </ul>
-        </details>
+          </tbody>
+        </table>
+      ) : (
+        <table class="family-facts__matrix" data-family-facts-matrix>
+          <caption>
+            Fit result by configuration; expand an option below for full dimensions and assumptions.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Configuration</th>
+              <th scope="col">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {genericSummaryRows.map((row) => (
+              <tr>
+                <th scope="row">{row.label}</th>
+                <td data-label="Result">{row.result}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </section>
-  ))}
+  )}
+  {sections.map((section, sectionIndex) =>
+    sections.length > 1 ? (
+      <details class="family-facts__detail">
+        <summary>
+          {section.title} — {resultFor(section)}
+        </summary>
+        <section class="family-facts" aria-labelledby={`family-section-${sectionIndex}`}>
+          <h2 id={`family-section-${sectionIndex}`}>{section.title}</h2>
+          {section.intro && <p>{section.intro}</p>}
+          <dl class="family-facts__list">
+            {section.facts.map((fact) => (
+              <div class="family-facts__row">
+                <dt>{fact.label}</dt>
+                <dd>
+                  {fact.valueMm !== undefined && <UnitValue mm={fact.valueMm} />}
+                  {fact.valueText}
+                  {fact.note && <span class="family-facts__note">{fact.note}</span>}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {section.assumptions && section.assumptions.length > 0 && (
+            <details class="family-facts__assumptions">
+              <summary>Assumptions for {section.title.toLowerCase()}</summary>
+              <ul>
+                {section.assumptions.map((assumption) => (
+                  <li>{assumption}</li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </section>
+      </details>
+    ) : (
+      <section class="family-facts" aria-labelledby={`family-section-${sectionIndex}`}>
+        <h2 id={`family-section-${sectionIndex}`}>{section.title}</h2>
+        {section.intro && <p>{section.intro}</p>}
+        <dl class="family-facts__list">
+          {section.facts.map((fact) => (
+            <div class="family-facts__row">
+              <dt>{fact.label}</dt>
+              <dd>
+                {fact.valueMm !== undefined && <UnitValue mm={fact.valueMm} />}
+                {fact.valueText}
+                {fact.note && <span class="family-facts__note">{fact.note}</span>}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+    ),
+  )}
   <SourceCitationList sources={sources} />
   <RelatedPageLinks links={relatedPages} />
 </PageFamilyLayout>
@@ -72,6 +174,92 @@ const { breadcrumb, h1, intro, sections, sources, relatedPages } = Astro.props;
     padding: var(--space-4);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
+  }
+
+  .family-facts__quick,
+  .family-facts__detail {
+    margin-block: var(--space-4);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+
+  .family-facts__quick h2 {
+    margin-top: 0;
+  }
+
+  .family-facts__detail > summary {
+    cursor: pointer;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  .family-facts__detail[open] > .family-facts {
+    margin-top: var(--space-3);
+    background: var(--color-surface);
+  }
+
+  .family-facts__matrix {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .family-facts__matrix th,
+  .family-facts__matrix td {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .family-facts__matrix th {
+    font-weight: 700;
+  }
+
+  @media (max-width: 36rem) {
+    .family-facts__matrix :global(thead) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    .family-facts__matrix,
+    .family-facts__matrix :global(tbody),
+    .family-facts__matrix :global(tr),
+    .family-facts__matrix :global(th),
+    .family-facts__matrix :global(td) {
+      display: block;
+      width: 100%;
+    }
+
+    .family-facts__matrix :global(tbody tr) {
+      margin-block-end: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .family-facts__matrix :global(tbody th) {
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .family-facts__matrix :global(tbody td) {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding: var(--space-2) 0;
+      border-bottom: 0;
+    }
+
+    .family-facts__matrix :global(tbody td::before) {
+      content: attr(data-label);
+      color: var(--color-text-secondary);
+      font-weight: 600;
+    }
   }
 
   .family-facts__list {

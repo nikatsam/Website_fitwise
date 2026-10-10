@@ -71,14 +71,14 @@ function renderDetailHtml(state: FitState, rows: DimensionDisplayRow[]): string 
   const primary = selectSummaryDimension(rows);
   if (!primary) return '';
   if (state === 'fits') {
-    return `Fits the selected dimensions — approximately ${unitValueHtml(primary.marginMm)} remains on ${escapeHtml(primary.label)}.`;
+    return `Fits. Tightest constraint: ${escapeHtml(primary.label)}. Physical space remaining: ${unitValueHtml(primary.physicalMarginMm)}. After your selected target: ${unitValueHtml(primary.targetMarginMm)}.`;
   }
   if (state === 'tight') {
-    const failures = rows.filter((row) => !row.recommendedFit).map((row) => escapeHtml(row.label));
-    return `The physical footprints fit, but selected clearance targets are short on ${failures.join(', ')}. See the table for margins.`;
+    const failures = rows.filter((row) => !row.recommendedFit);
+    return `Physical space remains, but selected targets are short on ${failures.map((row) => `${escapeHtml(row.label)} by ${unitValueHtml(Math.abs(row.targetMarginMm))}`).join(', ')}. See physical and target margins in the table.`;
   }
-  const failures = rows.filter((row) => !row.hardFit).map((row) => escapeHtml(row.label));
-  return `Does not fit — available space is short for ${failures.join(', ')}. See the table for each dimension's margin.`;
+  const failures = rows.filter((row) => !row.hardFit);
+  return `Does not fit — physical space is short on ${failures.map((row) => `${escapeHtml(row.label)} by ${unitValueHtml(Math.abs(row.physicalMarginMm))}`).join(', ')}. See the table for target margins too.`;
 }
 
 function clearFieldError(field: FieldSpec): void {
@@ -262,10 +262,10 @@ function recompute(): void {
       if (stickyDetail) {
         stickyDetail.innerHTML =
           result.state === 'fits'
-            ? `${unitValueHtml(Math.max(0, summaryRow.marginMm))} spare`
+            ? `${unitValueHtml(Math.max(0, summaryRow.targetMarginMm))} after target`
             : result.state === 'tight'
-              ? 'Clearance short'
-              : 'Review dimensions';
+              ? `Target short ${unitValueHtml(Math.abs(summaryRow.targetMarginMm))}`
+              : `Physical short ${unitValueHtml(Math.abs(summaryRow.physicalMarginMm))}`;
       }
     }
   }
@@ -277,13 +277,21 @@ function recompute(): void {
     if (tr) {
       tr.setAttribute('data-hard-fit', String(row.hardFit));
       tr.setAttribute('data-recommended-fit', String(row.recommendedFit));
-      const signEl = tr.querySelector<HTMLElement>('[data-field="margin-sign"]');
-      if (signEl) signEl.textContent = row.marginMm < 0 ? '−' : '';
+      const physicalSign = tr.querySelector<HTMLElement>('[data-field="physical-margin-sign"]');
+      if (physicalSign) {
+        physicalSign.textContent =
+          row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : '';
+      }
+      const targetSign = tr.querySelector<HTMLElement>('[data-field="target-margin-sign"]');
+      if (targetSign) {
+        targetSign.textContent = row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : '';
+      }
     }
     patchUnitValue(`${tableId}-${row.dimension}-required`, row.requiredMm);
     patchUnitValue(`${tableId}-${row.dimension}-recommended`, row.recommendedMm);
     patchUnitValue(`${tableId}-${row.dimension}-available`, row.availableMm);
-    patchUnitValue(`${tableId}-${row.dimension}-margin`, Math.abs(row.marginMm));
+    patchUnitValue(`${tableId}-${row.dimension}-physical-margin`, Math.abs(row.physicalMarginMm));
+    patchUnitValue(`${tableId}-${row.dimension}-target-margin`, Math.abs(row.targetMarginMm));
   }
 
   // Patch assumptions.

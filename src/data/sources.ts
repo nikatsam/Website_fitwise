@@ -104,7 +104,7 @@ export const sources: SourceRecord[] = [
     accessedOn: '2026-10-06',
     confidence: 'medium',
     notes:
-      'Internally documented round-number reference sizes and comfort-clearance recommendations used when no single external standard applies; see specs/DATA_MODEL.md §2.',
+      'Internally documented round-number reference sizes and comfort-clearance recommendations used when no single external standard applies; see the public measurement and reference conventions page.',
   },
   {
     id: 'src-sleep-foundation-us-mattress-sizes',

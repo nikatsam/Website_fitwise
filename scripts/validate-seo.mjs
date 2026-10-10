@@ -43,6 +43,8 @@ function decodeEntities(value) {
 function plainText(value) {
   return decodeEntities(
     value
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
       .replace(/<[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/[^>]+>/gi, '')
       .replace(/<[^>]*>/g, '')
       .replace(/\s+/g, ' ')
@@ -76,6 +78,10 @@ for (const file of files) {
   const route = routeForFile(file);
   if (route === '/404.html') continue;
   const html = await readFile(file, 'utf8');
+  assert(
+    !/(?<![\d.])\d+\.\d{8,}(?!\d)/.test(plainText(html)),
+    `${route}: visible text contains a raw floating-point measurement; format it with formatMeasurement().`,
+  );
   htmlByRoute.set(route, { file, html });
 
   const canonicalTags = [...html.matchAll(/<link\b[^>]*rel="canonical"[^>]*href="([^"]+)"[^>]*>/g)];

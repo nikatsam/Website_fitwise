@@ -18,9 +18,10 @@ const { rows, caption, id } = Astro.props;
     <tr>
       <th scope="col">Dimension</th>
       <th scope="col">Required</th>
-      <th scope="col">Recommended</th>
+      <th scope="col">Target</th>
       <th scope="col">Available</th>
-      <th scope="col">Margin</th>
+      <th scope="col">Physical margin</th>
+      <th scope="col">Target margin</th>
     </tr>
   </thead>
   <tbody>
@@ -36,15 +37,29 @@ const { rows, caption, id } = Astro.props;
         <td data-label="Required">
           <UnitValue mm={row.requiredMm} id={id && `${id}-${row.dimension}-required`} />
         </td>
-        <td data-label="Recommended">
+        <td data-label="Target">
           <UnitValue mm={row.recommendedMm} id={id && `${id}-${row.dimension}-recommended`} />
         </td>
         <td data-label="Available">
           <UnitValue mm={row.availableMm} id={id && `${id}-${row.dimension}-available`} />
         </td>
-        <td data-label="Margin">
-          <span data-field="margin-sign">{row.marginMm < 0 ? '−' : ''}</span>
-          <UnitValue mm={Math.abs(row.marginMm)} id={id && `${id}-${row.dimension}-margin`} />
+        <td data-label="Physical margin">
+          <span data-field="physical-margin-sign">
+            {row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}
+          </span>
+          <UnitValue
+            mm={Math.abs(row.physicalMarginMm)}
+            id={id && `${id}-${row.dimension}-physical-margin`}
+          />
+        </td>
+        <td data-label="Target margin">
+          <span data-field="target-margin-sign">
+            {row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}
+          </span>
+          <UnitValue
+            mm={Math.abs(row.targetMarginMm)}
+            id={id && `${id}-${row.dimension}-target-margin`}
+          />
         </td>
       </tr>
     ))}

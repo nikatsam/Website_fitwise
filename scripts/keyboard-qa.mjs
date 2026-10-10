@@ -197,7 +197,14 @@ async function smokePage(pathname, scope) {
     `${pathname} did not finish loading.`,
   );
   if (
-    ['/workspace/', '/bedroom/', '/will-it-fit/', '/dining/', '/fit-services/'].includes(pathname)
+    [
+      '/workspace/',
+      '/bedroom/',
+      '/will-it-fit/',
+      '/dining/',
+      '/fit-services/',
+      '/garden/',
+    ].includes(pathname)
   ) {
     assert(
       await evaluate('Boolean(document.querySelector("[data-fit-example-notice]:not([hidden])"))'),
@@ -228,6 +235,17 @@ async function smokePage(pathname, scope) {
   );
 
   if (pathname === '/workspace/') {
+    await tabUntil('[data-nav-group] > summary', 40);
+    await press(' ', 'Space', 32);
+    assert(
+      await evaluate('document.querySelector("[data-nav-group]").open'),
+      `${pathname}: primary Fit checks dropdown did not open with Space.`,
+    );
+    await press(' ', 'Space', 32);
+    assert(
+      !(await evaluate('document.querySelector("[data-nav-group]").open')),
+      `${pathname}: primary Fit checks dropdown did not close with Space.`,
+    );
     await tabUntil('[data-theme-toggle]', 32);
     const themeBefore = await evaluate(
       'document.querySelector("[data-theme-toggle]").getAttribute("aria-pressed")',
@@ -368,7 +386,46 @@ async function smokePage(pathname, scope) {
     );
   }
 
-  if (!['/will-it-fit/', '/fit-services/'].includes(pathname)) {
+  if (pathname === '/garden/') {
+    const modeCases = [
+      ['garden-structure', '#service-bodyWidth'],
+      ['garden-patio-dining', '#service-clearWidth'],
+      ['garden-shed-storage', '#service-insideWidth'],
+      ['garden-greenhouse', '#service-greenhouseWidth'],
+      ['garden-hot-tub', '#service-tubWidth'],
+      ['garden-outdoor-kitchen', '#service-runWidth'],
+      ['garden-play-equipment', '#service-useZoneSource'],
+    ];
+    for (const [mode, field] of modeCases) {
+      const hasExpectedField = await evaluate(`(() => {
+        const select = document.querySelector('#fit-service-mode');
+        select.value = ${JSON.stringify(mode)};
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        return Boolean(document.querySelector(${JSON.stringify(field)})) && document.querySelector('#fit-services-table tbody tr');
+      })()`);
+      assert(hasExpectedField, `${pathname}: ${mode} did not render fields and results.`);
+    }
+    const reverseSizing = await evaluate(`(() => {
+      const select = document.querySelector('#fit-service-mode');
+      select.value = 'garden-structure';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      const direction = document.querySelector('#service-direction');
+      direction.value = 'plot-to-structure';
+      direction.dispatchEvent(new Event('change', { bubbles: true }));
+      return { candidates: document.querySelectorAll('[data-fit-service-candidates] li').length, maxEnvelope: document.querySelector('[data-fit-service-extra]').textContent, candidatesInputVisible: !document.querySelector('[data-name=candidateSizes]').hidden };
+    })()`);
+    assert(
+      reverseSizing.candidates > 0 &&
+        reverseSizing.maxEnvelope.includes('maximum rectangular body envelope') &&
+        reverseSizing.candidatesInputVisible,
+      `${pathname}: reverse plot-to-structure sizing did not show candidate footprints: ${JSON.stringify(reverseSizing)}.`,
+    );
+    await evaluate(
+      `(() => { const direction = document.querySelector('#service-direction'); direction.value = 'structure-to-plot'; direction.dispatchEvent(new Event('change', { bubbles: true })); })()`,
+    );
+  }
+
+  if (!['/will-it-fit/', '/fit-services/', '/garden/'].includes(pathname)) {
     const selector = `.${scope}__advanced > summary`;
     await tabUntil(selector);
     await press(' ', 'Space', 32);
@@ -500,7 +557,14 @@ async function smokePage(pathname, scope) {
   }
 
   if (
-    ['/workspace/', '/bedroom/', '/will-it-fit/', '/dining/', '/fit-services/'].includes(pathname)
+    [
+      '/workspace/',
+      '/bedroom/',
+      '/will-it-fit/',
+      '/dining/',
+      '/fit-services/',
+      '/garden/',
+    ].includes(pathname)
   ) {
     const stickyState = await evaluate(`(() => {
       const summary = document.querySelector('#workspace-fitcheck-summary, #bedroom-fitcheck-summary, #universal-fit-summary, #dining-fitcheck-summary, #fit-services-summary');
@@ -538,7 +602,9 @@ async function smokePage(pathname, scope) {
           ? '#dining-room-width'
           : pathname === '/fit-services/'
             ? '#service-itemWidth'
-            : '#fit-item-width';
+            : pathname === '/garden/'
+              ? '#service-plotWidth'
+              : '#fit-item-width';
   await tabUntil(dimensionField, 40);
   await selectAll();
   await typeDigits('0');
@@ -594,6 +660,7 @@ try {
   await smokePage('/will-it-fit/', 'universal-fitcheck');
   await smokePage('/dining/', 'dining-fitcheck');
   await smokePage('/fit-services/', 'fit-services');
+  await smokePage('/garden/', 'fit-services');
   await cdp('Page.navigate', {
     url: new URL('/workspace/120cm-vs-140cm-desk/', baseUrl).toString(),
   });
@@ -613,6 +680,49 @@ try {
     `Desk comparison does not use a readable mobile card layout: ${JSON.stringify(comparisonMobile)}.`,
   );
   console.log('Mobile comparison table passed card-layout and overflow checks.');
+
+  await cdp('Page.navigate', {
+    url: new URL('/workspace/monitor-size-chart/', baseUrl).toString(),
+  });
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if ((await evaluate('document.readyState')) === 'complete') break;
+    await delay(50);
+  }
+  const breadcrumbCheck = await evaluate(`(() => {
+    const nav = document.querySelector('nav[aria-label="Breadcrumb"]');
+    const jsonLd = [...document.querySelectorAll('script[type="application/ld+json"]')].some((node) => {
+      try { return JSON.parse(node.textContent)['@type'] === 'BreadcrumbList'; } catch { return node.textContent.includes('BreadcrumbList'); }
+    });
+    return { visible: Boolean(nav && getComputedStyle(nav).display !== 'none'), jsonLd, pageWidth: document.documentElement.scrollWidth, viewport: innerWidth };
+  })()`);
+  assert(
+    breadcrumbCheck.visible &&
+      breadcrumbCheck.jsonLd &&
+      breadcrumbCheck.pageWidth <= breadcrumbCheck.viewport + 1,
+    `Live guide breadcrumb check failed: ${JSON.stringify(breadcrumbCheck)}.`,
+  );
+
+  await cdp('Page.navigate', {
+    url: new URL('/bedroom/what-bed-fits-in-10x12-room/', baseUrl).toString(),
+  });
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if ((await evaluate('document.readyState')) === 'complete') break;
+    await delay(50);
+  }
+  const bedroomMatrix = await evaluate(`(() => {
+    const cell = document.querySelector('.family-facts__matrix tbody td');
+    const details = [...document.querySelectorAll('.family-facts__detail')];
+    const matrix = document.querySelector('.family-facts__matrix');
+    return { cellDisplay: cell && getComputedStyle(cell).display, detailsClosed: details.length >= 6 && details.every((item) => !item.open), matrixFirst: Boolean(matrix && matrix.compareDocumentPosition(details[0]) & Node.DOCUMENT_POSITION_FOLLOWING), pageWidth: document.documentElement.scrollWidth, viewport: innerWidth };
+  })()`);
+  assert(
+    bedroomMatrix.cellDisplay === 'flex' &&
+      bedroomMatrix.detailsClosed &&
+      bedroomMatrix.matrixFirst &&
+      bedroomMatrix.pageWidth <= bedroomMatrix.viewport + 1,
+    `Bedroom result matrix is not scan-first and responsive: ${JSON.stringify(bedroomMatrix)}.`,
+  );
+  console.log('Mobile bedroom matrix and live breadcrumb checks passed.');
   console.log('Keyboard QA passed in headless Chrome using real Tab, Enter, and Space key events.');
 } catch (error) {
   console.error(`Keyboard QA failed: ${error.message}`);

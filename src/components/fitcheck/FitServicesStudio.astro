@@ -8,18 +8,33 @@ import {
   FIT_SERVICE_DEFINITIONS,
   buildFitServicePlan,
   getFitServiceDefaults,
+  type FitServiceCategory,
+  type FitServiceMode,
 } from '../../lib/geometry';
-import { formatMeasurement, parseLength } from '../../lib/units';
+import { formatMeasurement } from '../../lib/units';
 
-const INITIAL_MODE = 'appliance-install';
-const initialDefinition = FIT_SERVICE_DEFINITIONS.find(
+interface Props {
+  category?: FitServiceCategory | 'all';
+  initialMode?: FitServiceMode;
+}
+
+const { category = 'core', initialMode: requestedInitialMode } = Astro.props;
+const serviceDefinitions = FIT_SERVICE_DEFINITIONS.filter(
+  (definition) => category === 'all' || (definition.category ?? 'core') === category,
+);
+const INITIAL_MODE =
+  requestedInitialMode ?? (category === 'garden' ? 'garden-structure' : 'appliance-install');
+const initialDefinition = serviceDefinitions.find(
   (definition) => definition.mode === INITIAL_MODE,
 )!;
-const initialPlan = buildFitServicePlan(INITIAL_MODE, getFitServiceDefaults(INITIAL_MODE));
+const initialValues = getFitServiceDefaults(INITIAL_MODE);
+const initialPlan = buildFitServicePlan(INITIAL_MODE, initialValues);
 const initialResult = evaluateFit(initialPlan.checks, initialPlan.assumptions);
 const initialState = initialPlan.compatibility.some((check) => !check.compatible)
   ? 'does_not_fit'
-  : initialResult.state;
+  : initialPlan.reviewRequired && initialPlan.reviewRequired.length > 0
+    ? 'tight'
+    : initialResult.state;
 const initialRows = toDimensionDisplayRows(initialPlan.checks, {
   ...initialResult,
   state: initialState,
@@ -33,13 +48,14 @@ const initialFields = initialDefinition.fields
   .map((field) => {
     const id = `service-${field.name}`;
     const condition = field.showWhen
-      ? ` data-show-when-name="${escapeAttribute(field.showWhen.name)}" data-show-when-value="${escapeAttribute(field.showWhen.value)}" hidden`
+      ? ` data-show-when-name="${escapeAttribute(field.showWhen.name)}" data-show-when-value="${escapeAttribute(field.showWhen.value)}"${initialValues[field.showWhen.name] === field.showWhen.value ? '' : ' hidden'}`
       : '';
     const required = field.required === false || field.optional ? '' : ' required';
+    const initialValue = initialValues[field.name] ?? field.defaultValue;
     const value =
-      field.type === 'length'
-        ? formatMeasurement(Number(parseLengthDefault(field.defaultValue)))
-        : field.defaultValue;
+      field.type === 'length' && typeof initialValue === 'number'
+        ? formatMeasurement(initialValue)
+        : String(initialValue);
     let control: string;
     if (field.type === 'select') {
       control = `<select id="${id}" name="${field.name}" data-service-control="${field.type}"${required}>${(field.options ?? []).map((option) => `<option value="${escapeAttribute(option.value)}"${option.value === value ? ' selected' : ''}>${escapeAttribute(option.label)}</option>`).join('')}</select>`;
@@ -55,12 +71,6 @@ const initialFields = initialDefinition.fields
     return `<div class="field" data-service-field data-name="${field.name}"${condition}><label for="${id}">${escapeAttribute(field.label)}</label>${control}<span class="field__error" id="${id}-error" role="alert"></span></div>`;
   })
   .join('');
-
-function parseLengthDefault(value: string): number {
-  const parsed = parseLength(value);
-  if (!parsed.ok) throw new Error(`Invalid default service length '${value}'.`);
-  return parsed.valueMm;
-}
 ---
 
 <div class="fit-services" data-fit-services>
@@ -72,7 +82,7 @@ function parseLengthDefault(value: string): number {
     <div class="field">
       <label for="fit-service-mode">Choose a fit relationship</label>
       <select id="fit-service-mode" name="mode">
-        {FIT_SERVICE_DEFINITIONS.map((definition) => (
+        {serviceDefinitions.map((definition) => (
           <option value={definition.mode} selected={definition.mode === INITIAL_MODE}>
             {definition.title}
           </option>
@@ -98,9 +108,9 @@ function parseLengthDefault(value: string): number {
       rows={initialRows}
     />
     <p class="fit-services__extra" data-fit-service-extra>
-      {initialPlan.capacity === undefined
-        ? initialDefinition.description
-        : `Estimated single-layer capacity: ${initialPlan.capacity}; requested ${initialPlan.capacityRequested}.`}
+      {initialPlan.extra ?? initialDefinition.description}
+      {initialPlan.capacity !== undefined &&
+        ` Estimated single-layer capacity: ${initialPlan.capacity}; requested ${initialPlan.capacityRequested}.`}
     </p>
     <ul
       class="fit-services__compatibility"
@@ -112,6 +122,26 @@ function parseLengthDefault(value: string): number {
           <strong>{check.compatible ? 'Compatible' : 'Check required'}:</strong> {check.label}.{' '}
           {check.detail}
         </li>
+      ))}
+    </ul>
+    <ul
+      class="fit-services__candidates"
+      data-fit-service-candidates
+      aria-label="Candidate structure sizes"
+    >
+      {initialPlan.candidates?.map((candidate) => (
+        <li data-candidate-state={candidate.state}>
+          <strong>{candidate.label}:</strong> {candidate.detail}
+        </li>
+      ))}
+    </ul>
+    <ul
+      class="fit-services__review"
+      data-fit-service-review
+      aria-label="Required source or safety review"
+    >
+      {initialPlan.reviewRequired?.map((item) => (
+        <li>{item}</li>
       ))}
     </ul>
     <DimensionTable
@@ -225,6 +255,24 @@ function parseLengthDefault(value: string): number {
 
   .fit-services__compatibility:empty {
     display: none;
+  }
+
+  .fit-services__candidates,
+  .fit-services__review {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-left: var(--space-5);
+  }
+
+  .fit-services__candidates:empty,
+  .fit-services__review:empty {
+    display: none;
+  }
+
+  .fit-services__review {
+    color: var(--color-state-tight-fg);
+    font-weight: 600;
   }
 
   .fit-services__compatibility li[data-compatible='false'] {

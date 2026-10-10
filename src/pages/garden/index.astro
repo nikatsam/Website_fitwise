@@ -1,0 +1,94 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro';
+---
+
+<BaseLayout
+  title="Garden Fit — Sheds, Gazebos, Greenhouses and Patio Layouts — Fitwise.stream"
+  description="Compare garden structures, actual gazebo post spans, shed storage, greenhouse staging and outdoor equipment using your measured plot dimensions."
+  noindex
+>
+  <section class="page-heading wrapper">
+    <p class="eyebrow">Garden Fit</p>
+    <h1>What can fit in your garden space?</h1>
+    <p>
+      Check structure body and roof footprints, maintenance/access space, gazebo interior spans,
+      shed storage and greenhouse staging. Enter the usable dimensions you measured, not just an
+      advertised structure size.
+    </p>
+  </section>
+  <section class="wrapper section">
+    <FitServicesStudio category="garden" initialMode="garden-structure" />
+    <section class="garden-services" aria-labelledby="garden-services-heading">
+      <h2 id="garden-services-heading">Garden fit services</h2>
+      <ul>
+        <li>
+          Shed, gazebo/pergola and garden-office footprint in a usable plot, including reverse
+          candidate-size comparison.
+        </li>
+        <li>Dining table and chair envelopes inside actual gazebo post-to-post spans.</li>
+        <li>Repeated-item, single-layer storage estimate inside a shed with an aisle target.</li>
+        <li>Greenhouse body, staging depth, central aisle target and door access.</li>
+        <li>
+          Hot-tub service and cover-lift space, outdoor-kitchen work/service zones and
+          play-equipment use zones.
+        </li>
+      </ul>
+    </section>
+    <p class="garden-note">
+      These tools use your measurements and assumptions. They do not check planning permission,
+      drainage, foundations, wind loading, utilities, ventilation, fall surfaces or manufacturer
+      safety zones unless you enter the exact manual dimensions. Play-equipment and hot-tub results
+      are not safety assessments. This early utility page remains noindex pending source and search
+      review.
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .page-heading {
+    padding-block: var(--space-7) var(--space-3);
+  }
+
+  .page-heading h1 {
+    max-width: 26ch;
+    margin-block: var(--space-1) var(--space-3);
+    font-size: var(--fs-3xl);
+    letter-spacing: -0.035em;
+  }
+
+  .page-heading > p:last-child,
+  .garden-note {
+    max-width: 80ch;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+  }
+
+  .eyebrow {
+    margin: 0;
+    color: var(--color-accent-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .garden-services {
+    max-width: 80ch;
+    margin-top: var(--space-6);
+  }
+
+  .garden-services ul {
+    display: grid;
+    gap: var(--space-2);
+    padding-left: var(--space-5);
+    line-height: 1.5;
+  }
+
+  .garden-note {
+    padding: var(--space-3);
+    border-left: 0.2rem solid var(--color-accent-1);
+    background: var(--color-surface-raised);
+    font-size: var(--fs-sm);
+  }
+</style>

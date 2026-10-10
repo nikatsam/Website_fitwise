@@ -4,13 +4,22 @@ interface NavItem {
   label: string;
 }
 
-const navItems: NavItem[] = [
-  { href: '/', label: 'Home' },
-  { href: '/will-it-fit/', label: 'Will it fit?' },
-  { href: '/dining/', label: 'Dining' },
+const fitCheckLinks: NavItem[] = [
+  { href: '/will-it-fit/', label: 'Universal fit' },
   { href: '/workspace/', label: 'Workspace' },
   { href: '/bedroom/', label: 'Bedroom' },
-  { href: '/methodology/', label: 'Methodology' },
+  { href: '/dining/', label: 'Dining' },
+  { href: '/garden/', label: 'Garden' },
+  { href: '/fit-services/', label: 'Appliance, route and equipment checks' },
+];
+
+const guideLinks: NavItem[] = [
+  { href: '/workspace/desk-size-guide/', label: 'Desk sizing' },
+  { href: '/workspace/what-fits-on-a-140cm-desk/', label: 'What fits on a 140 cm desk' },
+  { href: '/workspace/monitor-size-chart/', label: 'Monitor size chart' },
+  { href: '/bedroom/what-size-bed-fits-my-room/', label: 'Bed and room sizing' },
+  { href: '/bedroom/what-bed-fits-in-10x10-room/', label: 'Bed fit in a 10 × 10 room' },
+  { href: '/methodology/reference-conventions/', label: 'Measurement conventions' },
 ];
 
 const currentPath = new URL(Astro.request.url).pathname;
@@ -36,14 +45,48 @@ const currentPath = new URL(Astro.request.url).pathname;
     </a>
 
     <nav class="site-nav" aria-label="Primary">
-      <ul>
-        {navItems.map((item) => (
-          <li>
-            <a href={item.href} aria-current={currentPath === item.href ? 'page' : undefined}>
-              {item.label}
-            </a>
-          </li>
-        ))}
+      <ul class="site-nav__list">
+        <li class="site-nav__group">
+          <details data-nav-group>
+            <summary>Fit checks</summary>
+            <ul class="site-nav__submenu">
+              {fitCheckLinks.map((item) => (
+                <li>
+                  <a href={item.href} aria-current={currentPath === item.href ? 'page' : undefined}>
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </li>
+        <li class="site-nav__group">
+          <details data-nav-group>
+            <summary>Guides</summary>
+            <ul class="site-nav__submenu">
+              {guideLinks.map((item) => (
+                <li>
+                  <a href={item.href} aria-current={currentPath === item.href ? 'page' : undefined}>
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </li>
+        <li>
+          <a
+            href="/methodology/"
+            aria-current={currentPath === '/methodology/' ? 'page' : undefined}
+          >
+            Methodology
+          </a>
+        </li>
+        <li>
+          <a href="/about/" aria-current={currentPath === '/about/' ? 'page' : undefined}>
+            About
+          </a>
+        </li>
       </ul>
     </nav>
 
@@ -99,24 +142,78 @@ const currentPath = new URL(Astro.request.url).pathname;
 
   .site-nav {
     flex: 1;
+    min-width: 0;
   }
 
-  .site-nav ul {
+  .site-nav__list {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-5);
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-4) var(--space-5);
     list-style: none;
     margin: 0;
     padding: 0;
   }
 
-  .site-nav a {
+  .site-nav a,
+  .site-nav summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
     color: var(--color-text-secondary);
     text-decoration: none;
     font-weight: 600;
     font-size: var(--fs-sm);
     padding: var(--space-2) 0;
     position: relative;
+  }
+
+  .site-nav summary {
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .site-nav summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .site-nav summary::after {
+    content: '▾';
+    font-size: 0.8em;
+  }
+
+  .site-nav__group {
+    position: relative;
+  }
+
+  .site-nav__submenu {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + var(--space-2));
+    left: 0;
+    display: grid;
+    min-width: 15rem;
+    max-width: min(22rem, calc(100vw - 2rem));
+    gap: var(--space-1);
+    margin: 0;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-md);
+    list-style: none;
+  }
+
+  .site-nav__submenu a {
+    display: block;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+  }
+
+  .site-nav__submenu a:hover,
+  .site-nav__submenu a:focus-visible {
+    background: var(--color-surface);
   }
 
   .site-nav a[aria-current='page'] {
@@ -157,8 +254,17 @@ const currentPath = new URL(Astro.request.url).pathname;
     .site-header__inner {
       flex-wrap: wrap;
     }
-    .site-nav ul {
-      gap: var(--space-4);
+    .site-nav {
+      order: 3;
+      flex-basis: 100%;
+    }
+    .site-nav__list {
+      justify-content: flex-start;
+      gap: var(--space-2) var(--space-4);
+    }
+    .site-nav__submenu {
+      left: auto;
+      right: 0;
     }
   }
 </style>

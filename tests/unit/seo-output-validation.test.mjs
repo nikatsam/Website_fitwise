@@ -23,7 +23,11 @@ async function makeBuiltFixture(options = {}) {
   const breadcrumbPath = options.brokenBreadcrumb ? '/missing/' : '/published/';
   const breadcrumbName = options.brokenBreadcrumb ? 'Missing' : 'Published';
   const canonical = '<link rel="canonical" href="https://fitwise.stream/published/">';
-  const published = `<!doctype html><html lang="en"><head><title>Published</title><meta name="description" content="Published page">${canonical}${options.duplicateCanonical ? canonical : ''}<script type="application/ld+json">{"@type":"WebPage","url":"https://fitwise.stream/published/","name":"Published"}</script><script type="application/ld+json">{"@type":"BreadcrumbList","itemListElement":[{"position":1,"name":"Home","item":"https://fitwise.stream/"},{"position":2,"name":"${breadcrumbName}","item":"https://fitwise.stream${breadcrumbPath}"}]}</script></head><body><nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><span aria-current="page">${breadcrumbName}</span></li></ol></nav><h1>Published</h1></body></html>`;
+  const floatText = options.visibleFloatLeak ? '<p>1930.3999999999999 mm</p>' : '';
+  const inlineScript = options.scriptFloat
+    ? '<script>const dimension = 1930.3999999999999;</script>'
+    : '';
+  const published = `<!doctype html><html lang="en"><head><title>Published</title><meta name="description" content="Published page">${canonical}${options.duplicateCanonical ? canonical : ''}<script type="application/ld+json">{"@type":"WebPage","url":"https://fitwise.stream/published/","name":"Published"}</script><script type="application/ld+json">{"@type":"BreadcrumbList","itemListElement":[{"position":1,"name":"Home","item":"https://fitwise.stream/"},{"position":2,"name":"${breadcrumbName}","item":"https://fitwise.stream${breadcrumbPath}"}]}</script></head><body><nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><span aria-current="page">${breadcrumbName}</span></li></ol></nav><h1>Published</h1>${floatText}${inlineScript}</body></html>`;
   await writeFile(path.join(dir, 'index.html'), home, 'utf8');
   await writeFile(path.join(dir, 'published', 'index.html'), published, 'utf8');
   if (options.missingSeoSignal) {
@@ -101,6 +105,16 @@ describe('offline built-output SEO validators', () => {
     const result = run(seoValidator, dir);
     expect(result.status).not.toBe(0);
     expect(result.stderr).toMatch(/non-noindex HTML page must have exactly one self-canonical/i);
+  });
+
+  it('rejects visible floating-point artifacts while ignoring script implementation details', async () => {
+    const visibleLeakDir = await makeBuiltFixture({ visibleFloatLeak: true });
+    const visibleLeak = run(seoValidator, visibleLeakDir);
+    expect(visibleLeak.status).not.toBe(0);
+    expect(visibleLeak.stderr).toMatch(/visible text contains a raw floating-point measurement/i);
+
+    const scriptOnlyDir = await makeBuiltFixture({ scriptFloat: true });
+    expect(run(seoValidator, scriptOnlyDir).status).toBe(0);
   });
 
   it('rejects malformed sitemap entries rather than accepting a partial urlset', async () => {

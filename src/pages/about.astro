@@ -85,6 +85,13 @@ const sourceCount = sources.length;
             </div>
           </dl>
           {source.notes && <p>{source.notes}</p>}
+          {source.id === 'src-fitwise-internal-convention' && (
+            <p>
+              <a href="/methodology/reference-conventions/">
+                Public reference-size and clearance conventions
+              </a>
+            </p>
+          )}
         </article>
       ))}
     </div>
@@ -100,8 +107,12 @@ const sourceCount = sources.length;
       labeled as assumptions.
     </p>
     <p>
-      No public correction-submission contact is configured yet. This page documents the correction
-      standard but does not imply a response channel or service-level commitment.
+      <a href="https://github.com/nikatsam/Website_fitwise/issues/new?template=correction.yml">
+        Report a measurement or calculation correction on GitHub
+      </a>
+      . Include the page URL, exact model, current source or manual and a reproducible description.
+      Do not include private addresses or personal information. Reports are public issues; no
+      response-time commitment is implied.
     </p>
   </section>
 </BaseLayout>

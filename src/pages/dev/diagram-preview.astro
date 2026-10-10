@@ -10,6 +10,7 @@ import DimensionArrow from '../../components/diagram/DimensionArrow.astro';
 import Legend from '../../components/diagram/Legend.astro';
 import { computeScale } from '../../lib/diagram';
 import { computeConfigurationWidth } from '../../lib/geometry';
+import { formatMeasurement } from '../../lib/units';
 
 // Desk: 1400mm wide x 700mm deep. Two monitors, 613mm wide each, 20mm gap,
 // 38mm recommended side clearance either side of the configuration.
@@ -55,7 +56,7 @@ const originYMm = diagramPaddingPx / scale;
         id="desk-diagram"
         widthPx={viewportWidthPx}
         heightPx={viewportHeightPx}
-        summary={`Desk ${deskWidthMm} mm wide by ${deskDepthMm} mm deep, with two ${monitorWidthMm} mm monitors and a ${gapMm} mm gap, totalling ${configurationWidthMm} mm, centred with ${sideClearanceMm} mm recommended clearance on each side.`}
+        summary={`Desk ${formatMeasurement(deskWidthMm)} wide by ${formatMeasurement(deskDepthMm)} deep, with two ${formatMeasurement(monitorWidthMm)} monitors and a ${formatMeasurement(gapMm)} gap, totalling ${formatMeasurement(configurationWidthMm)}, centred with ${formatMeasurement(sideClearanceMm)} recommended clearance on each side.`}
       >
         <SpaceRect
           xMm={originXMm}

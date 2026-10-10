@@ -58,6 +58,8 @@ checkPage('/', home, {
   includes: [
     '/will-it-fit/',
     '/dining/',
+    '/garden/',
+    '/garden/',
     '/fit-services/',
     '/workspace/',
     '/bedroom/',
@@ -111,6 +113,26 @@ assert(
   '/dining/: early utility page must remain noindex until source and search-demand review.',
 );
 
+const garden = await html('/garden/');
+checkPage('/garden/', garden, {
+  heading: 'What can fit in your garden space?',
+  includes: [
+    'data-fit-services-form',
+    'garden-structure',
+    'garden-patio-dining',
+    'garden-shed-storage',
+    'garden-greenhouse',
+    'garden-hot-tub',
+    'garden-outdoor-kitchen',
+    'garden-play-equipment',
+    'planning permission',
+  ],
+});
+assert(
+  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(garden),
+  '/garden/: early utility vertical must remain noindex until source and search review.',
+);
+
 const fitServices = await html('/fit-services/');
 checkPage('/fit-services/', fitServices, {
   heading: 'Specialized fit checks',
@@ -140,13 +162,29 @@ checkPage('/about/', aboutAndSources, {
   includes: [
     'id="data-sources"',
     'id="corrections"',
-    'No public correction-submission contact is configured yet.',
+    'Report a measurement or calculation correction on GitHub',
+    '/methodology/reference-conventions/',
     'record confidence',
   ],
 });
 assert(
   /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(aboutAndSources),
   '/about/: editorial/trust page must remain noindex until owner-reviewed for publication.',
+);
+
+const referenceConventions = await html('/methodology/reference-conventions/');
+checkPage('/methodology/reference-conventions/', referenceConventions, {
+  heading: 'Measurement and reference conventions',
+  includes: [
+    'Physical margin',
+    'Target margin',
+    'Internal reference values',
+    'Rounding is for display only',
+  ],
+});
+assert(
+  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(referenceConventions),
+  '/methodology/reference-conventions/: keep noindex until editorial publication review.',
 );
 
 const workspace = await html('/workspace/');
@@ -156,6 +194,9 @@ checkPage('/workspace/', workspace, {
     'data-workspace-fitcheck-form',
     'Example setup.',
     'data-fit-sticky',
+    'Physical margin',
+    'Target margin',
+    'Tightest constraint',
     'workspace-fitcheck-table',
     'data-fit-state',
     '/workspace/monitor-size-chart/',
@@ -169,11 +210,20 @@ checkPage('/bedroom/', bedroom, {
     'data-bedroom-fitcheck-form',
     'Example setup.',
     'data-fit-sticky',
+    'Physical margin',
+    'Target margin',
+    'Tightest constraint',
     'bedroom-fitcheck-table',
     '/bedroom/us-bed-size-dimensions/',
     '/bedroom/uk-bed-size-dimensions/',
   ],
 });
+assert(
+  ['140.0 cm', '20.0 cm', 'Physical space remaining', 'After your selected target'].every((value) =>
+    bedroom.includes(value),
+  ),
+  '/bedroom/: example result must distinguish 140 cm physical margin from 20 cm after the selected clearance target.',
+);
 
 const dedicatedPages = [
   {
@@ -328,6 +378,17 @@ const sharedDualMonitorPages = [
     await html('/workspace/desk-size-for-dual-monitors/'),
   ],
 ];
+assert(
+  [
+    '121.6 cm',
+    '129.2 cm',
+    'Physical space remaining',
+    'After your selected target',
+    '18.4 cm',
+    '10.8 cm',
+  ].every((value) => workspace.includes(value)),
+  '/workspace/: the dual-27 result must distinguish 18.4 cm physical margin from 10.8 cm after the selected target.',
+);
 for (const [route, source] of sharedDualMonitorPages) {
   assert(
     source.includes('121.6 cm') && source.includes('129.2 cm'),
@@ -345,6 +406,17 @@ for (const route of [
     `${route}: rendered dimensions must not expose floating-point artifacts.`,
   );
 }
+
+const bedroomMatrix = await html('/bedroom/what-bed-fits-in-10x12-room/');
+const matrixPosition = bedroomMatrix.indexOf('data-family-facts-matrix');
+const detailPosition = bedroomMatrix.indexOf('class="family-facts__detail"');
+assert(
+  matrixPosition >= 0 &&
+    detailPosition > matrixPosition &&
+    bedroomMatrix.includes('Portrait') &&
+    bedroomMatrix.includes('Landscape'),
+  'The 10x12 bed page must show its orientation/result matrix before collapsed measurement details.',
+);
 
 const breadcrumbGuide = await html('/workspace/monitor-size-chart/');
 assert(

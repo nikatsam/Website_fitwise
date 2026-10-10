@@ -118,6 +118,10 @@ function unitHtml(mm: number): string {
   return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span> <span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
 }
 
+function signedMeasurement(mm: number): string {
+  return `${mm > 0 ? '+' : mm < 0 ? '−' : ''}${formatMeasurement(Math.abs(mm), 'metric')}`;
+}
+
 function renderRows(rows: DimensionDisplayRow[]): void {
   const tbody = document.querySelector<HTMLTableSectionElement>('#universal-fit-table tbody');
   if (!tbody) return;
@@ -128,9 +132,10 @@ function renderRows(rows: DimensionDisplayRow[]): void {
       ) => `<tr data-dimension="${row.dimension}" data-hard-fit="${row.hardFit}" data-recommended-fit="${row.recommendedFit}">
         <th scope="row" data-label="Dimension">${row.label}</th>
         <td data-label="Required">${unitHtml(row.requiredMm)}</td>
-        <td data-label="Recommended">${unitHtml(row.recommendedMm)}</td>
+        <td data-label="Target">${unitHtml(row.recommendedMm)}</td>
         <td data-label="Available">${unitHtml(row.availableMm)}</td>
-        <td data-label="Margin"><span data-field="margin-sign">${row.marginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.marginMm))}</td>
+        <td data-label="Physical margin"><span>${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.physicalMarginMm))}</td>
+        <td data-label="Target margin"><span>${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.targetMarginMm))}</td>
       </tr>`,
     )
     .join('');
@@ -143,16 +148,15 @@ function renderSummary(
   const summary = document.getElementById('universal-fit-summary');
   if (!summary) return;
   const primary = selectSummaryDimension(rows);
-  const failures = rows
-    .filter((row) => (state === 'does_not_fit' ? !row.hardFit : !row.recommendedFit))
-    .map((row) => row.label);
+  const hardFailures = rows.filter((row) => !row.hardFit);
+  const targetFailures = rows.filter((row) => !row.recommendedFit);
   let detail = 'Fits all checked dimensions.';
   if (state === 'fits' && primary) {
-    detail = `Fits the selected dimensions — approximately ${unitHtml(Math.max(0, primary.marginMm))} remains on ${primary.label}.`;
+    detail = `Tightest constraint: ${primary.label}. Physical space remaining: ${unitHtml(primary.physicalMarginMm)}. After your selected target: ${unitHtml(primary.targetMarginMm)}.`;
   } else if (state === 'tight') {
-    detail = `Physical dimensions fit, but selected clearance targets are short on ${failures.join(', ')}.`;
+    detail = `Physical space remains, but selected targets are short on ${targetFailures.map((row) => `${row.label} by ${unitHtml(Math.abs(row.targetMarginMm))}`).join(', ')}.`;
   } else if (state === 'does_not_fit') {
-    detail = `Does not fit the checked dimensions: ${failures.join(', ')}.`;
+    detail = `Does not fit physically: ${hardFailures.map((row) => `${row.label} short by ${unitHtml(Math.abs(row.physicalMarginMm))}`).join(', ')}.`;
   }
   summary.setAttribute('data-fit-state', state);
   summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent =
@@ -175,10 +179,10 @@ function renderSummary(
     if (stickyDetail) {
       stickyDetail.innerHTML =
         state === 'fits' && primary
-          ? `${unitHtml(Math.max(0, primary.marginMm))} spare`
+          ? `${unitHtml(Math.max(0, primary.targetMarginMm))} after target`
           : state === 'tight'
-            ? 'Clearance short'
-            : 'Review dimensions';
+            ? `Target short ${unitHtml(Math.abs(selectSummaryDimension(targetFailures)?.targetMarginMm ?? 0))}`
+            : `Physical short ${unitHtml(Math.abs(selectSummaryDimension(hardFailures)?.physicalMarginMm ?? 0))}`;
     }
   }
 }
@@ -229,7 +233,7 @@ function createReport(): string {
     `Best floor orientation: ${plan.orientation}; estimated single-layer capacity: ${plan.quantityCapacity}`,
     ...rows.map(
       (row) =>
-        `${row.label}: ${row.marginMm < 0 ? 'short by' : 'spare'} ${formatMeasurement(Math.abs(row.marginMm), 'metric')} / ${formatMeasurement(Math.abs(row.marginMm), 'imperial')}`,
+        `${row.label}: physical margin ${signedMeasurement(row.physicalMarginMm)}; target margin ${signedMeasurement(row.targetMarginMm)}`,
     ),
     'Screening estimate only; verify measurements and access route on site.',
   ].join('\n');

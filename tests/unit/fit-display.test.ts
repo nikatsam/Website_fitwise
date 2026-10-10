@@ -33,12 +33,13 @@ describe('toDimensionDisplayRows', () => {
     expect(rows[1]!.label).toBe('side_clearance');
   });
 
-  it('exposes required (minimum), recommended, available and margin for each row', () => {
+  it('exposes required, target, available, physical margin and target margin', () => {
     expect(rows[0]).toMatchObject({
       requiredMm: 1200,
       recommendedMm: 1300,
       availableMm: 1400,
-      marginMm: 200,
+      physicalMarginMm: 200,
+      targetMarginMm: 100,
       hardFit: true,
       recommendedFit: true,
     });
@@ -46,7 +47,8 @@ describe('toDimensionDisplayRows', () => {
       requiredMm: 0,
       recommendedMm: 38,
       availableMm: 20,
-      marginMm: 20,
+      physicalMarginMm: 20,
+      targetMarginMm: -18,
       hardFit: true,
       recommendedFit: false,
     });
@@ -57,6 +59,7 @@ describe('toDimensionDisplayRows', () => {
     const noRecResult = evaluateFit(noRecCheck);
     const [row] = toDimensionDisplayRows(noRecCheck, noRecResult);
     expect(row!.recommendedMm).toBe(600);
+    expect(row!.targetMarginMm).toBe(100);
   });
 
   it('throws on a checks/result mismatch rather than silently misaligning rows', () => {
@@ -84,10 +87,14 @@ describe('toDimensionDisplayRows', () => {
     ];
     const rows = toDimensionDisplayRows(checks, evaluateFit(checks));
 
-    expect(selectSummaryDimension(rows)?.dimension).toBe('wardrobe_sweep');
+    expect(selectSummaryDimension(rows)?.dimension).toBe('dresser_drawer');
     expect(getFailedDimensionRows(rows).hardFailures.map((row) => row.dimension)).toEqual([
       'wardrobe_sweep',
       'dresser_drawer',
     ]);
+  });
+
+  it('chooses the tightest target margin even when physical margins are larger', () => {
+    expect(selectSummaryDimension(rows)?.dimension).toBe('left');
   });
 });
