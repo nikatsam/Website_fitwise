@@ -481,6 +481,7 @@ export const FIT_SERVICE_DEFINITIONS: FitServiceDefinition[] = [
       length('equipmentWidth', 'Equipment outside width', '2500 mm'),
       length('equipmentDepth', 'Equipment outside depth', '2500 mm'),
       length('equipmentHeight', 'Equipment outside height', '2200 mm'),
+      length('clearHeight', 'Clear overhead height (0 if open sky)', '0 mm', true),
       length('plotWidth', 'Usable plot width', '5.0 m'),
       length('plotDepth', 'Usable plot depth', '5.0 m'),
       select('useZoneSource', 'Use-zone source status', 'not-verified', [
@@ -1381,29 +1382,35 @@ export function buildFitServicePlan(
         reference.length > 0 &&
         reference.toLowerCase() !== 'not entered' &&
         Object.values(zones).every((zone) => zone > 0);
-      return {
-        checks: [
-          dimension(
-            'play_plot_width',
-            'equipment footprint and manufacturer use zone width',
-            width,
-            positive(values, 'plotWidth'),
-            width + zones.left + zones.right,
-          ),
-          dimension(
-            'play_plot_depth',
-            'equipment footprint and manufacturer use zone depth',
-            depth,
-            positive(values, 'plotDepth'),
-            depth + zones.front + zones.rear,
-          ),
+      const clearHeight = nonNegative(values, 'clearHeight');
+      const checks = [
+        dimension(
+          'play_plot_width',
+          'equipment footprint and manufacturer use zone width',
+          width,
+          positive(values, 'plotWidth'),
+          width + zones.left + zones.right,
+        ),
+        dimension(
+          'play_plot_depth',
+          'equipment footprint and manufacturer use zone depth',
+          depth,
+          positive(values, 'plotDepth'),
+          depth + zones.front + zones.rear,
+        ),
+      ];
+      if (clearHeight > 0) {
+        checks.push(
           dimension(
             'play_equipment_height',
-            'equipment height and open-sky clearance',
+            'equipment height and overhead clearance',
             height,
-            positive(values, 'clearHeight'),
+            clearHeight,
           ),
-        ],
+        );
+      }
+      return {
+        checks,
         compatibility: [],
         assumptions: [
           'The equipment use zone is safety-sensitive and must be copied from the exact manufacturer manual; Fitwise supplies no generic use-zone dimensions.',

@@ -1,13 +1,9 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 import DiningFitCheck from '../../components/fitcheck/DiningFitCheck.astro';
 ---
 
-<BaseLayout
-  title="Dining FitCheck — Will the Table and Chairs Fit? — Fitwise.stream"
-  description="Compare measured rectangular dining tables, chairs and user-selected circulation space with your dining room. Enter global metric or imperial dimensions."
-  noindex
->
+<PublishedLayout pageIntentId="pi-feature-dining">
   <section class="page-heading wrapper">
     <p class="eyebrow">Dining room fit</p>
     <h1>Will the dining table and chairs fit?</h1>
@@ -28,8 +24,13 @@ import DiningFitCheck from '../../components/fitcheck/DiningFitCheck.astro';
     <p class="method-link">
       <a href="/methodology/">How fit states and assumptions work</a>
     </p>
+    <p>
+      <a href="/garden/patio-dining-fit/">
+        Check this table and chair envelope against gazebo post spans
+      </a>
+    </p>
   </section>
-</BaseLayout>
+</PublishedLayout>
 
 <style>
   .page-heading {

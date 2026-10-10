@@ -9,6 +9,9 @@ import { bedroomPageIntents } from './bedroom/page-intents';
 import { seoPublications } from './seo-publications';
 import { routeDispositions } from './route-dispositions';
 import { buildFamilySeoPublications } from './family-seo-publications';
+import { featurePageIntents, featureSeoPublications } from './feature-pages';
+
+export { featurePages, featurePageByIntentId } from './feature-pages';
 
 /**
  * Aggregated production dataset. Workspace and bedroom seed records are
@@ -26,11 +29,15 @@ const dataWithoutSeo = {
   ],
   clearanceRules: [...clearanceRules, ...bedroomClearanceRules],
   relationships: [],
-  pageIntents: [...pageIntents, ...bedroomPageIntents],
+  pageIntents: [...pageIntents, ...bedroomPageIntents, ...featurePageIntents],
   routeDispositions,
 };
 
 export const dataset: Dataset = {
   ...dataWithoutSeo,
-  seoPublications: [...seoPublications, ...buildFamilySeoPublications(dataWithoutSeo)],
+  seoPublications: [
+    ...seoPublications,
+    ...featureSeoPublications,
+    ...buildFamilySeoPublications(dataWithoutSeo),
+  ],
 };

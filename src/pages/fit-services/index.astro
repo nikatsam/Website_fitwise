@@ -1,13 +1,9 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro';
 ---
 
-<BaseLayout
-  title="Fit Services Studio — Appliance, Route, Workspace, TV, Gym, Storage and Vehicle Checks — Fitwise.stream"
-  description="Try measured-input fit checks for appliances, delivery routes, workspace compatibility, TVs, home gyms, storage, pool tables and garages."
-  noindex
->
+<PublishedLayout pageIntentId="pi-feature-fit-services-hub">
   <section class="page-heading wrapper">
     <p class="eyebrow">Fit relationships</p>
     <h1>Specialized fit checks</h1>
@@ -19,6 +15,38 @@ import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro
   </section>
   <section class="wrapper section">
     <FitServicesStudio />
+    <nav class="service-directory" aria-label="Browse fit services">
+      <h2>Choose a service</h2>
+      <ul>
+        <li>
+          <a href="/appliances/">Appliances</a>
+        </li>
+        <li>
+          <a href="/access/">Furniture delivery routes</a>
+        </li>
+        <li>
+          <a href="/workspace/monitor-arm-compatibility/">Monitor, arm and desk compatibility</a>
+        </li>
+        <li>
+          <a href="/tv/">TV stand and wall fit</a>
+        </li>
+        <li>
+          <a href="/home-gym/">Home gym equipment</a>
+        </li>
+        <li>
+          <a href="/storage/">Storage planning</a>
+        </li>
+        <li>
+          <a href="/game-room/">Pool/game tables</a>
+        </li>
+        <li>
+          <a href="/vehicle/">Vehicle/garage fit</a>
+        </li>
+        <li>
+          <a href="/garden/">Garden Fit</a>
+        </li>
+      </ul>
+    </nav>
     <p class="fit-note">
       All values are editable examples. Enter dimensions from your actual items and consult current
       manuals for manufacturer load, mounting and installation limits. Turn handling, gym operating
@@ -29,7 +57,7 @@ import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro
       <a href="/methodology/">How fit states and assumptions work</a>
     </p>
   </section>
-</BaseLayout>
+</PublishedLayout>
 
 <style>
   .page-heading {

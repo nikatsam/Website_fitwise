@@ -1,13 +1,9 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 import WorkspaceFitCheck from '../../components/fitcheck/WorkspaceFitCheck.astro';
 ---
 
-<BaseLayout
-  title="Workspace FitChecks — Fitwise.stream"
-  description="Check whether your monitors fit your desk, with real dimensions and clearances."
-  noindex
->
+<PublishedLayout pageIntentId="pi-feature-workspace-hub">
   <section class="wrapper section">
     <h1>Will your monitors fit your desk?</h1>
     <p>
@@ -15,6 +11,9 @@ import WorkspaceFitCheck from '../../components/fitcheck/WorkspaceFitCheck.astro
       doesn't fit — with a scale diagram and the assumptions behind the answer.
     </p>
     <WorkspaceFitCheck />
+    <p>
+      <a href="/workspace/monitor-arm-compatibility/">Check monitor, arm and desk compatibility</a>
+    </p>
     <nav class="reference-links" aria-label="Workspace measurement references">
       <h2>Measurement references</h2>
       <ul>
@@ -24,7 +23,7 @@ import WorkspaceFitCheck from '../../components/fitcheck/WorkspaceFitCheck.astro
       </ul>
     </nav>
   </section>
-</BaseLayout>
+</PublishedLayout>
 
 <style>
   .section {

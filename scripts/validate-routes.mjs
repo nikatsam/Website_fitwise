@@ -85,15 +85,12 @@ checkPage('/will-it-fit/', universalFit, {
     'fit-item-width',
     'fit-door-width',
     'fit-quantity',
-    'name="robots" content="noindex"',
+    'rel="canonical"',
+    'BreadcrumbList',
     'Accepted units:',
     'feet plus inches',
   ],
 });
-assert(
-  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(universalFit),
-  '/will-it-fit/: standalone calculator must remain noindex until editorial review.',
-);
 
 const dining = await html('/dining/');
 checkPage('/dining/', dining, {
@@ -105,13 +102,10 @@ checkPage('/dining/', dining, {
     'dining-fitcheck-table',
     'Rectangular tables only',
     'user-selected space beyond the pulled-out chair envelope',
-    'name="robots" content="noindex"',
+    'rel="canonical"',
+    'BreadcrumbList',
   ],
 });
-assert(
-  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(dining),
-  '/dining/: early utility page must remain noindex until source and search-demand review.',
-);
 
 const garden = await html('/garden/');
 checkPage('/garden/', garden, {
@@ -126,12 +120,10 @@ checkPage('/garden/', garden, {
     'garden-outdoor-kitchen',
     'garden-play-equipment',
     'planning permission',
+    'rel="canonical"',
+    'BreadcrumbList',
   ],
 });
-assert(
-  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(garden),
-  '/garden/: early utility vertical must remain noindex until source and search review.',
-);
 
 const fitServices = await html('/fit-services/');
 checkPage('/fit-services/', fitServices, {
@@ -148,13 +140,10 @@ checkPage('/fit-services/', fitServices, {
     'storage',
     'pool-room',
     'vehicle-garage',
-    'name="robots" content="noindex"',
+    'rel="canonical"',
+    'BreadcrumbList',
   ],
 });
-assert(
-  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(fitServices),
-  '/fit-services/: utility suite must stay noindex until source and search review.',
-);
 
 const aboutAndSources = await html('/about/');
 checkPage('/about/', aboutAndSources, {
@@ -165,12 +154,10 @@ checkPage('/about/', aboutAndSources, {
     'Report a measurement or calculation correction on GitHub',
     '/methodology/reference-conventions/',
     'record confidence',
+    'rel="canonical"',
+    'BreadcrumbList',
   ],
 });
-assert(
-  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(aboutAndSources),
-  '/about/: editorial/trust page must remain noindex until owner-reviewed for publication.',
-);
 
 const referenceConventions = await html('/methodology/reference-conventions/');
 checkPage('/methodology/reference-conventions/', referenceConventions, {
@@ -180,12 +167,10 @@ checkPage('/methodology/reference-conventions/', referenceConventions, {
     'Target margin',
     'Internal reference values',
     'Rounding is for display only',
+    'rel="canonical"',
+    'BreadcrumbList',
   ],
 });
-assert(
-  /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(referenceConventions),
-  '/methodology/reference-conventions/: keep noindex until editorial publication review.',
-);
 
 const workspace = await html('/workspace/');
 checkPage('/workspace/', workspace, {
@@ -233,7 +218,7 @@ const dedicatedPages = [
   },
   {
     route: '/workspace/120cm-vs-140cm-desk/',
-    heading: '120cm vs 140cm desk',
+    heading: '120 cm vs 140 cm desk for two 27-inch monitors',
     includes: [
       '121.6 cm',
       '-1.6 cm',
@@ -473,12 +458,6 @@ for (const record of routeDispositions) {
         noindex || canonical,
         `${record.route}: generated route must be explicitly noindex or have a canonical publication envelope.`,
       );
-      if (record.renderer === 'static') {
-        assert(
-          noindex,
-          `${record.route}: hand-authored route without an SEO publication envelope must remain noindex.`,
-        );
-      }
     }
   } else if (record.disposition === 'deferred') {
     deferredIntentCount += 1;

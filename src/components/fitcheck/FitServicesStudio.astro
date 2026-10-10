@@ -16,9 +16,10 @@ import { formatMeasurement } from '../../lib/units';
 interface Props {
   category?: FitServiceCategory | 'all';
   initialMode?: FitServiceMode;
+  pinnedMode?: boolean;
 }
 
-const { category = 'core', initialMode: requestedInitialMode } = Astro.props;
+const { category = 'core', initialMode: requestedInitialMode, pinnedMode = false } = Astro.props;
 const serviceDefinitions = FIT_SERVICE_DEFINITIONS.filter(
   (definition) => category === 'all' || (definition.category ?? 'core') === category,
 );
@@ -79,19 +80,28 @@ const initialFields = initialDefinition.fields
       <strong>Example setup.</strong> Values are illustrative examples, not defaults for a product,
       manufacturer or local building standard. Replace them with measured dimensions.
     </p>
-    <div class="field">
-      <label for="fit-service-mode">Choose a fit relationship</label>
-      <select id="fit-service-mode" name="mode">
-        {serviceDefinitions.map((definition) => (
-          <option value={definition.mode} selected={definition.mode === INITIAL_MODE}>
-            {definition.title}
-          </option>
-        ))}
-      </select>
-      <p class="field__note" data-fit-service-description>
-        {initialDefinition.description}
-      </p>
-    </div>
+    {pinnedMode ? (
+      <>
+        <input id="fit-service-mode" name="mode" type="hidden" value={INITIAL_MODE} />
+        <p class="fit-services__mode-description" data-fit-service-description>
+          {initialDefinition.description}
+        </p>
+      </>
+    ) : (
+      <div class="field">
+        <label for="fit-service-mode">Choose a fit relationship</label>
+        <select id="fit-service-mode" name="mode">
+          {serviceDefinitions.map((definition) => (
+            <option value={definition.mode} selected={definition.mode === INITIAL_MODE}>
+              {definition.title}
+            </option>
+          ))}
+        </select>
+        <p class="field__note" data-fit-service-description>
+          {initialDefinition.description}
+        </p>
+      </div>
+    )}
     <div class="fit-services__fields field-grid" data-fit-service-fields set:html={initialFields} />
     <p class="field__note">
       Length entries accept mm, cm, m, inches or feet. Weight fields are in kg. Check the exact

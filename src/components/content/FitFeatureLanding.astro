@@ -1,0 +1,121 @@
+---
+import PageFamilyLayout from './PageFamilyLayout.astro';
+import FitServicesStudio from '../fitcheck/FitServicesStudio.astro';
+import type { BreadcrumbItem, ContentNavigationLink } from '../../lib/content';
+import type { FeaturePageRecord } from '../../data/feature-pages';
+import type { PageIntent, SeoPublication, SourceRecord } from '../../types';
+
+interface Props {
+  pageIntent: PageIntent;
+  publication: SeoPublication;
+  feature: FeaturePageRecord;
+  breadcrumb: BreadcrumbItem[];
+  links: ContentNavigationLink[];
+  sources: SourceRecord[];
+}
+
+const { pageIntent, publication, feature, breadcrumb, links, sources } = Astro.props;
+---
+
+<PageFamilyLayout breadcrumb={breadcrumb} h1={publication.h1}>
+  <p class="feature-intro">{feature.intro}</p>
+  {feature.kind === 'hub' ? (
+    <section aria-labelledby="feature-areas">
+      <h2 id="feature-areas">Fit services</h2>
+      <ul class="feature-links">
+        {links.map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))}
+      </ul>
+      <p>{feature.calculation}</p>
+    </section>
+  ) : feature.mode && feature.modeCategory ? (
+    <>
+      <section aria-labelledby="feature-how-it-works">
+        <h2 id="feature-how-it-works">How this check works</h2>
+        <p>{feature.calculation}</p>
+        <p class="feature-example">
+          The calculator starts with a labeled illustrative setup, not a named product. Replace the
+          sample dimensions with measured values before relying on the result.
+        </p>
+      </section>
+      <FitServicesStudio category={feature.modeCategory} initialMode={feature.mode} pinnedMode />
+      <section aria-labelledby="feature-limitations">
+        <h2 id="feature-limitations">Scope and limitations</h2>
+        <ul>
+          {feature.limitations.map((limitation) => (
+            <li>{limitation}</li>
+          ))}
+        </ul>
+      </section>
+    </>
+  ) : null}
+  <section aria-labelledby="feature-sources">
+    <h2 id="feature-sources">Sources and entered data</h2>
+    {sources.length > 0 ? (
+      <ul class="feature-links">
+        {sources.map((source) => (
+          <li>
+            {source.url ? <a href={source.url}>{source.title}</a> : source.title} —{' '}
+            {source.publisher}
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p>
+        No product-specific dimension is preloaded for this feature. The live calculation uses the
+        dimensions you enter; copy model-specific limits from current manuals.
+      </p>
+    )}
+    <p>
+      <a href="/methodology/">Calculation methodology</a> ·{' '}
+      <a href="/methodology/reference-conventions/">Measurement conventions</a> ·{' '}
+      <a href="/about/">About and data sources</a>
+    </p>
+  </section>
+  {links.length > 0 && feature.kind !== 'hub' && (
+    <nav aria-label="Related fit services">
+      <h2>Related fit services</h2>
+      <ul class="feature-links">
+        {links
+          .filter((link) => link.href !== pageIntent.route)
+          .map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))}
+      </ul>
+    </nav>
+  )}
+</PageFamilyLayout>
+
+<style>
+  .feature-intro {
+    max-width: 76ch;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-md);
+    line-height: 1.65;
+  }
+
+  .feature-example {
+    max-width: 76ch;
+    padding: var(--space-3);
+    border-left: 0.2rem solid var(--color-accent-1);
+    background: var(--color-surface-raised);
+    font-size: var(--fs-sm);
+    line-height: 1.55;
+  }
+
+  .feature-links {
+    display: grid;
+    gap: var(--space-2);
+    padding-left: var(--space-5);
+  }
+
+  section,
+  nav {
+    max-width: 82ch;
+  }
+</style>

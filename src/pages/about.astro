@@ -1,15 +1,11 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import PublishedLayout from '../components/layout/PublishedLayout.astro';
 import { sources } from '../data/sources';
 
 const sourceCount = sources.length;
 ---
 
-<BaseLayout
-  title="About Fitwise and Data Sources — Fitwise.stream"
-  description="Learn how Fitwise separates sourced dimensions, calculated geometry and user-selected assumptions, and browse the source registry used by its fit tools."
-  noindex
->
+<PublishedLayout pageIntentId="pi-feature-about">
   <section class="page-heading wrapper">
     <p class="eyebrow">About Fitwise</p>
     <h1>Dimension-based fit tools, with assumptions made visible</h1>
@@ -115,7 +111,7 @@ const sourceCount = sources.length;
       response-time commitment is implied.
     </p>
   </section>
-</BaseLayout>
+</PublishedLayout>
 
 <style>
   .page-heading {

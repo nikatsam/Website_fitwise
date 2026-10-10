@@ -1,12 +1,8 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 ---
 
-<BaseLayout
-  title="Methodology — Fitwise.stream"
-  description="How Fitwise sources dimensions and calculates fit results."
-  noindex
->
+<PublishedLayout pageIntentId="pi-feature-methodology">
   <section class="wrapper section">
     <h1>Methodology</h1>
     <p>
@@ -61,7 +57,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       and <a href="/about/#data-sources">the source registry</a>.
     </p>
   </section>
-</BaseLayout>
+</PublishedLayout>
 
 <style>
   .section {

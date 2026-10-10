@@ -84,7 +84,8 @@ function updateConditionalFields(): void {
 
 function readForm(): { mode: FitServiceMode; values: FitServiceValues } | null {
   const form = document.querySelector<HTMLFormElement>('[data-fit-services-form]');
-  const modeControl = document.getElementById('fit-service-mode') as HTMLSelectElement | null;
+  const modeControl = document.getElementById('fit-service-mode') as
+    HTMLSelectElement | HTMLInputElement | null;
   if (!form || !modeControl) return null;
   const mode = getFitServiceModeForRoute(modeControl.value);
   if (!mode) return null;
@@ -321,13 +322,18 @@ function init(): void {
   if (!form || !modeControl) return;
 
   const requestedMode = getFitServiceModeForRoute(new URLSearchParams(location.search).get('mode'));
-  const pageModes = new Set(Array.from(modeControl.options, (option) => option.value));
+  const pageModes = new Set(
+    modeControl.tagName === 'SELECT'
+      ? Array.from((modeControl as HTMLSelectElement).options, (option) => option.value)
+      : [modeControl.value],
+  );
   if (requestedMode && pageModes.has(requestedMode)) modeControl.value = requestedMode;
   const initialMode = getFitServiceModeForRoute(modeControl.value);
   if (!initialMode) return;
   renderFields(initialMode);
 
   modeControl.addEventListener('change', () => {
+    if (modeControl.tagName !== 'SELECT') return;
     const mode = getFitServiceModeForRoute(modeControl.value);
     if (!mode) return;
     renderFields(mode);

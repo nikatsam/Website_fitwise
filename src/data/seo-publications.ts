@@ -8,18 +8,21 @@ import type { SeoPublication } from '../types';
 export const seoPublications: SeoPublication[] = [
   {
     pageIntentId: 'pi-p001-desk-size-guide',
-    indexable: false,
-    title: 'Desk Size for Monitors — Fitwise.stream',
+    indexable: true,
+    title: 'Desk Size for Monitors: Footprint and Depth Guide — Fitwise.stream',
     description:
-      'Compare monitor footprints against reference desk widths, then check the physical monitor model and desk depth before buying. Screen-only estimates are clearly separated from sourced outer-device dimensions.',
+      'Compare monitor footprints against reference desk widths, then check the exact monitor model, stand depth, cable space and working zone.',
     h1: 'Desk size and monitor fit guide',
     canonicalPath: '/workspace/desk-size-guide/',
     publishedOn: '2026-10-06',
-    breadcrumbIds: [],
-    relatedPageIds: [],
+    significantlyModifiedOn: '2026-10-10',
+    breadcrumbIds: ['pi-feature-workspace-hub'],
+    relatedPageIds: ['pi-p004-desk-size-two-27in', 'pi-p019-monitor-size-chart'],
     market: 'global',
     language: 'en',
-    sourceIds: [],
+    sourceIds: ['src-fitwise-internal-convention'],
+    intentEvidence:
+      'Owner-authorized release on 2026-10-10; the guide links the dimension tools and separates measured and derived device widths.',
   },
   {
     pageIntentId: 'pi-p019-monitor-size-chart',
@@ -69,16 +72,20 @@ export const seoPublications: SeoPublication[] = [
   },
   {
     pageIntentId: 'pi-p011-what-fits-140cm-desk',
-    indexable: false,
+    indexable: true,
     title: 'What Fits on a 140 cm Desk? Monitor Layout Estimates — Fitwise.stream',
     description:
       'Compare representative monitor layouts on a nominal 140 cm desk using derived screen widths, a sourced 32-inch model and explicit side margins.',
     h1: 'What fits on a 140 cm desk? Monitor layout estimates',
     canonicalPath: '/workspace/what-fits-on-a-140cm-desk/',
     publishedOn: '2026-10-06',
-    significantlyModifiedOn: '2026-10-08',
-    breadcrumbIds: [],
-    relatedPageIds: [],
+    significantlyModifiedOn: '2026-10-10',
+    breadcrumbIds: ['pi-feature-workspace-hub'],
+    relatedPageIds: [
+      'pi-p001-desk-size-guide',
+      'pi-p004-desk-size-two-27in',
+      'pi-p019-monitor-size-chart',
+    ],
     market: 'global',
     language: 'en',
     sourceIds: [
@@ -251,5 +258,49 @@ export const seoPublications: SeoPublication[] = [
     market: 'global',
     language: 'en',
     sourceIds: [],
+  },
+  {
+    pageIntentId: 'pi-p004-desk-size-two-27in',
+    indexable: true,
+    title: 'Desk Size for Two 27-Inch Monitors: Physical and Target Width — Fitwise.stream',
+    description:
+      'See the shared 121.6 cm physical width and 129.2 cm target width for two approximate 27-inch monitor panels, with exact formula, assumptions and margins.',
+    h1: 'Desk size for two 27-inch monitors',
+    canonicalPath: '/workspace/desk-size-for-two-27-inch-monitors/',
+    publishedOn: '2026-10-06',
+    significantlyModifiedOn: '2026-10-10',
+    breadcrumbIds: ['pi-feature-workspace-hub'],
+    relatedPageIds: [
+      'pi-p001-desk-size-guide',
+      'pi-p011-what-fits-140cm-desk',
+      'pi-p019-monitor-size-chart',
+    ],
+    market: 'global',
+    language: 'en',
+    sourceIds: ['src-fitwise-internal-convention'],
+    intentEvidence:
+      'Published as a specific calculator/content route after the owner-directed audit; shared 27-inch geometry is regression-tested against the interactive planner and desk comparison.',
+  },
+  {
+    pageIntentId: 'pi-p013-120-vs-140cm-desk',
+    indexable: true,
+    title: '120 cm vs 140 cm Desk for Two 27-Inch Monitors — Fitwise.stream',
+    description:
+      'Compare the shared 121.6 cm physical monitor width and 129.2 cm target width, with signed physical and target margins on 120 cm and 140 cm desks.',
+    h1: '120 cm vs 140 cm desk for two 27-inch monitors',
+    canonicalPath: '/workspace/120cm-vs-140cm-desk/',
+    publishedOn: '2026-10-08',
+    significantlyModifiedOn: '2026-10-10',
+    breadcrumbIds: ['pi-feature-workspace-hub'],
+    relatedPageIds: [
+      'pi-p001-desk-size-guide',
+      'pi-p004-desk-size-two-27in',
+      'pi-p011-what-fits-140cm-desk',
+    ],
+    market: 'global',
+    language: 'en',
+    sourceIds: ['src-ikea-lagkapten-desk', 'src-fitwise-internal-convention'],
+    intentEvidence:
+      'Published after the owner-directed cross-page calculation audit. Both columns use the shared workspace geometry and regression invariants.',
   },
 ];

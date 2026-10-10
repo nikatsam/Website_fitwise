@@ -1,0 +1,78 @@
+---
+import type { BreadcrumbItem } from '../../lib/content';
+import { buildPublicationBreadcrumbs, publicationStructuredData } from '../../lib/seo/metadata';
+import { dataset } from '../../data';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+interface Props {
+  pageIntentId: string;
+  showBreadcrumb?: boolean;
+}
+
+const { pageIntentId, showBreadcrumb = true } = Astro.props;
+const intent = dataset.pageIntents.find((candidate) => candidate.id === pageIntentId);
+const publication = dataset.seoPublications.find(
+  (candidate) => candidate.pageIntentId === pageIntentId,
+);
+if (!intent || !publication?.indexable) {
+  throw new Error(
+    `PublishedLayout requires an indexable PageIntent/publication for '${pageIntentId}'.`,
+  );
+}
+const breadcrumb: BreadcrumbItem[] = buildPublicationBreadcrumbs(
+  intent,
+  publication,
+  dataset.pageIntents,
+  dataset.seoPublications,
+);
+const structuredData = publicationStructuredData(publication, breadcrumb);
+---
+
+<BaseLayout
+  title={publication.title}
+  description={publication.description}
+  canonicalPath={publication.canonicalPath}
+  language={publication.language}
+  structuredData={structuredData}
+>
+  {showBreadcrumb && (
+    <nav class="published-breadcrumb wrapper" aria-label="Breadcrumb">
+      <ol>
+        {breadcrumb.map((item, index) => (
+          <li>
+            {index === breadcrumb.length - 1 ? (
+              <span aria-current="page">{item.label}</span>
+            ) : (
+              <>
+                <a href={item.href}>{item.label}</a>
+                <span aria-hidden="true"> / </span>
+              </>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  )}
+  <slot />
+</BaseLayout>
+
+<style>
+  .published-breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+  }
+
+  .published-breadcrumb li {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .published-breadcrumb a {
+    color: var(--color-text-secondary);
+  }
+</style>

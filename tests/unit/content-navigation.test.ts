@@ -56,4 +56,24 @@ describe('curated content navigation', () => {
     );
     expect(dresserLinks.every((link) => link.description.trim())).toBe(true);
   });
+
+  it('exposes every specialized fit landing from its crawlable category hub', () => {
+    const applianceLinks = buildContentNavigationLinks(
+      'pi-feature-appliances-hub',
+      dataset.pageIntents,
+      dataset.seoPublications,
+      dataset.routeDispositions,
+    );
+    const gardenLinks = buildContentNavigationLinks(
+      'pi-feature-garden-hub',
+      dataset.pageIntents,
+      dataset.seoPublications,
+      dataset.routeDispositions,
+    );
+
+    expect(applianceLinks.map((link) => link.href)).toContain('/appliances/fridge-fit/');
+    expect(applianceLinks.map((link) => link.href)).toContain('/appliances/washer-fit/');
+    expect(gardenLinks.map((link) => link.href)).toContain('/garden/structure-fit/');
+    expect(gardenLinks.map((link) => link.href)).toContain('/garden/play-equipment-use-zone/');
+  });
 });

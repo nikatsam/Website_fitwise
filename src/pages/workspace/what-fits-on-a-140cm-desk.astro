@@ -1,9 +1,10 @@
 ---
 // Static reverse-fit answer for the published P011 workspace intent.
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 import SpaceToObjectTemplate from '../../components/content/templates/SpaceToObjectTemplate.astro';
 import { dataset } from '../../data';
-import { buildBreadcrumb, buildContentNavigationLinks } from '../../lib/content';
+import { buildContentNavigationLinks } from '../../lib/content';
+import { buildPublicationBreadcrumbs } from '../../lib/seo/metadata';
 import { evaluateFit } from '../../lib/fit';
 import { buildWorkspaceConfigurationCheck, resolveMonitorWidth } from '../../lib/geometry';
 import { formatMeasurement } from '../../lib/units';
@@ -95,7 +96,12 @@ const noFitLabels = candidates
   .filter((candidate) => candidate.state === 'does_not_fit')
   .map((candidate) => candidate.label);
 const intro = `Width-only estimate for a nominal ${formatMeasurement(deskWidthMm, 'cm')} reference desk: ${fitLabels.join(', ')} stay within the modeled width target after the stated gaps and side margins. ${noFitLabels.join(' and ')} exceed the desk's stated width even before stand, cable or accessory space. This does not confirm that the complete physical setup fits; most entries use screen-panel estimates, and desk depth is not checked.`;
-const breadcrumb = buildBreadcrumb(pageIntent.route, pageIntent.cluster);
+const breadcrumb = buildPublicationBreadcrumbs(
+  pageIntent,
+  publication,
+  dataset.pageIntents,
+  dataset.seoPublications,
+);
 const relatedPages = buildContentNavigationLinks(
   pageIntent.id,
   dataset.pageIntents,
@@ -120,13 +126,13 @@ const sourceIds = new Set([
 const sources = dataset.sources.filter((source) => sourceIds.has(source.id));
 ---
 
-<BaseLayout title={publication.title} description={publication.description} noindex>
+<PublishedLayout pageIntentId="pi-p011-what-fits-140cm-desk" showBreadcrumb={false}>
   <div class="wrapper">
     <SpaceToObjectTemplate
       breadcrumb={breadcrumb}
       h1={publication.h1}
       intro={intro}
-      spaceLabel={`a ${deskWidthMm / 10}cm desk`}
+      spaceLabel={`a ${formatMeasurement(deskWidthMm, 'cm')} desk`}
       candidates={candidates}
       assumptions={[
         'A 140 cm desk is a nominal reference size from the cited IKEA range, not a measurement of every desk sold as 140 cm.',
@@ -140,4 +146,4 @@ const sources = dataset.sources.filter((source) => sourceIds.has(source.id));
       relatedPages={relatedPages}
     />
   </div>
-</BaseLayout>
+</PublishedLayout>

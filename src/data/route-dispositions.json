@@ -279,5 +279,236 @@
     "intentStatus": "published",
     "disposition": "generated",
     "renderer": "family"
+  },
+  {
+    "pageIntentId": "pi-feature-fit-services-hub",
+    "route": "/fit-services/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-garden-hub",
+    "route": "/garden/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-will-it-fit",
+    "route": "/will-it-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-dining",
+    "route": "/dining/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-workspace-hub",
+    "route": "/workspace/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-bedroom",
+    "route": "/bedroom/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-about",
+    "route": "/about/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-methodology",
+    "route": "/methodology/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-reference-conventions",
+    "route": "/methodology/reference-conventions/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-appliances-hub",
+    "route": "/appliances/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-access-hub",
+    "route": "/access/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-tv-hub",
+    "route": "/tv/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-home-gym-hub",
+    "route": "/home-gym/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-storage-hub",
+    "route": "/storage/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-game-room-hub",
+    "route": "/game-room/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-vehicle-hub",
+    "route": "/vehicle/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-appliance-install",
+    "route": "/appliances/appliance-install-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-fridge-fit",
+    "route": "/appliances/fridge-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-washer-fit",
+    "route": "/appliances/washer-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-furniture-route",
+    "route": "/access/furniture-route-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-workspace-compatibility",
+    "route": "/workspace/monitor-arm-compatibility/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-tv-stand-fit",
+    "route": "/tv/tv-stand-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-power-rack-fit",
+    "route": "/home-gym/power-rack-room-size/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-storage-capacity",
+    "route": "/storage/what-fits-in-storage/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-pool-table-fit",
+    "route": "/game-room/pool-table-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-vehicle-garage",
+    "route": "/vehicle/garage-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-garden-structure",
+    "route": "/garden/structure-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-garden-patio-dining",
+    "route": "/garden/patio-dining-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-garden-shed-storage",
+    "route": "/garden/shed-interior-storage/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-garden-greenhouse",
+    "route": "/garden/greenhouse-layout/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-garden-hot-tub",
+    "route": "/garden/hot-tub-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-garden-outdoor-kitchen",
+    "route": "/garden/outdoor-kitchen-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-garden-play",
+    "route": "/garden/play-equipment-use-zone/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
   }
 ]

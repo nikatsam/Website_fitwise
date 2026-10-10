@@ -45,20 +45,60 @@ describe('SEO static outputs', () => {
     expect(entries[1]?.lastmod).toBe('2026-10-06');
   });
 
-  it('keeps enriched noindex content out while updating lastmod for materially linked references', () => {
+  it('includes every approved feature landing and keeps unapproved answer pages out', () => {
     const entries = publishedSitemapEntries(
       productionDataset.pageIntents,
       productionDataset.seoPublications,
     );
     const urls = entries.map((entry) => entry.url);
 
-    expect(urls).toEqual([
-      'https://fitwise.stream/',
-      'https://fitwise.stream/workspace/monitor-size-chart/',
-      'https://fitwise.stream/bedroom/us-bed-size-dimensions/',
-      'https://fitwise.stream/bedroom/uk-bed-size-dimensions/',
-    ]);
-    expect(urls).not.toContain('https://fitwise.stream/workspace/what-fits-on-a-140cm-desk/');
+    expect(urls).toHaveLength(41);
+    for (const route of [
+      '/',
+      '/will-it-fit/',
+      '/dining/',
+      '/garden/',
+      '/fit-services/',
+      '/workspace/',
+      '/bedroom/',
+      '/appliances/fridge-fit/',
+      '/appliances/washer-fit/',
+      '/access/furniture-route-fit/',
+      '/workspace/monitor-arm-compatibility/',
+      '/tv/tv-stand-fit/',
+      '/home-gym/power-rack-room-size/',
+      '/storage/what-fits-in-storage/',
+      '/game-room/pool-table-fit/',
+      '/vehicle/garage-fit/',
+      '/garden/structure-fit/',
+      '/garden/patio-dining-fit/',
+      '/garden/shed-interior-storage/',
+      '/garden/greenhouse-layout/',
+      '/garden/hot-tub-fit/',
+      '/garden/outdoor-kitchen-fit/',
+      '/garden/play-equipment-use-zone/',
+      '/appliances/',
+      '/access/',
+      '/tv/',
+      '/home-gym/',
+      '/storage/',
+      '/game-room/',
+      '/vehicle/',
+      '/appliances/appliance-install-fit/',
+      '/workspace/desk-size-for-two-27-inch-monitors/',
+      '/workspace/120cm-vs-140cm-desk/',
+      '/workspace/desk-size-guide/',
+      '/workspace/desk-size-for-two-27-inch-monitors/',
+      '/about/',
+      '/methodology/',
+      '/methodology/reference-conventions/',
+    ]) {
+      expect(urls).toContain(`https://fitwise.stream${route}`);
+    }
+    expect(urls).toContain('https://fitwise.stream/workspace/monitor-size-chart/');
+    expect(urls).toContain('https://fitwise.stream/bedroom/us-bed-size-dimensions/');
+    expect(urls).toContain('https://fitwise.stream/bedroom/uk-bed-size-dimensions/');
+    expect(urls).toContain('https://fitwise.stream/workspace/what-fits-on-a-140cm-desk/');
     expect(urls).not.toContain('https://fitwise.stream/workspace/desk-chair-clearance/');
     expect(urls).not.toContain('https://fitwise.stream/workspace/desk-depth-for-monitor/');
     expect(urls).not.toContain('https://fitwise.stream/bedroom/minimum-room-size-for-queen-bed/');

@@ -6,9 +6,10 @@
 // to noindex pending a separate editorial release review.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import EntityTemplate from '../components/content/templates/EntityTemplate.astro';
+import FitFeatureLanding from '../components/content/FitFeatureLanding.astro';
 import FamilyFactsTemplate from '../components/content/templates/FamilyFactsTemplate.astro';
 import HubTemplate from '../components/content/templates/HubTemplate.astro';
-import { dataset } from '../data';
+import { dataset, featurePages, featurePageByIntentId } from '../data';
 import { buildBreadcrumb, buildContentNavigationLinks, getPublishedRoutes } from '../lib/content';
 import { buildFamilyAnswer } from '../lib/content/build-family-answer';
 import {
@@ -19,16 +20,20 @@ import {
 import type { PageIntent } from '../types';
 
 export async function getStaticPaths() {
-  const generatedFamilyIds = new Set(
+  const generatedFeatureIds = new Set(
+    featurePages.filter((page) => page.kind !== 'direct').map((page) => page.pageIntent.id),
+  );
+  const generatedRouteIds = new Set(
     dataset.routeDispositions
       .filter(
         (disposition) =>
-          disposition.disposition === 'generated' && disposition.renderer === 'family',
+          disposition.disposition === 'generated' &&
+          (disposition.renderer === 'family' || generatedFeatureIds.has(disposition.pageIntentId)),
       )
       .map((disposition) => disposition.pageIntentId),
   );
   return getPublishedRoutes(dataset)
-    .filter((route) => generatedFamilyIds.has(route.pageIntent.id))
+    .filter((route) => generatedRouteIds.has(route.pageIntent.id))
     .map((route) => ({
       params: { slug: route.slug },
       props: { pageIntent: route.pageIntent },
@@ -40,6 +45,7 @@ interface Props {
 }
 
 const { pageIntent } = Astro.props;
+const featurePage = featurePageByIntentId.get(pageIntent.id);
 const publication = dataset.seoPublications.find((record) => record.pageIntentId === pageIntent.id);
 if (!publication) throw new Error(`Missing SEO publication record for '${pageIntent.id}'.`);
 const breadcrumb = publication.indexable
@@ -73,8 +79,9 @@ const contentLinks = buildContentNavigationLinks(
   dataset.routeDispositions,
 );
 
-const familyAnswer =
-  pageIntent.family === 'hub' || pageIntent.family === 'entity'
+const familyAnswer = featurePage
+  ? undefined
+  : pageIntent.family === 'hub' || pageIntent.family === 'entity'
     ? undefined
     : buildFamilyAnswer(pageIntent, dataset);
 
@@ -119,12 +126,22 @@ const measurements = dataset.entities
   alternateLanguages={alternateLanguages}
   structuredData={structuredData}
 >
-  {pageIntent.family === 'hub' && (
+  {pageIntent.family === 'hub' && !featurePage && (
     <HubTemplate
       breadcrumb={breadcrumb}
       h1={h1}
       intro={publication.description}
       links={contentLinks}
+    />
+  )}
+  {featurePage && (
+    <FitFeatureLanding
+      breadcrumb={breadcrumb}
+      pageIntent={pageIntent}
+      publication={publication}
+      feature={featurePage}
+      links={contentLinks}
+      sources={dataset.sources.filter((source) => publication.sourceIds.includes(source.id))}
     />
   )}
   {pageIntent.family === 'entity' && (

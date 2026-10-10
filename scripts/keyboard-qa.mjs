@@ -80,7 +80,11 @@ function cdp(method, params = {}) {
 }
 
 async function evaluate(expression) {
-  const response = await cdp('Runtime.evaluate', { expression, returnByValue: true });
+  const response = await cdp('Runtime.evaluate', {
+    expression,
+    returnByValue: true,
+    awaitPromise: true,
+  });
   if (response.exceptionDetails) {
     throw new Error(response.exceptionDetails.exception?.description ?? 'Page evaluation failed.');
   }
@@ -723,6 +727,42 @@ try {
     `Bedroom result matrix is not scan-first and responsive: ${JSON.stringify(bedroomMatrix)}.`,
   );
   console.log('Mobile bedroom matrix and live breadcrumb checks passed.');
+
+  const sitemapRoutes = await evaluate(`(async () => {
+    const xml = await fetch('/sitemap.xml').then((response) => response.text());
+    const documentXml = new DOMParser().parseFromString(xml, 'application/xml');
+    return [...documentXml.querySelectorAll('loc')].map((element) => new URL(element.textContent).pathname);
+  })()`);
+  for (const route of sitemapRoutes) {
+    await cdp('Page.navigate', { url: new URL(route, baseUrl).toString() });
+    let ready = false;
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      ready = (await evaluate('document.readyState')) === 'complete';
+      if (ready) break;
+      await delay(50);
+    }
+    const crawlCheck = await evaluate(`(async () => {
+      const canonical = document.querySelector('link[rel="canonical"]')?.href;
+      const robots = document.querySelector('meta[name="robots"]')?.content?.toLowerCase() ?? '';
+      const breadcrumbs = [...document.querySelectorAll('script[type="application/ld+json"]')].some((node) => {
+        try { return JSON.parse(node.textContent)['@type'] === 'BreadcrumbList'; } catch { return node.textContent.includes('BreadcrumbList'); }
+      });
+      const status = await fetch(location.href).then((response) => response.status);
+      return { path: location.pathname, status, canonicalPath: canonical ? new URL(canonical).pathname : null, noindex: robots.includes('noindex'), hasH1: Boolean(document.querySelector('h1')), breadcrumbs: location.pathname === '/' || breadcrumbs, pageWidth: document.documentElement.scrollWidth, viewport: innerWidth, floatingArtifact: /[0-9]+[.][0-9]{8,}/.test(document.body.innerText) };
+    })()`);
+    assert(
+      ready &&
+        crawlCheck.status === 200 &&
+        crawlCheck.canonicalPath === route &&
+        !crawlCheck.noindex &&
+        crawlCheck.hasH1 &&
+        crawlCheck.breadcrumbs &&
+        crawlCheck.pageWidth <= crawlCheck.viewport + 1 &&
+        !crawlCheck.floatingArtifact,
+      `Indexable route failed live crawler QA: ${JSON.stringify(crawlCheck)}.`,
+    );
+  }
+  console.log(`Live sitemap crawl QA passed for ${sitemapRoutes.length} indexable routes.`);
   console.log('Keyboard QA passed in headless Chrome using real Tab, Enter, and Space key events.');
 } catch (error) {
   console.error(`Keyboard QA failed: ${error.message}`);

@@ -1,13 +1,9 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import PublishedLayout from '../components/layout/PublishedLayout.astro';
 import UniversalFitCheck from '../components/fitcheck/UniversalFitCheck.astro';
 ---
 
-<BaseLayout
-  title="Will It Fit? Universal Space and Access Calculator — Fitwise.stream"
-  description="Check an item's measured width, depth and height against a room, doorway and corridor. Enter metric or imperial dimensions, compare orientations and estimate a single-layer quantity."
-  noindex
->
+<PublishedLayout pageIntentId="pi-feature-will-it-fit">
   <section class="page-heading wrapper">
     <p class="eyebrow">Universal fit review</p>
     <h1>Will it fit?</h1>
@@ -24,7 +20,7 @@ import UniversalFitCheck from '../components/fitcheck/UniversalFitCheck.astro';
       account for packaging, handles, hinges, thresholds, turns and temporary obstacles yourself.
     </p>
   </section>
-</BaseLayout>
+</PublishedLayout>
 
 <style>
   .page-heading {

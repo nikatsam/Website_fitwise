@@ -188,11 +188,16 @@ export function buildContentNavigationLinks(
   publications: SeoPublication[],
   routeDispositions: RouteDispositionRecord[],
 ): ContentNavigationLink[] {
-  const targets = CONTENT_LINK_TARGETS[pageIntentId] ?? [];
   const intentById = new Map(pageIntents.map((intent) => [intent.id, intent]));
   const publicationById = new Map(
     publications.map((publication) => [publication.pageIntentId, publication]),
   );
+  const targets = [
+    ...new Set([
+      ...(CONTENT_LINK_TARGETS[pageIntentId] ?? []),
+      ...(publicationById.get(pageIntentId)?.relatedPageIds ?? []),
+    ]),
+  ];
   const dispositionById = new Map(
     routeDispositions.map((disposition) => [disposition.pageIntentId, disposition]),
   );

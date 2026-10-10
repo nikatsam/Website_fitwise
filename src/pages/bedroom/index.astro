@@ -1,13 +1,9 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 import BedroomFitCheck from '../../components/fitcheck/BedroomFitCheck.astro';
 ---
 
-<BaseLayout
-  title="Bedroom FitChecks — Fitwise.stream"
-  description="Check whether your bed fits your room, with real dimensions and clearances."
-  noindex
->
+<PublishedLayout pageIntentId="pi-feature-bedroom">
   <section class="wrapper section">
     <h1>Will your bed fit your room?</h1>
     <p>
@@ -28,7 +24,7 @@ import BedroomFitCheck from '../../components/fitcheck/BedroomFitCheck.astro';
       </ul>
     </nav>
   </section>
-</BaseLayout>
+</PublishedLayout>
 
 <style>
   .section {

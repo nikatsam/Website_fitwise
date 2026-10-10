@@ -1,14 +1,14 @@
 ---
 // Representative 'object_to_space' page (tasks/T014). noindex: not yet backed
 // by a published PageIntent/SeoPublication record (T015-T017).
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 import FitAnswerTemplate from '../../components/content/templates/FitAnswerTemplate.astro';
 import { dataset } from '../../data';
-import { buildBreadcrumb } from '../../lib/content';
 import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
 import { buildWorkspaceConfigurationCheck, resolveMonitorWidth } from '../../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../../lib/diagram';
 import { formatMeasurement } from '../../lib/units';
+import { buildPublicationBreadcrumbs } from '../../lib/seo/metadata';
 
 const desk = dataset.entities.find((entity) => entity.id === 'ent-desk-1400');
 const monitor = dataset.entities.find((entity) => entity.id === 'ent-display-27in-16x9');
@@ -54,14 +54,21 @@ const diagramMarkup = renderWorkspaceDiagramMarkup({
 });
 
 const h1 = 'Desk size for two 27-inch monitors';
-const breadcrumb = buildBreadcrumb('/workspace/desk-size-for-two-27-inch-monitors/', 'workspace');
+const pageIntent = dataset.pageIntents.find((intent) => intent.id === 'pi-p004-desk-size-two-27in');
+const publication = dataset.seoPublications.find(
+  (record) => record.pageIntentId === 'pi-p004-desk-size-two-27in',
+);
+if (!pageIntent || !publication)
+  throw new Error('The two-27 monitor page needs its publication metadata.');
+const breadcrumb = buildPublicationBreadcrumbs(
+  pageIntent,
+  publication,
+  dataset.pageIntents,
+  dataset.seoPublications,
+);
 ---
 
-<BaseLayout
-  title={`${h1} — Fitwise.stream`}
-  description="See the minimum and recommended desk width for two 27-inch monitors side by side, with a scale diagram."
-  noindex
->
+<PublishedLayout pageIntentId="pi-p004-desk-size-two-27in" showBreadcrumb={false}>
   <div class="wrapper">
     <FitAnswerTemplate
       breadcrumb={breadcrumb}
@@ -78,4 +85,4 @@ const breadcrumb = buildBreadcrumb('/workspace/desk-size-for-two-27-inch-monitor
       assumptions={result.assumptions}
     />
   </div>
-</BaseLayout>
+</PublishedLayout>

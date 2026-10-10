@@ -1,12 +1,8 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 ---
 
-<BaseLayout
-  title="Measurement and Reference Conventions — Fitwise.stream"
-  description="Public definitions for Fitwise measurement types, provenance, internal reference values, rounding and user-selected clearances."
-  noindex
->
+<PublishedLayout pageIntentId="pi-feature-reference-conventions">
   <section class="page-heading wrapper">
     <p class="eyebrow">Methodology</p>
     <h1>Measurement and reference conventions</h1>
@@ -71,7 +67,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <a href="/methodology/">Return to calculation methodology</a>.
     </p>
   </section>
-</BaseLayout>
+</PublishedLayout>
 
 <style>
   .page-heading {

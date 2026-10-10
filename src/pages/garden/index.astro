@@ -1,13 +1,9 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro';
 ---
 
-<BaseLayout
-  title="Garden Fit — Sheds, Gazebos, Greenhouses and Patio Layouts — Fitwise.stream"
-  description="Compare garden structures, actual gazebo post spans, shed storage, greenhouse staging and outdoor equipment using your measured plot dimensions."
-  noindex
->
+<PublishedLayout pageIntentId="pi-feature-garden-hub">
   <section class="page-heading wrapper">
     <p class="eyebrow">Garden Fit</p>
     <h1>What can fit in your garden space?</h1>
@@ -23,15 +19,29 @@ import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro
       <h2 id="garden-services-heading">Garden fit services</h2>
       <ul>
         <li>
-          Shed, gazebo/pergola and garden-office footprint in a usable plot, including reverse
-          candidate-size comparison.
+          <a href="/garden/structure-fit/">
+            Shed, gazebo/pergola and garden-office plot fit, including reverse sizing
+          </a>
         </li>
-        <li>Dining table and chair envelopes inside actual gazebo post-to-post spans.</li>
-        <li>Repeated-item, single-layer storage estimate inside a shed with an aisle target.</li>
-        <li>Greenhouse body, staging depth, central aisle target and door access.</li>
         <li>
-          Hot-tub service and cover-lift space, outdoor-kitchen work/service zones and
-          play-equipment use zones.
+          <a href="/garden/patio-dining-fit/">Dining table and chair fit between gazebo posts</a>
+        </li>
+        <li>
+          <a href="/garden/shed-interior-storage/">Shed interior storage and aisle</a>
+        </li>
+        <li>
+          <a href="/garden/greenhouse-layout/">Greenhouse staging, aisle and door access</a>
+        </li>
+        <li>
+          <a href="/garden/hot-tub-fit/">Hot-tub service and cover-lift space</a>
+        </li>
+        <li>
+          <a href="/garden/outdoor-kitchen-fit/">Outdoor-kitchen work and service zones</a>
+        </li>
+        <li>
+          <a href="/garden/play-equipment-use-zone/">
+            Play equipment with manufacturer use-zone data
+          </a>
         </li>
       </ul>
     </section>
@@ -39,11 +49,10 @@ import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro
       These tools use your measurements and assumptions. They do not check planning permission,
       drainage, foundations, wind loading, utilities, ventilation, fall surfaces or manufacturer
       safety zones unless you enter the exact manual dimensions. Play-equipment and hot-tub results
-      are not safety assessments. This early utility page remains noindex pending source and search
-      review.
+      are not safety assessments.
     </p>
   </section>
-</BaseLayout>
+</PublishedLayout>
 
 <style>
   .page-heading {

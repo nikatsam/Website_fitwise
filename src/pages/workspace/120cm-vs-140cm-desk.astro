@@ -1,13 +1,13 @@
 ---
 // Representative 'comparison' page (tasks/T014). noindex: not yet backed by
 // a published PageIntent/SeoPublication record.
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 import ComparisonTemplate from '../../components/content/templates/ComparisonTemplate.astro';
 import { dataset } from '../../data';
-import { buildBreadcrumb } from '../../lib/content';
 import { evaluateFit } from '../../lib/fit';
 import { buildWorkspaceConfigurationCheck, resolveMonitorWidth } from '../../lib/geometry';
 import { formatMeasurement } from '../../lib/units';
+import { buildPublicationBreadcrumbs } from '../../lib/seo/metadata';
 
 const monitor = dataset.entities.find((entity) => entity.id === 'ent-display-27in-16x9');
 const desks = ['ent-desk-1200', 'ent-desk-1400'].map((id) =>
@@ -73,15 +73,22 @@ const columns = calculations.map((calculation) => {
   };
 });
 
-const h1 = '120cm vs 140cm desk';
-const breadcrumb = buildBreadcrumb('/workspace/120cm-vs-140cm-desk/', 'workspace');
+const pageIntent = dataset.pageIntents.find((intent) => intent.id === 'pi-p013-120-vs-140cm-desk');
+const publication = dataset.seoPublications.find(
+  (record) => record.pageIntentId === 'pi-p013-120-vs-140cm-desk',
+);
+if (!pageIntent || !publication)
+  throw new Error('The 120/140 desk comparison needs its publication metadata.');
+const h1 = publication.h1;
+const breadcrumb = buildPublicationBreadcrumbs(
+  pageIntent,
+  publication,
+  dataset.pageIntents,
+  dataset.seoPublications,
+);
 ---
 
-<BaseLayout
-  title={`${h1} — Fitwise.stream`}
-  description="Compare 120 cm and 140 cm desks for two 27-inch monitors, with signed physical and recommended width margins."
-  noindex
->
+<PublishedLayout pageIntentId="pi-p013-120-vs-140cm-desk" showBreadcrumb={false}>
   <div class="wrapper">
     <ComparisonTemplate
       breadcrumb={breadcrumb}
@@ -91,4 +98,4 @@ const breadcrumb = buildBreadcrumb('/workspace/120cm-vs-140cm-desk/', 'workspace
       columns={columns}
     />
   </div>
-</BaseLayout>
+</PublishedLayout>
