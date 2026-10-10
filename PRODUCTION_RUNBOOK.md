@@ -37,7 +37,7 @@ The production workflow `.github/workflows/deploy-production.yml` deploys only f
 - CloudFront returned 200 for Home, both hubs, the monitor chart, the US bed chart, sitemap, robots, and the IndexNow key file. Unknown paths return 404; HTTP redirects to HTTPS.
 - DNS-resolved HTTPS tests confirm `www.fitwise.stream/` and nested paths return 301 to the apex, preserving path/query. Apex returns 200.
 - Direct S3 REST access returns 403. CloudFront uses OAC, TLS 1.2 or later, CSP/HSTS/nosniff/frame/referrer/permissions headers, and the static route rewrite.
-- Sitemap is 200 `application/xml`; robots is 200 `text/plain`. The indexable sitemap has four URLs. IndexNow notifications ran successfully; Google Search Console API submission was skipped because no service-account/property inputs are configured.
+- Sitemap is 200 `application/xml`; robots is 200 `text/plain`. The initial T021 indexable sitemap had four URLs; feature indexing later expanded it to 41. IndexNow notifications ran successfully; Google Search Console API submission was skipped because no service-account/property inputs are configured.
 - The GA4 tag for `G-J10W58E2ZL` is in deployed HTML and executes only on `fitwise.stream`. No consent banner/Consent Mode is implemented; consent/privacy review remains an owner action.
 - T025/T026 production smoke checks are complete. Google Search Console, Bing Webmaster, and Yandex property verification remain owner-operationally-pending; this audit can confirm public DNS records but not account verification or indexing.
 
@@ -47,6 +47,13 @@ The production workflow `.github/workflows/deploy-production.yml` deploys only f
 2. Keep both ACM validation CNAMEs. They now validate the apex and `www`; do not remove them while the certificate is in use.
 3. The active `www` record is Type `CNAME`, Name `www`, Target `d1qzsj88vccaey.cloudfront.net`, Proxy status **DNS only**, TTL **Auto**. If it must be recreated, edit an existing `www` record rather than creating a duplicate.
 4. Most recently verified: `https://www.fitwise.stream/` and a nested route return 301 to the matching apex URL with path/query preserved; apex returns 200. Recheck `/sitemap.xml`, `/robots.txt`, and a nonexistent path after future DNS/deployment changes. If Cloudflare proxying is enabled later, use SSL/TLS **Full (strict)**.
+
+## Latest Application Release
+
+- Fit-state/manual-data correction commit `d0f6b0a` was deployed by workflow `38055492924` on 2026-10-10. The workflow completed successfully, including verification/build, S3 sync, CloudFront invalidation and IndexNow notification.
+- Production build validation: 221 tests, 73 generated pages, 72 internal routes and 41 canonical sitemap URLs. Live headless keyboard QA passed on the primary tool flows and crawled all 41 indexable routes.
+- Manual/source-dependent appliance, monitor-arm, TV-mount and play-equipment results now require explicit user-entered provenance before claiming a complete fit/compatibility result. This does not validate the truth of entered source data; users remain responsible for checking exact current model instructions.
+- Search Console API submission remains skipped until owner credentials/property configuration are available. Successful deployment and IndexNow delivery do not prove search-engine indexing.
 
 ## Search and Analytics Setup
 

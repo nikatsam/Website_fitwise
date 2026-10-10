@@ -5,7 +5,7 @@
   "implementationProgressPct": 100,
   "deploymentProgressPct": 100,
   "activeTask": null,
-  "nextTask": null,
+  "nextTask": "Shed Multi-Fit Engine (planned; not implemented)",
   "statuses": {
     "NOT_STARTED": "\u2b1c",
     "IN_PROGRESS": "\ud83d\udfe6",
@@ -45,5 +45,5 @@
     { "id": "T028", "status": "DONE", "weight": 2 },
     { "id": "T029", "status": "DONE", "weight": 4 }
   ],
-  "lastUpdated": "2026-10-10T10:00:00Z"
+  "lastUpdated": "2026-10-10T13:25:00Z"
 }

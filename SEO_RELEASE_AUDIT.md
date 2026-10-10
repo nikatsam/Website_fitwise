@@ -74,3 +74,11 @@ Reviewer: **Project owner — sign-off confirmed through authenticated user inte
 - Planner updates were deployed by workflow `37838761910` from commit `623d8bd`. Workspace now checks multi-monitor count/aspect plus a stand/cable/keyboard depth envelope; Bedroom supports sourced mattress/frame presets, nightstand footprints, and optional wardrobe-door/dresser-drawer collision checks.
 - `npm run verify` passes with 189 tests, 43 built pages, 42 link-validated routes and four canonical sitemap URLs. Live headless keyboard checks passed on both planners; mobile Lighthouse samples scored 100 for performance/accessibility/best practices, with SEO 66 on the intentionally noindex hubs.
 - The www/apex redirect and indexability set are unchanged; Search Console query data remains unavailable and no planner pages were promoted.
+
+## 2026-10-10 feature indexing and production audit (complete)
+
+- Feature-indexing commit `a9f10fe` deployed in workflow `38039995713`; the sitemap grew to 41 URLs covering the Home/Garden/Fit Services hubs and dedicated feature landings. All 41 live routes passed headless checks for HTTP 200, self-canonical, indexability, visible/structured breadcrumbs and mobile overflow.
+- Follow-up fit-state correction commit `d0f6b0a` deployed successfully in workflow `38055492924`. The release requires explicit source/reference information before unverified appliance installation clearances, monitor-arm compatibility, TV mount compatibility or play-equipment use zones are presented as complete.
+- Latest local CI: `npm run verify` passed with 221 tests, 73 generated pages, 72 internal HTML routes and 41 sitemap canonicals. Live `npm run qa:keyboard -- https://fitwise.stream` passed the primary interactive flows and crawled all 41 URLs. IndexNow notification succeeded.
+- Google Search Console authentication/submission was skipped because owner credentials/property settings are not configured. Actual search index status remains unverified; IndexNow delivery is not evidence of indexing.
+- Outstanding audit follow-ups include the UK MALM/US PAX pairing and PAX conversion labels, Aeron Size B maximum height (`41.1 in`), bedroom foot-clearance citation, and owner/compliance direction on GA4 consent/privacy. Shed Multi-Fit remains a planned product milestone, not part of this release.

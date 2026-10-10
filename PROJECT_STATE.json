@@ -2,12 +2,12 @@
   "project": "fitwise.stream",
   "stage": "production",
   "activeTask": null,
-  "nextTask": null,
+  "nextTask": "Shed Multi-Fit Engine (planned; not implemented)",
   "lastCompletedTask": "T029",
   "implementationProgressPct": 100,
   "deploymentProgressPct": 100,
   "knownBlockers": [],
   "lastVerificationCommand": "npm run verify",
   "cloudDeploymentAllowed": true,
-  "notes": "T001-T029 complete; T021 Gate E was signed. Private S3/OAC and global CloudFront in eu-north-1 are deployed through GitHub OIDC; stack fitwise-static-site is UPDATE_COMPLETE and distribution EY0IX2NYZEEG1 serves apex plus www with the dual-name ACM certificate. T025-T029 releases remain complete. T028 reciprocal en-US/en-GB hreflang is live. After the T029 four-URL sitemap stage, the owner explicitly authorized feature indexing: commit a9f10fe deployed by workflow 38039995713 adds dedicated calculator/vertical URLs, canonicals, visible BreadcrumbList navigation and a 41-URL sitemap. `npm run verify` passes with 219 tests, 73 built pages and 72 internal routes; live headless QA crawled all 41 sitemap URLs. IndexNow notification succeeded. Optional Google Search Console authentication/submission was skipped because owner credentials are not configured; actual search index status is unverified. Noindex remains for draft/dev/duplicate routes. GA4 remains active by owner decision; privacy/consent is still an unresolved compliance item."
+  "notes": "T001-T029 complete; T021 Gate E was signed. Private S3/OAC and global CloudFront in eu-north-1 are deployed through GitHub OIDC; stack fitwise-static-site is UPDATE_COMPLETE and distribution EY0IX2NYZEEG1 serves apex plus www with the dual-name ACM certificate. T025-T029 releases remain complete. Commit a9f10fe deployed by workflow 38039995713 added dedicated calculator/vertical URLs, canonicals, visible BreadcrumbList navigation and a 41-URL sitemap. Fit-state/manual-data correction commit d0f6b0a deployed successfully by workflow 38055492924. Latest `npm run verify` passes with 221 tests, 73 built pages, 72 internal routes and 41 canonical URLs; live keyboard/browser QA passed across primary tools and crawled every sitemap URL. IndexNow notification succeeded. Optional Google Search Console submission was skipped because owner credentials/property are not configured; actual indexing remains unverified. Remaining audit follow-ups: verify UK MALM/US PAX example pairing and PAX conversion labels, correct Aeron Size B maximum height to 41.1 in, verify the bedroom foot-clearance citation, and obtain owner/compliance direction for GA4 consent/privacy. Shed Multi-Fit is planned, not implemented."
 }

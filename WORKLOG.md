@@ -23,7 +23,7 @@
 - Implementation progress: **100%**
 - Deployment progress: **100%**
 - Current active task: **None**
-- Next task: **Owner: confirm Search Console coverage and privacy/consent policy**
+- Next task: **Shed Multi-Fit Engine (planned); owner Search Console and privacy/consent decisions remain open**
 
 ## Task tracker
 
@@ -61,9 +61,10 @@
 
 ## Post-T029 Release Log
 
-| Date       | Change                                                                                                                                                                 | Verification / deployment                                                                                                                                                                                                                                           |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-10-10 | Published 41 feature URLs with canonical, visible breadcrumbs and BreadcrumbList metadata; separated physical/target margins; added Garden and dedicated mode landings | Commit `a9f10fe`, deploy run `38039995713`; `npm run verify` passes with 219 tests, 73-page build, 72 internal routes; live headless Chrome crawled all 41 sitemap URLs. IndexNow notified; optional GSC submission skipped because credentials are not configured. |
+| Date       | Change                                                                                                                                                                                             | Verification / deployment                                                                                                                                                                                                                                           |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-10 | Published 41 feature URLs with canonical, visible breadcrumbs and BreadcrumbList metadata; separated physical/target margins; added Garden and dedicated mode landings                             | Commit `a9f10fe`, deploy run `38039995713`; `npm run verify` passes with 219 tests, 73-page build, 72 internal routes; live headless Chrome crawled all 41 sitemap URLs. IndexNow notified; optional GSC submission skipped because credentials are not configured. |
+| 2026-10-10 | Added distinct Needs information state for unverified manual-dependent results; added provenance controls, contextual unit helpers, play-zone review enforcement, and fixed duplicate footer links | Commit `d0f6b0a`, deploy run `38055492924`; `npm run verify` passes with 221 tests, 73-page build and 72 internal routes; live keyboard QA and all 41 indexable routes pass. IndexNow notified; optional GSC submission skipped.                                    |
 
 ## Session log
 
