@@ -1,59 +1,110 @@
 export interface NavigationLink {
   href: string;
   label: string;
+  activeRoutes?: string[];
 }
 
 export interface NavigationGroup {
   label: string;
   links: NavigationLink[];
+  specialistGroups?: NavigationGroup[];
 }
 
-export const UNIVERSAL_FIT_LINK: NavigationLink = {
-  href: '/will-it-fit/',
-  label: 'Universal fit',
-};
+const fitCheckLinks = {
+  universal: { href: '/will-it-fit/', label: 'Universal fit' },
+  all: { href: '/fit-checks/', label: 'All fit checks', activeRoutes: ['/fit-services/'] },
+  advanced: { href: '/fit-services/', label: 'Advanced all-in-one checker' },
+  workspace: { href: '/workspace/', label: 'Workspace' },
+  bedroom: { href: '/bedroom/', label: 'Bedroom' },
+  dining: { href: '/dining/', label: 'Dining' },
+  garden: { href: '/garden/', label: 'Garden' },
+  appliances: { href: '/appliances/', label: 'Appliances' },
+  tv: { href: '/tv/tv-stand-fit/', label: 'TV stand and mount' },
+  powerRack: { href: '/home-gym/power-rack-room-size/', label: 'Power rack' },
+  deliveryRoute: { href: '/access/furniture-route-fit/', label: 'Furniture delivery route' },
+  storage: { href: '/storage/what-fits-in-storage/', label: 'Storage capacity' },
+  poolTable: { href: '/game-room/pool-table-fit/', label: 'Pool table fit' },
+  vehicleGarage: { href: '/vehicle/garage-fit/', label: 'Vehicle/garage fit' },
+  applianceInstallation: {
+    href: '/appliances/appliance-install-fit/',
+    label: 'Appliance installation clearance',
+  },
+  fridge: { href: '/appliances/fridge-fit/', label: 'Fridge fit' },
+  washer: { href: '/appliances/washer-fit/', label: 'Washer fit' },
+  monitorArm: { href: '/workspace/monitor-arm-compatibility/', label: 'Monitor-arm compatibility' },
+  gardenStructure: { href: '/garden/structure-fit/', label: 'Garden structures' },
+  patioDining: { href: '/garden/patio-dining-fit/', label: 'Patio dining' },
+  shedStorage: { href: '/garden/shed-interior-storage/', label: 'Shed storage' },
+  greenhouse: { href: '/garden/greenhouse-layout/', label: 'Greenhouse layout' },
+  hotTub: { href: '/garden/hot-tub-fit/', label: 'Hot-tub service and cover space' },
+  outdoorKitchen: {
+    href: '/garden/outdoor-kitchen-fit/',
+    label: 'Outdoor-kitchen work and service zones',
+  },
+  playEquipment: { href: '/garden/play-equipment-use-zone/', label: 'Play-equipment use zone' },
+} satisfies Record<string, NavigationLink>;
 
-export const ALL_FIT_CHECKS_LINK: NavigationLink = {
-  href: '/fit-services/',
-  label: 'All fit checks',
-};
+export const UNIVERSAL_FIT_LINK = fitCheckLinks.universal;
+export const ALL_FIT_CHECKS_LINK = fitCheckLinks.all;
+export const ADVANCED_FIT_CHECK_LINK = fitCheckLinks.advanced;
 
 export const FIT_CHECK_GROUPS: NavigationGroup[] = [
   {
     label: 'Rooms & spaces',
-    links: [
-      { href: '/workspace/', label: 'Workspace' },
-      { href: '/bedroom/', label: 'Bedroom' },
-      { href: '/dining/', label: 'Dining' },
-    ],
+    links: [fitCheckLinks.workspace, fitCheckLinks.bedroom, fitCheckLinks.dining],
+    specialistGroups: [{ label: 'Workspace tools', links: [fitCheckLinks.monitorArm] }],
   },
   {
     label: 'Outdoor',
-    links: [{ href: '/garden/', label: 'Garden' }],
+    links: [fitCheckLinks.garden],
+    specialistGroups: [
+      {
+        label: 'Garden projects',
+        links: [
+          fitCheckLinks.gardenStructure,
+          fitCheckLinks.patioDining,
+          fitCheckLinks.shedStorage,
+          fitCheckLinks.greenhouse,
+          fitCheckLinks.hotTub,
+          fitCheckLinks.outdoorKitchen,
+          fitCheckLinks.playEquipment,
+        ],
+      },
+    ],
   },
   {
     label: 'Install & mount',
-    links: [
-      { href: '/appliances/', label: 'Appliances' },
-      { href: '/tv/tv-stand-fit/', label: 'TV stand and mount' },
-      { href: '/home-gym/power-rack-room-size/', label: 'Power rack' },
+    links: [fitCheckLinks.appliances, fitCheckLinks.tv, fitCheckLinks.powerRack],
+    specialistGroups: [
+      {
+        label: 'Appliance installation',
+        links: [fitCheckLinks.applianceInstallation, fitCheckLinks.fridge, fitCheckLinks.washer],
+      },
     ],
   },
   {
     label: 'Move & store',
-    links: [
-      { href: '/access/furniture-route-fit/', label: 'Furniture delivery route' },
-      { href: '/storage/what-fits-in-storage/', label: 'Storage capacity' },
-    ],
+    links: [fitCheckLinks.deliveryRoute, fitCheckLinks.storage],
   },
   {
     label: 'More fit checks',
-    links: [
-      { href: '/game-room/pool-table-fit/', label: 'Pool table fit' },
-      { href: '/vehicle/garage-fit/', label: 'Vehicle/garage fit' },
-    ],
+    links: [fitCheckLinks.poolTable, fitCheckLinks.vehicleGarage],
   },
 ];
+
+export function getNavigationCurrent(
+  currentPath: string,
+  href: string,
+  activeRoutes: readonly string[] = [],
+): 'page' | 'location' | undefined {
+  if (activeRoutes.includes(currentPath)) return 'location';
+  if (currentPath === href) return 'page';
+  if (href !== '/' && href.endsWith('/') && currentPath.startsWith(href)) return 'location';
+  if (currentPath !== '/' && currentPath.endsWith('/') && href.startsWith(currentPath)) {
+    return 'location';
+  }
+  return undefined;
+}
 
 export const GUIDE_LINKS: NavigationLink[] = [
   { href: '/workspace/desk-size-guide/', label: 'Desk sizing' },
@@ -70,11 +121,23 @@ export const FEATURED_FIT_CHECKS = [
     kicker: 'Object → Space',
     title: 'Universal fit check',
   },
-  { href: '/workspace/', kicker: 'Objects → Surface', title: 'Monitors and workspace layouts' },
-  { href: '/bedroom/', kicker: 'Objects → Room', title: 'Bed, bedside tables and clearance' },
-  { href: '/dining/', kicker: 'Objects → Room', title: 'Dining table, chairs and circulation' },
   {
-    href: '/garden/',
+    href: fitCheckLinks.workspace.href,
+    kicker: 'Objects → Surface',
+    title: 'Monitors and workspace layouts',
+  },
+  {
+    href: fitCheckLinks.bedroom.href,
+    kicker: 'Objects → Room',
+    title: 'Bed, bedside tables and clearance',
+  },
+  {
+    href: fitCheckLinks.dining.href,
+    kicker: 'Objects → Room',
+    title: 'Dining table, chairs and circulation',
+  },
+  {
+    href: fitCheckLinks.garden.href,
     kicker: 'Structure → Garden',
     title: 'Sheds, greenhouses and garden layouts',
   },
@@ -82,50 +145,5 @@ export const FEATURED_FIT_CHECKS = [
     href: ALL_FIT_CHECKS_LINK.href,
     kicker: 'Browse by task',
     title: ALL_FIT_CHECKS_LINK.label,
-  },
-];
-
-export const SPECIALIST_FIT_GROUPS: NavigationGroup[] = [
-  {
-    label: 'Appliance installation',
-    links: [
-      { href: '/appliances/appliance-install-fit/', label: 'Appliance installation clearance' },
-      { href: '/appliances/fridge-fit/', label: 'Fridge fit' },
-      { href: '/appliances/washer-fit/', label: 'Washer fit' },
-    ],
-  },
-  {
-    label: 'Access and mounting',
-    links: [
-      { href: '/access/furniture-route-fit/', label: 'Furniture delivery route' },
-      { href: '/workspace/monitor-arm-compatibility/', label: 'Monitor-arm compatibility' },
-      { href: '/tv/tv-stand-fit/', label: 'TV stand and wall fit' },
-    ],
-  },
-  {
-    label: 'Equipment and storage',
-    links: [
-      { href: '/home-gym/power-rack-room-size/', label: 'Power rack room size' },
-      { href: '/storage/what-fits-in-storage/', label: 'Storage capacity' },
-    ],
-  },
-  {
-    label: 'Game room and vehicle',
-    links: [
-      { href: '/game-room/pool-table-fit/', label: 'Pool table and cue clearance' },
-      { href: '/vehicle/garage-fit/', label: 'Vehicle in a garage' },
-    ],
-  },
-  {
-    label: 'Garden projects',
-    links: [
-      { href: '/garden/structure-fit/', label: 'Garden structures' },
-      { href: '/garden/patio-dining-fit/', label: 'Patio dining' },
-      { href: '/garden/shed-interior-storage/', label: 'Shed storage' },
-      { href: '/garden/greenhouse-layout/', label: 'Greenhouse layout' },
-      { href: '/garden/hot-tub-fit/', label: 'Hot-tub service and cover space' },
-      { href: '/garden/outdoor-kitchen-fit/', label: 'Outdoor-kitchen work and service zones' },
-      { href: '/garden/play-equipment-use-zone/', label: 'Play-equipment use zone' },
-    ],
   },
 ];

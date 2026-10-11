@@ -2,6 +2,7 @@ import type { FitState } from './engine';
 import { FIT_STATE_BADGE_COPY } from './copy';
 import { selectSummaryDimension, type DimensionDisplayRow } from './display';
 import { formatMeasurement } from '../units';
+import type { MissingRequirement } from './missing-requirement';
 
 export interface CompatibilitySummaryCheck {
   label: string;
@@ -25,6 +26,7 @@ export interface FitSummaryCopy {
   marginMm: number | null;
   explanation: string;
   nextAction: string;
+  missingRequirements: MissingRequirement[];
 }
 
 function humanizeDimension(dimension?: string): string {
@@ -63,15 +65,36 @@ function finishSentence(value: string): string {
   return sentence ? `${sentence}.` : '';
 }
 
+function normalizeMissingRequirement(requirement: MissingRequirement): MissingRequirement {
+  return {
+    ...requirement,
+    label: cleanName(requirement.label) || 'Required information',
+    explanation: finishSentence(requirement.explanation),
+    action: finishSentence(requirement.action),
+  };
+}
+
+const fallbackMissingRequirement: MissingRequirement = {
+  type: 'manufacturer_source',
+  label: 'Required measurements or exact model source',
+  explanation:
+    'One or more required measurements, source or compatibility details have not been verified.',
+  action: 'Enter the missing measurements and verify the exact model source.',
+};
+
 export function getFitSummaryCopy(
   state: FitState,
   rows: DimensionDisplayRow[],
   options: {
-    needsInformation?: string[];
+    missingRequirements?: MissingRequirement[];
     compatibilityChecks?: CompatibilitySummaryCheck[];
   } = {},
 ): FitSummaryCopy {
-  const needsInformation = options.needsInformation ?? [];
+  const missingRequirements = options.missingRequirements?.length
+    ? options.missingRequirements.map(normalizeMissingRequirement)
+    : state === 'needs_information'
+      ? [normalizeMissingRequirement(fallbackMissingRequirement)]
+      : [];
   const compatibilityChecks = options.compatibilityChecks ?? [];
   const hardFailures = rows.filter((row) => !row.hardFit);
   const targetFailures = rows.filter((row) => !row.recommendedFit);
@@ -81,7 +104,7 @@ export function getFitSummaryCopy(
     state === 'needs_information' ? 'Not confirmed' : targetFailures.length > 0 ? 'Short' : 'Met';
   const incompatibleChecks = compatibilityChecks.filter((check) => !check.compatible);
   const compatibilityStatus: FitSummaryCopy['compatibilityStatus'] =
-    needsInformation.length > 0
+    missingRequirements.length > 0
       ? 'Needs verification'
       : incompatibleChecks.length > 0
         ? 'Incompatible'
@@ -149,9 +172,9 @@ export function getFitSummaryCopy(
     nextAction =
       'Verify the exact model specifications or choose compatible products before installing.';
   } else {
-    const missing = listNames(needsInformation, 'the missing measurements or exact model source');
-    explanation = `Fit is not confirmed. Supply ${missing}.`;
-    nextAction = `Provide ${missing}, then run the check again.`;
+    explanation =
+      'This result is not confirmed because required information has not been verified.';
+    nextAction = 'Complete the verification steps listed below, then run the check again.';
   }
 
   return {
@@ -166,6 +189,7 @@ export function getFitSummaryCopy(
     marginMm,
     explanation: finishSentence(explanation),
     nextAction: finishSentence(nextAction),
+    missingRequirements,
   };
 }
 
@@ -199,8 +223,17 @@ export function renderFitSummaryContentHtml(copy: FitSummaryCopy): string {
   const exactFitWarning = copy.isExactFit
     ? '<p class="fit-summary__tolerance-warning"><strong>Fits exactly:</strong> No measurement tolerance remains. Re-check actual dimensions before relying on this result.</p>'
     : '';
+  const missingRequirements =
+    copy.missingRequirements.length > 0
+      ? `<section class="fit-summary__missing" aria-label="Missing or unverified requirements" aria-live="polite" aria-atomic="true"><h3>What is missing</h3><ul>${copy.missingRequirements
+          .map(
+            (requirement) =>
+              `<li><strong>${escapeHtml(requirement.label)}</strong><p>${escapeHtml(requirement.explanation)}</p><p><strong>Action:</strong> ${escapeHtml(requirement.action)}</p></li>`,
+          )
+          .join('')}</ul></section>`
+      : '';
   const compatibility = copy.compatibilityStatus
     ? `<div><dt>Compatibility</dt><dd>${escapeHtml(copy.compatibilityStatus)}</dd></div>`
     : '';
-  return `<div class="fit-summary__content"><dl class="fit-summary__facts"><div><dt>Physical fit</dt><dd data-field="physical-status">${escapeHtml(copy.physicalStatus)}</dd></div><div><dt>Selected clearance</dt><dd data-field="clearance-status">${escapeHtml(copy.clearanceStatus)}</dd></div>${compatibility}</dl>${binding}${margin}${exactFitWarning}<h3>What this means</h3><p class="fit-summary__detail" data-field="detail" aria-live="polite" aria-atomic="true">${escapeHtml(copy.explanation)}</p><p class="fit-summary__next"><strong>Next:</strong> <span data-field="next-action">${escapeHtml(copy.nextAction)}</span></p></div>`;
+  return `<div class="fit-summary__content"><dl class="fit-summary__facts"><div><dt>Physical fit</dt><dd data-field="physical-status">${escapeHtml(copy.physicalStatus)}</dd></div><div><dt>Selected clearance</dt><dd data-field="clearance-status">${escapeHtml(copy.clearanceStatus)}</dd></div>${compatibility}</dl>${binding}${margin}${exactFitWarning}${missingRequirements}<h3>What this means</h3><p class="fit-summary__detail" data-field="detail" aria-live="polite" aria-atomic="true">${escapeHtml(copy.explanation)}</p><p class="fit-summary__next"><strong>Next:</strong> <span data-field="next-action">${escapeHtml(copy.nextAction)}</span></p></div>`;
 }

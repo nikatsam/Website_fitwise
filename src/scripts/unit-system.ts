@@ -1,48 +1,34 @@
 const STORAGE_KEY = 'fitwise-unit-system';
-
-type UnitSystem = 'metric' | 'imperial';
-
-function applyUnitSystem(system: UnitSystem): void {
-  document.documentElement.setAttribute('data-unit-system', system);
-}
+const unitSystems = ['metric', 'imperial', 'both'] as const;
+type UnitSystem = (typeof unitSystems)[number];
 
 function currentUnitSystem(): UnitSystem {
-  return document.documentElement.getAttribute('data-unit-system') === 'imperial'
-    ? 'imperial'
-    : 'metric';
+  const value = document.documentElement.getAttribute('data-unit-system');
+  return unitSystems.find((system) => system === value) ?? 'metric';
 }
 
-function initUnitToggle(): void {
-  const button = document.querySelector<HTMLButtonElement>('[data-unit-toggle]');
-  if (!button) return;
-
-  const sync = (): void => {
-    const system = currentUnitSystem();
-    const nextSystem = system === 'imperial' ? 'metric' : 'imperial';
-    button.setAttribute('aria-pressed', String(system === 'imperial'));
-    button.textContent = `Show ${nextSystem} results`;
-    button.setAttribute(
-      'aria-label',
-      `Show ${nextSystem} results. Entered measurements will not change.`,
-    );
-  };
-
-  sync();
-
-  button.addEventListener('click', () => {
-    const next: UnitSystem = currentUnitSystem() === 'imperial' ? 'metric' : 'imperial';
-    applyUnitSystem(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // Storage may be unavailable (private browsing); preference still applies for this view.
-    }
-    sync();
+function syncUnitChoices(): void {
+  const current = currentUnitSystem();
+  document.querySelectorAll<HTMLInputElement>('[data-unit-choice]').forEach((choice) => {
+    choice.checked = choice.value === current;
   });
 }
 
-initUnitToggle();
+document.addEventListener('change', (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement) || !target.matches('[data-unit-choice]')) return;
+  if (!unitSystems.some((system) => system === target.value)) return;
 
-// Force module scope so this file's top-level declarations don't collide
-// with other same-named script files under isolated-modules type checking.
+  const system = target.value as UnitSystem;
+  document.documentElement.setAttribute('data-unit-system', system);
+  try {
+    localStorage.setItem(STORAGE_KEY, system);
+  } catch {
+    // Storage may be unavailable (private browsing); preference still applies for this view.
+  }
+  syncUnitChoices();
+});
+
+syncUnitChoices();
+
 export {};

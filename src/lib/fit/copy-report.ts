@@ -39,6 +39,11 @@ export function buildFitReviewReport(input: FitReviewReportInput): string {
     `Result: ${input.stateLabel}`,
     `What this means: ${input.summary.explanation}`,
     `Next: ${input.summary.nextAction}`,
+    ...input.summary.missingRequirements.flatMap((requirement) => [
+      `Missing: ${requirement.label}`,
+      `Why it matters: ${requirement.explanation}`,
+      `Action: ${requirement.action}`,
+    ]),
     `Item: ${formatDual(input.objectWidthMm)} W × ${formatDual(input.objectDepthMm)} D × ${formatDual(input.objectHeightMm)} H`,
     `Space: ${formatDual(input.spaceWidthMm)} W × ${formatDual(input.spaceDepthMm)} D × ${formatDual(input.spaceHeightMm)} H`,
     `Floor orientation: ${input.orientation}; estimated single-layer capacity: ${input.quantityCapacity}`,

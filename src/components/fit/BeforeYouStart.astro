@@ -1,7 +1,9 @@
 ---
+import type { BeforeYouStartItem } from '../../lib/fit/start-guidance';
+
 interface Props {
   id: string;
-  items: readonly string[];
+  items: readonly BeforeYouStartItem[];
   spansGrid?: boolean;
 }
 
@@ -17,7 +19,16 @@ const { id, items, spansGrid = false } = Astro.props;
   <h2 id={`${id}-heading`}>Before you start</h2>
   <ul data-before-you-start-items>
     {items.map((item) => (
-      <li>{item}</li>
+      <li data-preparation-type={item.type}>
+        <span class="before-you-start__type">
+          {item.type === 'verification'
+            ? 'For verification'
+            : item.type === 'required'
+              ? 'Required'
+              : 'Optional'}
+        </span>
+        <span>{item.text}</span>
+      </li>
     ))}
   </ul>
 </section>
@@ -47,5 +58,18 @@ const { id, items, spansGrid = false } = Astro.props;
     padding-inline-start: 1.25rem;
     color: var(--color-text-secondary);
     line-height: 1.5;
+  }
+
+  .before-you-start :global(li[data-preparation-type]) {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-2);
+  }
+
+  .before-you-start :global(.before-you-start__type) {
+    color: var(--color-text-primary);
+    font-size: var(--fs-xs);
+    font-weight: 700;
   }
 </style>

@@ -43,10 +43,6 @@ const relatedLinks = links.map((link) => ({
       <section aria-labelledby="feature-how-it-works">
         <h2 id="feature-how-it-works">How this check works</h2>
         <p>{feature.calculation}</p>
-        <p class="feature-example">
-          The calculator starts with a labeled illustrative setup, not a named product. Replace the
-          sample dimensions with measured values before relying on the result.
-        </p>
       </section>
       <div data-shell-section="calculator">
         <FitServicesStudio category={feature.modeCategory} initialMode={feature.mode} pinnedMode />
@@ -107,15 +103,6 @@ const relatedLinks = links.map((link) => ({
     color: var(--color-text-secondary);
     font-size: var(--fs-md);
     line-height: 1.65;
-  }
-
-  .feature-example {
-    max-width: 76ch;
-    padding: var(--space-3);
-    border-left: 0.2rem solid var(--color-accent-1);
-    background: var(--color-surface-raised);
-    font-size: var(--fs-sm);
-    line-height: 1.55;
   }
 
   .feature-links {

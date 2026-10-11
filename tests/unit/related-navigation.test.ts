@@ -15,11 +15,17 @@ function relatedRoutes(route: string): string[] {
 }
 
 describe('feature related-check journeys', () => {
-  it('connects fridge fit to installation and delivery checks, not a sibling appliance by default', () => {
+  it('connects fridge fit to its installation opening and delivery-route next tasks', () => {
     const route = '/appliances/fridge-fit/';
-    expect(relatedRoutes(route)).toEqual(['/access/furniture-route-fit/']);
+    expect(relatedRoutes(route)).toEqual([
+      '/appliances/appliance-install-fit/',
+      '/access/furniture-route-fit/',
+    ]);
     const page = featurePages.find((item) => item.pageIntent.route === route)!;
     expect(Object.keys(page.relatedReasons ?? {})).toEqual(relatedRoutes(route));
+    expect(page.relatedReasons?.['/appliances/appliance-install-fit/']).toMatch(
+      /cabinet opening.*manual/i,
+    );
   });
 
   it('connects a power rack to delivery and accessory storage without claiming multi-item fit', () => {
@@ -38,6 +44,15 @@ describe('feature related-check journeys', () => {
     const route = '/workspace/monitor-arm-compatibility/';
     expect(relatedRoutes(route)).toEqual(['/workspace/monitor-size-chart/']);
     expect(relatedRoutes(route)).not.toContain('/tv/tv-stand-fit/');
+  });
+
+  it('connects gazebo dining to the room-dining and garden-structure checks', () => {
+    const route = '/garden/patio-dining-fit/';
+    expect(relatedRoutes(route)).toEqual(['/dining/', '/garden/structure-fit/']);
+    const page = featurePages.find((item) => item.pageIntent.route === route)!;
+    expect(Object.keys(page.relatedReasons ?? {})).toEqual(relatedRoutes(route));
+    expect(page.relatedReasons?.['/dining/']).toMatch(/table.*chairs/i);
+    expect(page.relatedReasons?.['/garden/structure-fit/']).toMatch(/footprint.*overhang/i);
   });
 
   it('does not fabricate next-step checks when no relevant published route exists', () => {

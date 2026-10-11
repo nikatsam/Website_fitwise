@@ -2,126 +2,51 @@
 import PublishedLayout from '../../components/layout/PublishedLayout.astro';
 import CalculatorPageShell from '../../components/layout/CalculatorPageShell.astro';
 import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro';
-import { FIT_CHECK_GROUPS, SPECIALIST_FIT_GROUPS } from '../../data/navigation';
+import { ALL_FIT_CHECKS_LINK } from '../../data/navigation';
 ---
 
 <PublishedLayout pageIntentId="pi-feature-fit-services-hub">
-  <CalculatorPageShell h1="All fit checks" eyebrow="Browse by task">
+  <CalculatorPageShell h1="Advanced all-in-one fit checker" eyebrow="Power-user tool">
     <p slot="purpose">
-      Browse room and space planners, outdoor checks, installation and mounting, delivery routes,
-      storage, recreation and vehicle fit. Every specialist page links to its focused calculator.
+      Compare a custom item, space, route or equipment mode in one advanced calculator. Each mode
+      preserves its own measurements and verification requirements. For a focused standalone check,
+      start in the directory.
     </p>
-    <nav
-      slot="directory"
-      id="all-fit-checks"
-      class="fit-check-directory"
-      aria-label="All fit check categories"
-    >
-      <h2>Fit checks by task</h2>
-      <a class="fit-check-directory__tool-link" href="#fit-services-tool">
-        Jump straight to the specialist calculator
-      </a>
-      <div class="fit-check-directory__groups">
-        {FIT_CHECK_GROUPS.map((group) => (
-          <section class="fit-check-directory__group" aria-label={group.label}>
-            <h3>{group.label}</h3>
-            <ul>
-              {group.links.map((item) => (
-                <li>
-                  <a href={item.href}>{item.label}</a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
-      <h2>Specialist checks</h2>
-      <div class="fit-check-directory__groups fit-check-directory__groups--specialist">
-        {SPECIALIST_FIT_GROUPS.map((group) => (
-          <section class="fit-check-directory__group" aria-label={group.label}>
-            <h3>{group.label}</h3>
-            <ul>
-              {group.links.map((item) => (
-                <li>
-                  <a href={item.href}>{item.label}</a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
-    </nav>
+    <p slot="directory" class="advanced-fit-checker__directory-link">
+      <a href={ALL_FIT_CHECKS_LINK.href}>Browse focused fit checks</a>
+    </p>
     <div slot="calculator" id="fit-services-tool">
       <FitServicesStudio />
     </div>
-    <p slot="support" class="fit-note">
-      All values are editable examples. Enter dimensions from your actual items and consult current
-      manuals for manufacturer load, mounting and installation limits. Turn handling, gym operating
-      zones, storage aisles and cue envelopes are simplified calculations, not guarantees, safety
-      assessments or regulatory guidance.
+    <p slot="support" class="advanced-fit-checker__scope">
+      Values are editable examples, not product defaults. Use exact dimensions from the items you
+      own and current manufacturer manuals for installation, mounting and safety requirements.
+      Results are screening calculations, not guarantees or professional assessments.
     </p>
-    <p slot="support" class="method-link">
+    <p slot="support" class="advanced-fit-checker__method">
       <a href="/methodology/">How fit states and assumptions work</a>
     </p>
   </CalculatorPageShell>
 </PublishedLayout>
 
 <style>
-  .fit-check-directory {
-    display: grid;
-    gap: var(--space-4);
+  .advanced-fit-checker__directory-link,
+  .advanced-fit-checker__scope,
+  .advanced-fit-checker__method {
+    max-width: 78ch;
   }
 
-  .fit-check-directory h2 {
-    margin: 0;
-    font-size: var(--fs-lg);
-  }
-
-  .fit-check-directory__groups {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-    gap: var(--space-3);
-  }
-
-  .fit-check-directory__group {
-    padding: var(--space-4);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface-raised);
-  }
-
-  .fit-check-directory__group h3 {
-    margin: 0 0 var(--space-2);
-    font-size: var(--fs-md);
-  }
-
-  .fit-check-directory__group ul {
-    display: grid;
-    gap: var(--space-2);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .fit-check-directory__tool-link {
+  .advanced-fit-checker__directory-link a {
     display: inline-flex;
     align-items: center;
-    width: fit-content;
     min-height: 2.75rem;
     font-weight: 700;
   }
 
-  .fit-note {
-    max-width: 78ch;
+  .advanced-fit-checker__scope,
+  .advanced-fit-checker__method {
     color: var(--color-text-secondary);
-    line-height: 1.65;
-  }
-
-  .fit-note {
     font-size: var(--fs-sm);
-  }
-
-  .method-link {
-    font-size: var(--fs-sm);
+    line-height: 1.6;
   }
 </style>

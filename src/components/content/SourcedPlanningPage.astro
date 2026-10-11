@@ -2,6 +2,7 @@
 import { dataset } from '../../data';
 import { buildFurniturePlanningAnswer } from '../../lib/content/build-planning-example';
 import { buildBreadcrumb, buildContentNavigationLinks } from '../../lib/content';
+import { breadcrumbListStructuredData } from '../../lib/seo/metadata';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import FamilyFactsTemplate from './templates/FamilyFactsTemplate.astro';
 
@@ -20,6 +21,7 @@ if (!pageIntent || !publication || publication.indexable) {
 
 const answer = buildFurniturePlanningAnswer(pageIntent, dataset);
 const breadcrumb = buildBreadcrumb(pageIntent.route, pageIntent.cluster);
+const structuredData = [breadcrumbListStructuredData(publication.canonicalPath, breadcrumb)];
 const relatedPages = buildContentNavigationLinks(
   pageIntent.id,
   dataset.pageIntents,
@@ -28,7 +30,12 @@ const relatedPages = buildContentNavigationLinks(
 );
 ---
 
-<BaseLayout title={publication.title} description={publication.description} noindex>
+<BaseLayout
+  title={publication.title}
+  description={publication.description}
+  noindex
+  structuredData={structuredData}
+>
   <FamilyFactsTemplate
     breadcrumb={breadcrumb}
     h1={publication.h1}

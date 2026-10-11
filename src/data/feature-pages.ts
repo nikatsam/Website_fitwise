@@ -85,6 +85,7 @@ function definePage(input: FeaturePageInput): FeaturePageRecord {
 }
 
 const fitServicesId = 'pi-feature-fit-services-hub';
+const fitChecksDirectoryId = 'pi-feature-fit-checks-directory';
 const gardenId = 'pi-feature-garden-hub';
 const appliancesId = 'pi-feature-appliances-hub';
 const accessId = 'pi-feature-access-hub';
@@ -101,21 +102,44 @@ export const featurePages: FeaturePageRecord[] = [
     route: '/fit-services/',
     family: 'hub',
     cluster: 'other',
-    query: 'all fit checks and calculators',
-    title: 'All Fit Checks: Room, Garden and Specialist Calculators — Fitwise.stream',
+    query: 'advanced all in one fit calculator',
+    title: 'Advanced All-in-One Fit Checker — Fitwise.stream',
     description:
-      'Browse room, outdoor, appliance, delivery, storage, recreation and vehicle fit calculators, including focused specialist checks.',
+      'Use the advanced all-in-one checker to compare a custom item with a room, opening, route, equipment or storage setup.',
+    h1: 'Advanced all-in-one fit checker',
+    breadcrumbLabel: 'Advanced checker',
+    kind: 'direct',
+    intro:
+      'Use this power-user tool when a focused calculator is not enough. Select a service mode, enter actual measurements and verify any model-specific requirements.',
+    calculation:
+      'Each mode retains its own measurements, verification requirements, physical-fit checks, selected targets and next actions in one advanced workspace.',
+    limitations: [
+      'Values are user-entered; no product catalog supplies missing measurements.',
+      'Installation, compatibility and safety values must come from exact current product manuals or specifications.',
+      'This tool does not replace a focused manual review or professional assessment.',
+    ],
+    relatedPageIds: [fitChecksDirectoryId],
+    sourceIds: ['src-fitwise-internal-convention'],
+  }),
+  definePage({
+    id: fitChecksDirectoryId,
+    route: '/fit-checks/',
+    family: 'hub',
+    cluster: 'other',
+    query: 'fit checks directory by task',
+    title: 'Fit Checks by Task: Rooms, Installation, Access and Outdoors — Fitwise.stream',
+    description:
+      'Browse focused fit calculators by room, installation, delivery, storage, recreation and outdoor task without opening the advanced checker.',
     h1: 'All fit checks',
     breadcrumbLabel: 'All fit checks',
     kind: 'direct',
     intro:
-      'Start with a measured relationship between an object, an opening, a surface or a room. Every result separates hard dimensions from user-selected or manual-sourced targets.',
+      'Choose a focused calculator for the item, space or route you need to check. Each link opens the relevant measurements and manual requirements directly.',
     calculation:
-      'Select a tool, enter the exact dimensions from the item and destination, then review hard footprint, selected targets, available space and the tightest constraint.',
+      'Pick a tool that matches the task, enter the measured dimensions and review physical fit separately from user-selected or verified requirements.',
     limitations: [
-      'The tools use user-entered dimensions rather than a product catalog.',
-      'Installation and safety values must come from the exact current product manual.',
-      "No search-demand dataset is connected; dedicated pages are released at the owner's request and remain subject to future SERP review.",
+      'All measurements are user-entered and are not product defaults.',
+      'Manual-specific installation and safety requirements must be verified from the exact current source.',
     ],
     relatedPageIds: [
       'pi-feature-will-it-fit',
@@ -130,6 +154,7 @@ export const featurePages: FeaturePageRecord[] = [
       storageId,
       gameRoomId,
       vehicleId,
+      fitServicesId,
     ],
     sourceIds: ['src-fitwise-internal-convention'],
   }),
@@ -184,7 +209,7 @@ export const featurePages: FeaturePageRecord[] = [
       'The route model does not simulate turning, tilt, stairs, handles, thresholds or packaging bulges.',
       'A result is a screening calculation, not a delivery guarantee or accessibility determination.',
     ],
-    relatedPageIds: [fitServicesId],
+    relatedPageIds: [fitChecksDirectoryId],
   }),
   definePage({
     id: 'pi-feature-dining',
@@ -355,7 +380,7 @@ export const featurePages: FeaturePageRecord[] = [
       'No manufacturer model catalog or generic ventilation minimum is provided.',
       'Delivery access is checked separately from cabinet installation.',
     ],
-    breadcrumbIds: [fitServicesId],
+    breadcrumbIds: [fitChecksDirectoryId],
     relatedPageIds: [
       'pi-feature-appliance-install',
       'pi-feature-fridge-fit',
@@ -381,7 +406,7 @@ export const featurePages: FeaturePageRecord[] = [
     limitations: [
       'This is not a 3D motion solver and does not simulate tilt, lifting, stairs or handling technique.',
     ],
-    breadcrumbIds: [fitServicesId],
+    breadcrumbIds: [fitChecksDirectoryId],
     relatedPageIds: ['pi-feature-furniture-route'],
   }),
   definePage({
@@ -404,7 +429,7 @@ export const featurePages: FeaturePageRecord[] = [
       'No model database, wall structure or fastener suitability is inferred.',
       'Soundbar placement is checked as a separate surface footprint.',
     ],
-    breadcrumbIds: [fitServicesId],
+    breadcrumbIds: [fitChecksDirectoryId],
     relatedPageIds: ['pi-feature-tv-stand-fit'],
   }),
   definePage({
@@ -427,7 +452,7 @@ export const featurePages: FeaturePageRecord[] = [
       'Safety and operating zones must come from the exact manual or user judgment.',
       'This does not evaluate anchoring, floor loading or exercise technique.',
     ],
-    breadcrumbIds: [fitServicesId],
+    breadcrumbIds: [fitChecksDirectoryId],
     relatedPageIds: ['pi-feature-power-rack-fit'],
   }),
   definePage({
@@ -449,7 +474,7 @@ export const featurePages: FeaturePageRecord[] = [
     limitations: [
       'It does not model mixed objects, stacking, load limits, supports or a packing optimum.',
     ],
-    breadcrumbIds: [fitServicesId],
+    breadcrumbIds: [fitChecksDirectoryId],
     relatedPageIds: ['pi-feature-storage-capacity'],
   }),
   definePage({
@@ -471,7 +496,7 @@ export const featurePages: FeaturePageRecord[] = [
     limitations: [
       'Angled shots, player stance, raised cue clearance, pockets and other furniture are not simulated.',
     ],
-    breadcrumbIds: [fitServicesId],
+    breadcrumbIds: [fitChecksDirectoryId],
     relatedPageIds: ['pi-feature-pool-table-fit'],
   }),
   definePage({
@@ -492,7 +517,7 @@ export const featurePages: FeaturePageRecord[] = [
     limitations: [
       'There is no vehicle specification database or driveway/steering maneuver simulation.',
     ],
-    breadcrumbIds: [fitServicesId],
+    breadcrumbIds: [fitChecksDirectoryId],
     relatedPageIds: ['pi-feature-vehicle-garage'],
   }),
 
@@ -556,8 +581,10 @@ export const featurePages: FeaturePageRecord[] = [
       'Door swing, hinge reversals, water line, ventilation and delivery access need separate checks against the appliance manual and route.',
     ],
     breadcrumbIds: [appliancesId],
-    relatedPageIds: ['pi-feature-furniture-route'],
+    relatedPageIds: ['pi-feature-appliance-install', 'pi-feature-furniture-route'],
     relatedReasons: {
+      '/appliances/appliance-install-fit/':
+        'Check the cabinet opening and exact model installation clearances separately; the fridge-door swing remains manual-specific.',
       '/access/furniture-route-fit/':
         'If the fridge must be carried into the room, check each delivery doorway, turn and stair separately.',
     },
@@ -612,7 +639,7 @@ export const featurePages: FeaturePageRecord[] = [
       'No translation/rotation motion solver is used; the turn bound can reject paths movers can negotiate.',
       'Tilt, lift, handles, thresholds and packaging flex are excluded.',
     ],
-    breadcrumbIds: [fitServicesId, accessId],
+    breadcrumbIds: [fitChecksDirectoryId, accessId],
     relatedPageIds: ['pi-feature-will-it-fit'],
     relatedReasons: {
       '/will-it-fit/':
@@ -673,7 +700,7 @@ export const featurePages: FeaturePageRecord[] = [
       'Stand/soundbar co-placement is checked separately, not packed or overlap-simulated.',
       'Wall construction, fasteners, stud placement and viewing distance are not assessed.',
     ],
-    breadcrumbIds: [fitServicesId, 'pi-feature-tv-hub'],
+    breadcrumbIds: [fitChecksDirectoryId, 'pi-feature-tv-hub'],
     relatedPageIds: [],
   }),
   definePage({
@@ -698,7 +725,7 @@ export const featurePages: FeaturePageRecord[] = [
       'No default safety clearance is supplied.',
       'Anchoring, floor loading, bar path, plates, lifting technique and equipment movement are not modeled.',
     ],
-    breadcrumbIds: [fitServicesId, gymId],
+    breadcrumbIds: [fitChecksDirectoryId, gymId],
     relatedPageIds: ['pi-feature-furniture-route', 'pi-feature-storage-capacity'],
     relatedReasons: {
       '/access/furniture-route-fit/':
@@ -729,7 +756,7 @@ export const featurePages: FeaturePageRecord[] = [
       'Mixed-size objects, stacking, load ratings, shelving supports and aisle route optimization are excluded.',
       'The aisle target is user-entered, not an accessibility standard.',
     ],
-    breadcrumbIds: [fitServicesId, storageId],
+    breadcrumbIds: [fitChecksDirectoryId, storageId],
     relatedPageIds: ['pi-feature-garden-shed-storage'],
     relatedReasons: {
       '/garden/shed-interior-storage/':
@@ -756,7 +783,7 @@ export const featurePages: FeaturePageRecord[] = [
       'Angled shots, player stance, cue elevation, pockets and furniture are not simulated.',
       'This is not a cue-trajectory or safety assessment.',
     ],
-    breadcrumbIds: [fitServicesId, gameRoomId],
+    breadcrumbIds: [fitChecksDirectoryId, gameRoomId],
     relatedPageIds: ['pi-feature-furniture-route'],
     relatedReasons: {
       '/access/furniture-route-fit/':
@@ -785,7 +812,7 @@ export const featurePages: FeaturePageRecord[] = [
       'There is no vehicle dimension database.',
       'Driveway approach, steering, turning, ramps, garage tracks and door operation paths are not simulated.',
     ],
-    breadcrumbIds: [fitServicesId, vehicleId],
+    breadcrumbIds: [fitChecksDirectoryId, vehicleId],
     relatedPageIds: [],
   }),
 
@@ -838,7 +865,13 @@ export const featurePages: FeaturePageRecord[] = [
       'Walking allowance is user-selected, not a universal gazebo standard.',
     ],
     breadcrumbIds: [gardenId],
-    relatedPageIds: ['pi-feature-dining'],
+    relatedPageIds: ['pi-feature-dining', 'pi-feature-garden-structure'],
+    relatedReasons: {
+      '/dining/':
+        'Use the room-based dining check to compare table, pulled-out chairs and a chosen walking target.',
+      '/garden/structure-fit/':
+        'Check the gazebo structure footprint, roof overhang and maintenance space against the plot.',
+    },
   }),
   definePage({
     id: 'pi-feature-garden-shed-storage',

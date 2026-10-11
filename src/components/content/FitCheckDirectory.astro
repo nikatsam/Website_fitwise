@@ -1,0 +1,142 @@
+---
+import {
+  ADVANCED_FIT_CHECK_LINK,
+  FIT_CHECK_GROUPS,
+  getNavigationCurrent,
+  UNIVERSAL_FIT_LINK,
+} from '../../data/navigation';
+
+const currentPath = new URL(Astro.request.url).pathname;
+---
+
+<div class="fit-check-directory" id="all-fit-checks">
+  <div class="fit-check-directory__quick-start">
+    <p>Need a quick comparison between one item and one space?</p>
+    <a href={UNIVERSAL_FIT_LINK.href}>{UNIVERSAL_FIT_LINK.label}</a>
+  </div>
+  <nav aria-label="All fit checks by task">
+    <div class="fit-check-directory__groups">
+      {FIT_CHECK_GROUPS.map((group) => (
+        <section class="fit-check-directory__group" aria-label={group.label}>
+          <h2>{group.label}</h2>
+          <ul>
+            {group.links.map((item) => (
+              <li>
+                <a href={item.href} aria-current={getNavigationCurrent(currentPath, item.href)}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+            {group.specialistGroups?.map((specialistGroup) => (
+              <li class="fit-check-directory__specialist">
+                <h3>{specialistGroup.label}</h3>
+                <ul>
+                  {specialistGroup.links.map((item) => (
+                    <li>
+                      <a
+                        href={item.href}
+                        aria-current={getNavigationCurrent(currentPath, item.href)}
+                      >
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  </nav>
+  <aside class="fit-check-directory__advanced">
+    <h2>Need one advanced checker for a custom setup?</h2>
+    <p>
+      Compare a custom item, space, route or equipment mode in the all-in-one tool. Enter actual
+      measurements and verify model-specific requirements from current manuals.
+    </p>
+    <a href={ADVANCED_FIT_CHECK_LINK.href}>{ADVANCED_FIT_CHECK_LINK.label}</a>
+  </aside>
+</div>
+
+<style>
+  .fit-check-directory {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .fit-check-directory__quick-start {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border-left: 0.25rem solid var(--color-accent-1);
+    background: var(--color-surface);
+  }
+
+  .fit-check-directory__quick-start p,
+  .fit-check-directory__advanced h2,
+  .fit-check-directory__advanced p {
+    margin: 0;
+  }
+
+  .fit-check-directory__quick-start a,
+  .fit-check-directory__advanced a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-weight: 700;
+  }
+
+  .fit-check-directory__groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: var(--space-3);
+  }
+
+  .fit-check-directory__group {
+    min-width: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+
+  .fit-check-directory__group h2,
+  .fit-check-directory__specialist h3 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-md);
+  }
+
+  .fit-check-directory__group ul {
+    display: grid;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fit-check-directory__specialist {
+    margin-top: var(--space-3);
+  }
+
+  .fit-check-directory__specialist h3 {
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+  }
+
+  .fit-check-directory__advanced {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-2);
+    max-width: 78ch;
+    padding: var(--space-4);
+    border-left: 0.25rem solid var(--color-accent-1);
+    background: var(--color-surface);
+  }
+
+  .fit-check-directory__advanced p {
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+</style>

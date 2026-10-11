@@ -12,6 +12,16 @@ const console = new Console(process.stdout, process.stderr);
 const baseUrl = process.argv[2] ?? 'http://127.0.0.1:4322';
 const chromePath =
   process.env.CHROME_PATH ?? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const canonicalFitStates = [
+  { label: '✓ Fits', meaning: 'Hard physical requirements and selected or verified targets pass.' },
+  { label: '△ Tight', meaning: 'Physical fit passes, but one or more selected targets do not.' },
+  { label: '✕ Does not fit', meaning: 'At least one hard physical or access requirement fails.' },
+  {
+    label: '? Needs information',
+    meaning:
+      'Required measurement, source, model, manual or compatibility data has not been verified.',
+  },
+];
 const profile = await mkdtemp(path.join(os.tmpdir(), 'fitwise-keyboard-qa-'));
 let chrome;
 let websocket;
@@ -168,6 +178,26 @@ async function typeDigits(value) {
 }
 
 async function tabUntil(selector, maxTabs = 24) {
+  const targetCoreStep = await evaluate(`(() => {
+    const field = document.querySelector(${JSON.stringify(selector)});
+    const step = field?.closest('[data-core-calculator-step]');
+    return step ? Number(step.dataset.stepIndex) : null;
+  })()`);
+  if (typeof targetCoreStep === 'number') {
+    let currentCoreStep = await evaluate(
+      'Number(document.querySelector("[data-core-calculator-step]:not([hidden])")?.dataset.stepIndex ?? 0)',
+    );
+    while (currentCoreStep < targetCoreStep) {
+      await evaluate('document.querySelector("[data-core-step-next]").focus()');
+      await press(' ', 'Space', 32);
+      currentCoreStep += 1;
+    }
+    while (currentCoreStep > targetCoreStep) {
+      await evaluate('document.querySelector("[data-core-step-previous]").focus()');
+      await press(' ', 'Space', 32);
+      currentCoreStep -= 1;
+    }
+  }
   const visited = [];
   for (let i = 0; i < maxTabs; i += 1) {
     if (await evaluate(`document.activeElement.matches(${JSON.stringify(selector)})`)) return;
@@ -193,7 +223,7 @@ async function assertAccessibleForm(pathname) {
       const style = getComputedStyle(element);
       return style.display !== 'none' && style.visibility !== 'hidden' && element.getClientRects().length > 0;
     };
-    const controls = [...document.querySelectorAll('input, select, textarea, button')].filter((element) =>
+    const controls = [...document.querySelectorAll('input, select, textarea, button, summary, a[href], svg[role=img], [role=image], [role=button], [role=checkbox], [role=combobox], [role=link], [role=listbox], [role=menuitem], [role=radio], [role=searchbox], [role=slider], [role=spinbutton], [role=switch], [role=tab], [role=textbox]')].filter((element) =>
       element instanceof HTMLInputElement && element.type === 'hidden' ? false : isVisible(element),
     );
     const ids = [...document.querySelectorAll('[id]')].map((element) => element.id);
@@ -202,11 +232,16 @@ async function assertAccessibleForm(pathname) {
       const labelledBy = (element.getAttribute('aria-labelledby') ?? '').split(/\\s+/).filter(Boolean)
         .map((id) => document.getElementById(id)?.textContent?.trim() ?? '').join(' ');
       const labels = [...(element.labels ?? [])].map((label) => label.textContent.trim()).join(' ');
-      const contents = element.tagName === 'BUTTON' ? element.textContent.trim() : '';
+      const contents = ['BUTTON', 'SUMMARY'].includes(element.tagName) || element.getAttribute('role') === 'button' || element.tagName === 'A'
+        ? element.textContent.trim()
+        : '';
       const value = element instanceof HTMLInputElement && ['button', 'submit', 'reset'].includes(element.type) ? element.value : '';
       return [element.getAttribute('aria-label'), labelledBy, labels, value, contents].find((name) => name?.trim())?.trim() ?? '';
     };
     const unnamed = controls.filter((element) => !nameOf(element)).map((element) => element.tagName.toLowerCase() + '#' + (element.id || '(no id)'));
+    const genericNames = controls.map((element) => ({ element, name: nameOf(element) }))
+      .filter(({ name }) => /^\\s*\\[?\\s*(?:input|select|textarea|button|checkbox|radio|text box|text field|textbox|control)\\s*\\]?\\s*$/i.test(name))
+      .map(({ element, name }) => element.tagName.toLowerCase() + '#' + (element.id || '(no id)') + ': ' + name);
     const brokenDescriptions = controls.flatMap((element) =>
       (element.getAttribute('aria-describedby') ?? '').split(/\\s+/).filter(Boolean)
         .filter((id) => !document.getElementById(id)).map((id) => (element.id || element.tagName) + ': ' + id),
@@ -249,7 +284,9 @@ async function assertAccessibleForm(pathname) {
     }));
     const footerHrefs = footerLinks.map((link) => link.href);
     const footerDuplicates = [...new Set(footerHrefs.filter((href, index) => footerHrefs.indexOf(href) !== index))];
-    const smallTargets = controls.flatMap((element) => {
+    const smallTargets = controls.filter((element) =>
+      ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'SUMMARY'].includes(element.tagName) || element.getAttribute('role') === 'button',
+    ).flatMap((element) => {
       const input = element instanceof HTMLInputElement;
       const labels = input && ['checkbox', 'radio'].includes(element.type) ? [...(element.labels ?? [])] : [];
       const rects = (labels.length ? labels : [element]).map((target) => target.getBoundingClientRect());
@@ -259,6 +296,7 @@ async function assertAccessibleForm(pathname) {
     });
     return {
       unnamed,
+      genericNames,
       duplicateIds,
       brokenDescriptions,
       unassociatedMeasurementHelp,
@@ -269,14 +307,48 @@ async function assertAccessibleForm(pathname) {
         hrefs: footerHrefs,
         duplicates: footerDuplicates,
         gardenCount: footerLinks.filter((link) => link.href === '/garden/').length,
-        hasAllChecks: footerLinks.some((link) => link.href === '/fit-services/' && link.label === 'All fit checks'),
+        hasAllChecks: footerLinks.some((link) => link.href === '/fit-checks/' && link.label === 'All fit checks'),
         hasBrittleCopy: /appliance, route, garage and more/i.test(footer?.textContent ?? ''),
       },
       smallTargets,
     };
   })()`);
+  const axTree = await cdp('Accessibility.getFullAXTree');
+  const axControlRoles = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'image',
+    'img',
+    'link',
+    'listbox',
+    'menuitem',
+    'radio',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'textbox',
+  ]);
+  const axControls = axTree.nodes.filter(
+    (node) => !node.ignored && axControlRoles.has(node.role?.value),
+  );
+  const axUnnamed = axControls
+    .filter((node) => !node.name?.value?.trim())
+    .map((node) => `${node.role.value}#${node.nodeId}`);
+  const axGenericNames = axControls
+    .filter((node) =>
+      /^\s*\[?\s*(?:input|select|textarea|button|checkbox|radio|text box|text field|textbox|control)\s*\]?\s*$/i.test(
+        node.name?.value?.trim() ?? '',
+      ),
+    )
+    .map((node) => `${node.role.value}#${node.nodeId}: ${node.name.value}`);
   assert(
     audit.unnamed.length === 0 &&
+      audit.genericNames.length === 0 &&
+      axUnnamed.length === 0 &&
+      axGenericNames.length === 0 &&
       audit.duplicateIds.length === 0 &&
       audit.brokenDescriptions.length === 0 &&
       audit.unassociatedMeasurementHelp.length === 0 &&
@@ -288,7 +360,7 @@ async function assertAccessibleForm(pathname) {
       audit.footer.hasAllChecks &&
       !audit.footer.hasBrittleCopy &&
       audit.smallTargets.length === 0,
-    `${pathname}: form accessibility gate failed: ${JSON.stringify(audit)}.`,
+    `${pathname}: form/AX-tree accessibility gate failed: ${JSON.stringify({ audit, axUnnamed, axGenericNames })}.`,
   );
   const footerLinkSignature = JSON.stringify(audit.footer.hrefs);
   if (sharedFooterLinkSignature === undefined) sharedFooterLinkSignature = footerLinkSignature;
@@ -298,8 +370,102 @@ async function assertAccessibleForm(pathname) {
   );
 }
 
+async function assertKeyboardReachability(pathname) {
+  const expectedCount = await evaluate(`(() => {
+    const scope = document.querySelector('[data-fit-result-scope]');
+    if (!scope) return 0;
+    const selector = 'a[href], button, input:not([type=hidden]), select, textarea, summary, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+    const visible = (element) => {
+      for (let node = element; node && node !== document.body; node = node.parentElement) {
+        if (node.hidden || node.inert || node.getAttribute('aria-hidden') === 'true') return false;
+        if (
+          node.tagName === 'DETAILS' &&
+          !node.open &&
+          !node.querySelector(':scope > summary')?.contains(element)
+        ) {
+          return false;
+        }
+      }
+      const style = getComputedStyle(element);
+      return !element.matches(':disabled') && style.display !== 'none' && style.visibility !== 'hidden' && element.getClientRects().length > 0;
+    };
+    const allFocusables = [...scope.querySelectorAll(selector)].filter((element) =>
+      element.tabIndex >= 0 && visible(element),
+    );
+    const radioGroups = new Map();
+    for (const element of allFocusables) {
+      if (!(element instanceof HTMLInputElement) || element.type !== 'radio' || !element.name) continue;
+      const key = (element.form?.id ?? '') + ':' + element.name;
+      radioGroups.set(key, [...(radioGroups.get(key) ?? []), element]);
+    }
+    const radioTabStops = new Set(
+      [...radioGroups.values()].map((group) => group.find((element) => element.checked) ?? group[0]),
+    );
+    const elements = allFocusables.filter(
+      (element) =>
+        !(element instanceof HTMLInputElement) ||
+        element.type !== 'radio' ||
+        radioTabStops.has(element),
+    );
+    elements.forEach((element, index) => { element.dataset.qaKeyboardOrder = String(index); });
+    return elements.length;
+  })()`);
+  if (expectedCount === 0) return;
+  await evaluate(`(() => {
+    document.body.setAttribute('tabindex', '-1');
+    document.body.focus();
+  })()`);
+
+  const visited = new Set();
+  for (let attempt = 0; attempt < expectedCount + 128; attempt += 1) {
+    await press('Tab', 'Tab', 9);
+    const active = await evaluate(`(() => {
+      const element = document.activeElement;
+      return {
+        order: element?.dataset.qaKeyboardOrder ?? null,
+        tag: element?.tagName ?? null,
+        id: element?.id ?? null,
+        tabindex: element?.getAttribute('tabindex') ?? null,
+        tabIndex: element?.tabIndex ?? null,
+        label: element?.getAttribute('aria-label') ?? element?.textContent?.trim() ?? '',
+      };
+    })()`);
+    if (active.order === null) continue;
+    assert(
+      !visited.has(active.order),
+      `${pathname}: Tab skipped or trapped before reaching all controls: ${JSON.stringify(active)}.`,
+    );
+    visited.add(active.order);
+    if (visited.size === expectedCount) break;
+  }
+  const missing =
+    visited.size === expectedCount
+      ? []
+      : await evaluate(`(() => {
+          const seen = new Set(${JSON.stringify([...visited])});
+          return [...document.querySelectorAll('[data-qa-keyboard-order]')]
+            .filter((element) => !seen.has(element.dataset.qaKeyboardOrder))
+            .map((element) => ({
+              order: element.dataset.qaKeyboardOrder,
+              tag: element.tagName,
+              id: element.id,
+              role: element.getAttribute('role'),
+              label: element.getAttribute('aria-label') || element.textContent.trim().slice(0, 80),
+              tabindex: element.tabIndex,
+              inert: Boolean(element.closest('[inert]')),
+              classes: element.className,
+            }));
+        })()`);
+  assert(
+    visited.size === expectedCount,
+    `${pathname}: Tab did not reach every visible control (${visited.size}/${expectedCount}); missing=${JSON.stringify(missing)}.`,
+  );
+  await evaluate("document.body.removeAttribute('tabindex')");
+}
+
 async function exerciseMobileServiceSteps(pathname, expectedCount) {
-  const initial = await evaluate(`(() => {
+  const readInitialStep = () =>
+    evaluate(`(() => {
     const nav = document.querySelector('[data-fit-service-stepper]');
     const sections = [...document.querySelectorAll('[data-fit-service-step]')];
     return {
@@ -312,6 +478,16 @@ async function exerciseMobileServiceSteps(pathname, expectedCount) {
       stickyPosition: getComputedStyle(document.querySelector('[data-fit-sticky]')).position,
     };
   })()`);
+  let initial = await readInitialStep();
+  for (
+    let attempt = 0;
+    attempt < expectedCount && initial.previousDisabled === false;
+    attempt += 1
+  ) {
+    await evaluate('document.querySelector("[data-step-action=previous]").focus()');
+    await press(' ', 'Space', 32);
+    initial = await readInitialStep();
+  }
   assert(
     initial.isVisible &&
       initial.stepCount === expectedCount &&
@@ -372,6 +548,81 @@ async function exerciseMobileServiceSteps(pathname, expectedCount) {
   );
 }
 
+async function exerciseCoreMobileSteps(pathname, expectedCount) {
+  const readState = () =>
+    evaluate(`(() => {
+      const nav = document.querySelector('[data-core-stepper]');
+      const sections = [...document.querySelectorAll('[data-core-calculator-step]')];
+      const current = sections.find((section) => !section.hidden);
+      const currentIndex = Number(current?.dataset.stepIndex);
+      const currentProgress = nav?.querySelector('[aria-current="step"]');
+      const previous = nav?.querySelector('[data-core-step-previous]');
+      const next = nav?.querySelector('[data-core-step-next]');
+      return {
+        visible: Boolean(nav && !nav.hidden && getComputedStyle(nav).display !== 'none'),
+        stepCount: sections.length,
+        activeCount: sections.filter((section) => !section.hidden).length,
+        currentIndex,
+        currentProgressIndex: Number(currentProgress?.dataset.coreStepJump),
+        status: nav?.querySelector('[data-core-step-status]')?.textContent.trim(),
+        previousDisabled: previous?.disabled,
+        nextLabel: next?.textContent.trim(),
+        completeLabel: nav?.querySelector('[data-core-step-jump="' + (currentIndex - 1) + '"] [data-core-step-state]')?.textContent.trim(),
+        advancedOpen: Boolean(current?.closest('details')?.open),
+        advancedSummaryHidden: Boolean(current?.closest('details')?.querySelector(':scope > summary')?.hidden),
+        resultPosition: getComputedStyle(document.querySelector('[data-fit-sticky]')).position,
+      };
+    })()`);
+
+  let initial = await readState();
+  for (
+    let attempt = 0;
+    attempt < expectedCount && initial.previousDisabled === false;
+    attempt += 1
+  ) {
+    await evaluate('document.querySelector("[data-core-step-previous]").focus()');
+    await press(' ', 'Space', 32);
+    initial = await readState();
+  }
+  assert(
+    initial.visible &&
+      initial.stepCount === expectedCount &&
+      initial.activeCount === 1 &&
+      initial.currentIndex === 0 &&
+      initial.currentProgressIndex === 0 &&
+      initial.previousDisabled === true &&
+      initial.resultPosition === 'fixed',
+    `${pathname}: core progressive form did not initialize on its first step: ${JSON.stringify(initial)}.`,
+  );
+
+  for (let step = 1; step < expectedCount; step += 1) {
+    await evaluate('document.querySelector("[data-core-step-next]").focus()');
+    await press(' ', 'Space', 32);
+    const current = await readState();
+    assert(
+      current.currentIndex === step &&
+        current.currentProgressIndex === step &&
+        current.activeCount === 1 &&
+        current.previousDisabled === false &&
+        current.completeLabel === 'Complete' &&
+        current.resultPosition === 'fixed' &&
+        (step !== expectedCount - 1 || current.advancedOpen === current.advancedSummaryHidden),
+      `${pathname}: core step ${step + 1} did not advance with visible progress/result: ${JSON.stringify(current)}.`,
+    );
+    await assertAccessibleForm(`${pathname} (core step ${step + 1})`);
+  }
+
+  for (let attempt = 0; attempt < expectedCount - 1; attempt += 1) {
+    await evaluate('document.querySelector("[data-core-step-previous]").focus()');
+    await press(' ', 'Space', 32);
+  }
+  const returned = await readState();
+  assert(
+    returned.currentIndex === 0 && returned.activeCount === 1,
+    `${pathname}: Previous did not return to the first core step: ${JSON.stringify(returned)}.`,
+  );
+}
+
 async function smokePage(pathname, scope) {
   const url = new URL(pathname, baseUrl).href;
   await cdp('Emulation.setDeviceMetricsOverride', {
@@ -391,26 +642,39 @@ async function smokePage(pathname, scope) {
     `${pathname} did not finish loading.`,
   );
   await assertAccessibleForm(pathname);
+  const coreStepCount = await evaluate(
+    'document.querySelectorAll("[data-core-progressive-form] [data-core-calculator-step]").length',
+  );
+  if (coreStepCount > 1) await exerciseCoreMobileSteps(pathname, coreStepCount);
   const unitPreference = await evaluate(`(() => {
     const toggle = document.querySelector('[data-unit-toggle]');
     if (!toggle) return null;
     const unitSystem = document.documentElement.dataset.unitSystem ?? 'metric';
     return {
       unitSystem,
-      pressed: toggle.getAttribute('aria-pressed'),
+      choices: [...toggle.querySelectorAll('[data-unit-choice]')].map((choice) => ({
+        value: choice.value,
+        checked: choice.checked,
+      })),
       stored: localStorage.getItem('fitwise-unit-system'),
-      label: toggle.textContent.trim(),
-      scope: toggle.parentElement?.querySelector('.unit-toggle__note')?.textContent.trim() ?? '',
+      entryNote: toggle.querySelector('#unit-entry-note')?.textContent.trim() ?? '',
+      displayNote: toggle.querySelector('#unit-display-note')?.textContent.trim() ?? '',
+      entryNoteCount: document.querySelectorAll('#unit-entry-note').length,
     };
   })()`);
   if (unitPreference) {
     assert(
-      unitPreference.pressed === String(unitPreference.unitSystem === 'imperial') &&
+      ['metric', 'imperial', 'both'].includes(unitPreference.unitSystem) &&
+        unitPreference.choices.length === 3 &&
+        unitPreference.choices.filter((choice) => choice.checked).length === 1 &&
+        unitPreference.choices.find((choice) => choice.checked)?.value ===
+          unitPreference.unitSystem &&
         (unitPreference.stored === null || unitPreference.stored === unitPreference.unitSystem) &&
-        unitPreference.label ===
-          `Show ${unitPreference.unitSystem === 'imperial' ? 'metric' : 'imperial'} results` &&
-        unitPreference.scope.includes('display only') &&
-        unitPreference.scope.includes('entered measurements stay unchanged'),
+        unitPreference.entryNote.includes('mm, cm, m, in, ft, or ft/in') &&
+        unitPreference.entryNote.includes('defaults to mm') &&
+        unitPreference.entryNoteCount === 1 &&
+        unitPreference.displayNote.includes('display only') &&
+        unitPreference.displayNote.includes('stay unchanged'),
       `${pathname}: stored unit preference or display-only description is inconsistent: ${JSON.stringify(unitPreference)}.`,
     );
   }
@@ -543,6 +807,7 @@ async function smokePage(pathname, scope) {
       deviceScaleFactor: 1,
       mobile: false,
     });
+    await evaluate('scrollTo(0, 0)');
     const stickyBehavior = await evaluate(`(() => {
       const result = document.querySelector('[data-calculator-shell] .calculator-split__result');
       const stickyTop = Number.parseFloat(getComputedStyle(result).top);
@@ -562,6 +827,7 @@ async function smokePage(pathname, scope) {
       deviceScaleFactor: 1,
       mobile: false,
     });
+    await evaluate('scrollTo(0, 0)');
     const shortViewport = await evaluate(`(() => {
       const result = document.querySelector('[data-calculator-shell] .calculator-split__result');
       const stickyTop = Number.parseFloat(getComputedStyle(result).top);
@@ -602,11 +868,27 @@ async function smokePage(pathname, scope) {
       `${pathname}: the initial example result is not clearly labeled.`,
     );
     assert(
+      await evaluate(`(() => {
+        const notice = document.querySelector('[data-fit-example-notice]');
+        return notice?.textContent.includes('Example data loaded') && notice.textContent.includes('The values below are illustrative.');
+      })()`),
+      `${pathname}: the shared example-data notice is missing or inconsistent.`,
+    );
+    assert(
       (await evaluate(
-        'document.querySelector("[data-fit-example-notice]").closest("form").parentElement.querySelector("[data-field=label]")?.textContent.trim().startsWith("Example result — ")',
+        'document.querySelector("[data-fit-result-scope] [data-fit-origin=example] [data-field=label]")?.textContent.trim().startsWith("Example result — ")',
       )) === true,
       `${pathname}: the result label does not identify the starter result as an example.`,
     );
+    if (await evaluate('Boolean(document.querySelector("[data-fit-services]"))')) {
+      const stepCount = await evaluate(
+        'document.querySelectorAll("[data-fit-services] [data-calculator-step]").length',
+      );
+      assert(
+        stepCount > 1,
+        `${pathname}: the Fit Services calculator still renders a flat field grid.`,
+      );
+    }
     const mobileResult = await evaluate(`(() => {
       const link = document.querySelector('[data-fit-sticky]');
       const target = link?.hash ? document.querySelector(link.hash) : null;
@@ -622,6 +904,10 @@ async function smokePage(pathname, scope) {
     );
   }
 
+  await evaluate(`(() => {
+    document.body.setAttribute('tabindex', '-1');
+    document.body.focus();
+  })()`);
   await press('Tab', 'Tab', 9);
   const firstTabFocus = await evaluate(
     '({ tag: document.activeElement?.tagName, id: document.activeElement?.id, className: document.activeElement?.className, text: document.activeElement?.textContent?.trim().slice(0,80), outlineStyle: getComputedStyle(document.activeElement).outlineStyle, outlineWidth: getComputedStyle(document.activeElement).outlineWidth })',
@@ -632,6 +918,7 @@ async function smokePage(pathname, scope) {
       parseFloat(firstTabFocus.outlineWidth) >= 2,
     `${pathname}: the first Tab should focus the skip link; got ${JSON.stringify(firstTabFocus)}.`,
   );
+  await evaluate("document.body.removeAttribute('tabindex')");
   await press('Enter', 'Enter', 13);
   assert(
     (await evaluate('location.hash')) === '#main-content',
@@ -640,24 +927,32 @@ async function smokePage(pathname, scope) {
 
   const legend = await evaluate(`(() => {
     const details = document.querySelector('[data-fit-state-legend]');
-    return details ? [...details.querySelectorAll('li strong')].map((item) => item.textContent.trim().replace(/:$/, '')) : null;
+    return details ? [...details.querySelectorAll('li')].map((item) => {
+      const strong = item.querySelector('strong');
+      return {
+        label: strong.textContent.trim().replace(/:$/, ''),
+        meaning: item.textContent.trim().slice(strong.textContent.trim().length).trim(),
+      };
+    }) : null;
   })()`);
   const hasFitSummary = await evaluate('Boolean(document.querySelector(".fit-summary"))');
   assert(
-    !hasFitSummary ||
-      JSON.stringify(legend) ===
-        JSON.stringify(['✓ Fits', '△ Tight', '✕ Does not fit', '? Needs information']),
-    `${pathname}: calculator state legend does not use canonical labels/icons: ${JSON.stringify(legend)}.`,
+    !hasFitSummary || JSON.stringify(legend) === JSON.stringify(canonicalFitStates),
+    `${pathname}: calculator state legend differs from canonical definitions: ${JSON.stringify(legend)}.`,
   );
 
   if (pathname === '/methodology/') {
-    const methodologyStates = await evaluate(
-      `(() => [...document.querySelectorAll('.fit-state-list li strong')].map((item) => item.textContent.trim().replace(/:$/, '')))()`,
-    );
+    const methodologyStates =
+      await evaluate(`(() => [...document.querySelectorAll('.fit-state-list li')].map((item) => {
+      const strong = item.querySelector('strong');
+      return {
+        label: strong.textContent.trim().replace(/:$/, ''),
+        meaning: item.textContent.trim().slice(strong.textContent.trim().length).trim(),
+      };
+    }))()`);
     assert(
-      JSON.stringify(methodologyStates) ===
-        JSON.stringify(['✓ Fits', '△ Tight', '✕ Does not fit', '? Needs information']),
-      `Methodology does not describe the canonical four fit states: ${JSON.stringify(methodologyStates)}.`,
+      JSON.stringify(methodologyStates) === JSON.stringify(canonicalFitStates),
+      `Methodology does not use the canonical four-state definitions: ${JSON.stringify(methodologyStates)}.`,
     );
     console.log('Methodology passed canonical four-state legend checks.');
     return;
@@ -711,6 +1006,12 @@ async function smokePage(pathname, scope) {
       await evaluate('document.querySelector("[data-fit-example-notice]").hidden'),
       `${pathname}: example notice did not clear after editing a measurement control.`,
     );
+    assert(
+      await evaluate(
+        'document.querySelector("#workspace-fitcheck-summary [data-field=label]").textContent.trim().startsWith("Your result — ")',
+      ),
+      `${pathname}: Workspace did not switch to the shared user-result origin.`,
+    );
     const workspaceUnits = await evaluate(`(() => {
       const input = document.querySelector('#desk-width');
       const original = input.value;
@@ -759,6 +1060,12 @@ async function smokePage(pathname, scope) {
       await evaluate('document.querySelector("[data-fit-example-notice]").hidden'),
       `${pathname}: example notice did not clear after changing the bed orientation.`,
     );
+    assert(
+      await evaluate(
+        'document.querySelector("#bedroom-fitcheck-summary [data-field=label]").textContent.trim().startsWith("Your result — ")',
+      ),
+      `${pathname}: Bedroom did not switch to the shared user-result origin.`,
+    );
     const detail = await evaluate(
       'document.querySelector("#bedroom-fitcheck-summary .fit-summary__content").textContent',
     );
@@ -804,20 +1111,27 @@ async function smokePage(pathname, scope) {
       await evaluate('document.querySelector("[data-fit-example-notice]").hidden'),
       `${pathname}: example notice did not clear after changing dining orientation.`,
     );
+    assert(
+      await evaluate(
+        'document.querySelector("#dining-fitcheck-summary [data-field=label]").textContent.trim().startsWith("Your result — ")',
+      ),
+      `${pathname}: Dining did not switch to the shared user-result origin.`,
+    );
   }
 
-  if (pathname === '/fit-services/') {
+  if (pathname === '/fit-checks/') {
     const directoryContract = await evaluate(`(() => {
       const directory = document.querySelector('#all-fit-checks');
-      const calculator = document.querySelector('#fit-services-tool');
       return {
-        h1: document.querySelector('[data-calculator-shell] h1')?.textContent.trim(),
-        categoryGroups: [...(directory?.querySelectorAll('.fit-check-directory__groups:first-of-type .fit-check-directory__group h3') ?? [])].map((item) => item.textContent.trim()),
-        categoryLinks: [...(directory?.querySelectorAll('.fit-check-directory__groups:first-of-type .fit-check-directory__group a') ?? [])].map((item) => item.getAttribute('href')),
-        specialistGroups: [...(directory?.querySelectorAll('.fit-check-directory__groups--specialist .fit-check-directory__group h3') ?? [])].map((item) => item.textContent.trim()),
-        specialistLinks: [...(directory?.querySelectorAll('.fit-check-directory__groups--specialist a') ?? [])].map((item) => item.getAttribute('href')),
-        directoryBeforeTool: Boolean(directory && calculator && directory.compareDocumentPosition(calculator) & Node.DOCUMENT_POSITION_FOLLOWING),
-        hasAllFitHeaderLink: Boolean(document.querySelector('.site-nav a[href="/fit-services/"]')),
+        h1: document.querySelector('h1')?.textContent.trim(),
+        categoryGroups: [...(directory?.querySelectorAll('.fit-check-directory__group > h2') ?? [])].map((item) => item.textContent.trim()),
+        categoryLinks: [...(directory?.querySelectorAll('.fit-check-directory__group > ul > li:not(.fit-check-directory__specialist) > a') ?? [])].map((item) => item.getAttribute('href')),
+        specialistGroups: [...(directory?.querySelectorAll('.fit-check-directory__specialist h3') ?? [])].map((item) => item.textContent.trim()),
+        specialistLinks: [...(directory?.querySelectorAll('.fit-check-directory__specialist a') ?? [])].map((item) => item.getAttribute('href')),
+        allDirectoryLinks: [...(directory?.querySelectorAll('.fit-check-directory__group a') ?? [])].map((item) => item.getAttribute('href')),
+        hasAdvancedLink: Boolean(directory?.querySelector('.fit-check-directory__advanced a[href="/fit-services/"]')),
+        hasAllFitHeaderLink: Boolean(document.querySelector('.site-nav a[href="/fit-checks/"]')),
+        embedsCalculator: Boolean(document.querySelector('[data-fit-services-form]')),
         pageWidth: document.documentElement.scrollWidth,
         viewport: innerWidth,
       };
@@ -833,35 +1147,35 @@ async function smokePage(pathname, scope) {
             'More fit checks',
           ]) &&
         JSON.stringify(directoryContract.specialistGroups) ===
-          JSON.stringify([
-            'Appliance installation',
-            'Access and mounting',
-            'Equipment and storage',
-            'Game room and vehicle',
-            'Garden projects',
-          ]) &&
-        directoryContract.specialistLinks.length === 17 &&
-        !directoryContract.categoryLinks.some((href) =>
-          ['/access/', '/tv/', '/home-gym/', '/storage/', '/game-room/', '/vehicle/'].includes(
-            href,
-          ),
-        ) &&
-        directoryContract.specialistLinks.includes('/vehicle/garage-fit/') &&
+          JSON.stringify(['Workspace tools', 'Garden projects', 'Appliance installation']) &&
+        directoryContract.specialistLinks.length === 11 &&
+        directoryContract.allDirectoryLinks.length === 22 &&
+        new Set(directoryContract.allDirectoryLinks).size ===
+          directoryContract.allDirectoryLinks.length &&
+        directoryContract.allDirectoryLinks.includes('/vehicle/garage-fit/') &&
         directoryContract.specialistLinks.includes('/garden/play-equipment-use-zone/') &&
-        directoryContract.directoryBeforeTool &&
+        directoryContract.hasAdvancedLink &&
+        !directoryContract.embedsCalculator &&
         directoryContract.hasAllFitHeaderLink &&
         directoryContract.pageWidth <= directoryContract.viewport + 1,
       `${pathname}: all-checks directory contract failed: ${JSON.stringify(directoryContract)}.`,
     );
+    console.log(
+      'Fit Checks directory routes directly to focused tools and separates the advanced checker.',
+    );
+  }
+
+  if (pathname === '/fit-services/') {
     sharedApplianceEvidence = await evaluate(`(() => ({
       mode: document.querySelector('#fit-service-mode')?.value,
       state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'),
-      review: document.querySelector('[data-fit-service-review]')?.textContent?.trim(),
+      review: document.querySelector('#fit-services-summary .fit-summary__missing')?.textContent?.trim(),
       dimensions: [...document.querySelectorAll('#fit-services-table tbody tr')].map((row) => [row.dataset.dimension, row.dataset.hardFit, row.dataset.recommendedFit, ...[...row.cells].slice(1).map((cell) => cell.textContent.trim())]),
     }))()`);
     const defaultAppliance = await evaluate(`(() => {
       const summary = document.querySelector('#fit-services-summary');
       const detail = summary?.querySelector('[data-field=detail]')?.textContent ?? '';
+      const requirement = summary?.querySelector('.fit-summary__missing li');
       const resolveBackground = (variable) => {
         const probe = document.createElement('span');
         probe.style.backgroundColor = 'var(' + variable + ')';
@@ -870,11 +1184,13 @@ async function smokePage(pathname, scope) {
         probe.remove();
         return color;
       };
-      return { state: summary?.getAttribute('data-fit-state'), detail, background: getComputedStyle(summary).backgroundColor, infoBackground: resolveBackground('--color-state-info-bg'), tightBackground: resolveBackground('--color-state-tight-bg'), failureBackground: resolveBackground('--color-state-no-fit-bg') };
+      return { state: summary?.getAttribute('data-fit-state'), detail, missingLabel: requirement?.querySelector('strong')?.textContent.trim(), missingExplanation: requirement?.querySelector('p')?.textContent.trim(), missingAction: requirement?.querySelector('p:last-child')?.textContent.trim(), background: getComputedStyle(summary).backgroundColor, infoBackground: resolveBackground('--color-state-info-bg'), tightBackground: resolveBackground('--color-state-tight-bg'), failureBackground: resolveBackground('--color-state-no-fit-bg') };
     })()`);
     assert(
       defaultAppliance.state === 'needs_information' &&
-        defaultAppliance.detail.includes('clearance source/reference') &&
+        defaultAppliance.missingLabel === 'Installation clearance source' &&
+        defaultAppliance.missingExplanation.includes('exact source') &&
+        defaultAppliance.missingAction.includes('exact model manual') &&
         !defaultAppliance.detail.includes('short on .') &&
         defaultAppliance.background === defaultAppliance.infoBackground &&
         defaultAppliance.background !== defaultAppliance.tightBackground &&
@@ -896,13 +1212,22 @@ async function smokePage(pathname, scope) {
         const select = document.querySelector('#fit-service-mode');
         select.value = ${JSON.stringify(mode)};
         select.dispatchEvent(new Event('change', { bubbles: true }));
-        return { hasField: Boolean(document.querySelector(${JSON.stringify(field)})), state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), rows: document.querySelectorAll('#fit-services-table tbody tr').length, unitNote: document.querySelector('[data-fit-service-unit-note]')?.textContent?.trim(), preview: document.querySelector('[data-fit-service-preview-ascii]')?.textContent, beforeStart: document.querySelector('[data-before-you-start-items]')?.textContent ?? '', beforeStartItems: document.querySelectorAll('[data-before-you-start-items] li').length, measurementHelpCount: document.querySelectorAll('.measurement-help__summary').length, measurementDiagramTitles: [...document.querySelectorAll('.measurement-help__diagram title')].map((title) => title.textContent) };
+        const summary = document.querySelector('#fit-services-summary');
+        const exampleNotice = document.querySelector('[data-fit-example-notice]');
+        return { hasField: Boolean(document.querySelector(${JSON.stringify(field)})), state: summary?.getAttribute('data-fit-state'), origin: summary?.dataset.fitOrigin, label: summary?.querySelector('[data-field=label]')?.textContent.trim(), exampleNoticeVisible: Boolean(exampleNotice && !exampleNotice.hidden), rows: document.querySelectorAll('#fit-services-table tbody tr').length, unitNote: document.querySelector('[data-fit-service-unit-note]')?.textContent?.trim(), entryNote: document.querySelector('#unit-entry-note')?.textContent?.trim(), preview: document.querySelector('[data-fit-service-preview-ascii]')?.textContent, beforeStart: document.querySelector('[data-before-you-start-items]')?.textContent ?? '', beforeStartItems: document.querySelectorAll('[data-before-you-start-items] li').length, beforeStartTypes: [...document.querySelectorAll('[data-before-you-start-items] li')].map((item) => item.dataset.preparationType), measurementHelpCount: document.querySelectorAll('.measurement-help__summary').length, measurementDiagramTitles: [...document.querySelectorAll('.measurement-help__diagram title')].map((title) => title.textContent) };
       })()`);
       assert(
         outcome.hasField &&
           outcome.state === expectedState &&
+          outcome.origin === 'example' &&
+          outcome.label.startsWith('Example result — ') &&
+          outcome.exampleNoticeVisible &&
           outcome.rows > 0 &&
           outcome.beforeStartItems === 3 &&
+          outcome.beforeStartTypes.some((type) => type === 'required') &&
+          outcome.beforeStartTypes.every((type) =>
+            ['required', 'optional', 'verification'].includes(type),
+          ) &&
           outcome.measurementHelpCount > 0 &&
           outcome.preview?.includes('SCHEMATIC'),
         `${pathname}: ${mode} did not render or calculate its example: ${JSON.stringify(outcome)}.`,
@@ -930,10 +1255,11 @@ async function smokePage(pathname, scope) {
       }
       if (mode === 'appliance-install') {
         assert(
-          outcome.unitNote?.includes('Lengths accept mm, cm, m, in, ft or ft/in') &&
-            !outcome.unitNote.includes('kg') &&
+          outcome.entryNote?.includes('mm, cm, m, in, ft, or ft/in') &&
+            outcome.entryNote.includes('defaults to mm') &&
+            !outcome.unitNote?.includes('kg') &&
             outcome.beforeStart.includes('exact model') &&
-            outcome.beforeStart.includes('installation manual'),
+            outcome.beforeStart.includes('manufacturer specification'),
           `${pathname}: appliance helper copy must not mention absent weight fields.`,
         );
       }
@@ -958,12 +1284,14 @@ async function smokePage(pathname, scope) {
       const setup = document.querySelector('#service-setup');
       setup.value = 'wall';
       setup.dispatchEvent(new Event('change', { bubbles: true }));
-      return { field: Boolean(document.querySelector('#service-wallAreaWidth')), sourceField: Boolean(document.querySelector('#service-mountDataSource')), state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), compatibility: document.querySelectorAll('[data-fit-service-compatibility] li[data-compatible="true"]').length, unitNote: document.querySelector('[data-fit-service-unit-note]')?.textContent?.trim(), beforeStart: document.querySelector('[data-before-you-start-items]')?.textContent ?? '' };
+      return { field: Boolean(document.querySelector('#service-wallAreaWidth')), sourceField: Boolean(document.querySelector('#service-mountDataSource')), state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), missingLabel: document.querySelector('#fit-services-summary .fit-summary__missing li strong')?.textContent.trim(), missingAction: document.querySelector('#fit-services-summary .fit-summary__missing li p:last-child')?.textContent.trim(), compatibility: document.querySelectorAll('[data-fit-service-compatibility] li[data-compatible="true"]').length, unitNote: document.querySelector('[data-fit-service-unit-note]')?.textContent?.trim(), beforeStart: document.querySelector('[data-before-you-start-items]')?.textContent ?? '' };
     })()`);
     assert(
       wallTv.field &&
         wallTv.sourceField &&
         wallTv.state === 'needs_information' &&
+        wallTv.missingLabel === 'TV and mount compatibility data' &&
+        wallTv.missingAction?.includes('exact TV and mount') &&
         wallTv.compatibility === 2 &&
         wallTv.unitNote?.includes('Weight fields use kg') &&
         wallTv.beforeStart.includes('exact TV and mount manuals'),
@@ -997,7 +1325,7 @@ async function smokePage(pathname, scope) {
     const dedicated = await evaluate(`(() => ({
       mode: document.querySelector('#fit-service-mode')?.value,
       state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'),
-      review: document.querySelector('[data-fit-service-review]')?.textContent?.trim(),
+      review: document.querySelector('#fit-services-summary .fit-summary__missing')?.textContent?.trim(),
       dimensions: [...document.querySelectorAll('#fit-services-table tbody tr')].map((row) => [row.dataset.dimension, row.dataset.hardFit, row.dataset.recommendedFit, ...[...row.cells].slice(1).map((cell) => cell.textContent.trim())]),
     }))()`);
     assert(
@@ -1031,11 +1359,18 @@ async function smokePage(pathname, scope) {
     })()`);
     const after = await evaluate(`(() => ({
       summary: document.querySelector('[data-fit-service-preview-summary]')?.textContent ?? '',
+      system: document.documentElement.dataset.unitSystem ?? 'metric',
       pageWidth: document.documentElement.scrollWidth,
       viewport: window.innerWidth,
     }))()`);
+    const displayedDimension =
+      after.system === 'imperial'
+        ? '5 ft 3 in'
+        : after.system === 'both'
+          ? '160.0 cm / 5 ft 3 in'
+          : '160.0 cm';
     assert(
-      after.summary.includes('1600 mm') && after.pageWidth <= after.viewport + 1,
+      after.summary.includes(displayedDimension) && after.pageWidth <= after.viewport + 1,
       `${pathname}: preview did not update with dimensions or introduced mobile overflow: ${JSON.stringify(after)}.`,
     );
     await cdp('Emulation.setDeviceMetricsOverride', {
@@ -1117,11 +1452,19 @@ async function smokePage(pathname, scope) {
       const select = document.querySelector('#fit-service-mode');
       select.value = 'garden-play-equipment';
       select.dispatchEvent(new Event('change', { bubbles: true }));
-      return { state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'), review: document.querySelector('[data-fit-service-review]')?.textContent?.trim() };
+      const requirement = document.querySelector('#fit-services-summary .fit-summary__missing li');
+      return {
+        state: document.querySelector('#fit-services-summary')?.getAttribute('data-fit-state'),
+        label: requirement?.querySelector('strong')?.textContent.trim(),
+        explanation: requirement?.querySelector('p')?.textContent.trim(),
+        action: requirement?.querySelector('p:last-child')?.textContent.trim(),
+      };
     })()`);
     assert(
       playReview.state === 'needs_information' &&
-        playReview.review?.includes('Manufacturer use-zone dimensions'),
+        playReview.label === 'Manufacturer play-equipment use zone' &&
+        playReview.explanation?.includes('exact manual/model source') &&
+        playReview.action?.includes('all four use-zone dimensions'),
       `${pathname}: play equipment must not show an unverified safety zone as Fits/Tight: ${JSON.stringify(playReview)}.`,
     );
     const reverseSizing = await evaluate(`(() => {
@@ -1228,17 +1571,36 @@ async function smokePage(pathname, scope) {
     const selector = `.${scope}__advanced > summary`;
     await tabUntil(selector);
     await press(' ', 'Space', 32);
+    const advancedStep = await evaluate(`(() => {
+      const details = document.querySelector(${JSON.stringify(selector)}).parentElement;
+      const sections = [...document.querySelectorAll('[data-core-calculator-step]')];
+      const activeIndex = sections.findIndex((section) => !section.hidden);
+      return {
+        open: details.open,
+        summaryHidden: details.querySelector(':scope > summary').hidden,
+        activeIndex,
+        activeCount: sections.filter((section) => !section.hidden).length,
+      };
+    })()`);
     assert(
-      await evaluate(`document.querySelector(${JSON.stringify(selector)}).parentElement.open`),
-      `${pathname}: Space did not expand the assumptions disclosure.`,
+      advancedStep.open &&
+        advancedStep.summaryHidden &&
+        advancedStep.activeIndex === 2 &&
+        advancedStep.activeCount === 1,
+      `${pathname}: keyboard activation did not enter the advanced step: ${JSON.stringify(advancedStep)}.`,
     );
+    await evaluate('document.querySelector("[data-core-step-previous]").focus()');
     await press(' ', 'Space', 32);
+    const previousStep = await evaluate(`(() => ({
+      open: document.querySelector(${JSON.stringify(selector)}).parentElement.open,
+      summaryHidden: document.querySelector(${JSON.stringify(selector)}).hidden,
+      activeIndex: [...document.querySelectorAll('[data-core-calculator-step]')].findIndex((section) => !section.hidden),
+    }))()`);
     assert(
-      !(await evaluate(`document.querySelector(${JSON.stringify(selector)}).parentElement.open`)),
-      `${pathname}: Space did not collapse the assumptions disclosure.`,
+      !previousStep.open && !previousStep.summaryHidden && previousStep.activeIndex === 1,
+      `${pathname}: Previous did not collapse optional advanced content and return to Space: ${JSON.stringify(previousStep)}.`,
     );
-
-    // Reopen advanced controls to exercise the new depth/furniture inputs.
+    await evaluate('document.querySelector("[data-core-step-next]").focus()');
     await press(' ', 'Space', 32);
     await assertAccessibleForm(`${pathname} (advanced fields)`);
   }
@@ -1392,57 +1754,68 @@ async function smokePage(pathname, scope) {
     );
   }
 
-  if (pathname === '/fit-services/') {
-    await evaluate('document.querySelector(".fit-check-directory__tool-link")?.focus()');
-    await press('Enter', 'Enter', 13);
-    assert(
-      (await evaluate('location.hash')) === '#fit-services-tool',
-      `${pathname}: keyboard shortcut did not navigate from the directory to the calculator.`,
-    );
-  }
-  await tabUntil('[data-unit-toggle]', 40);
-  const workspaceInputBeforeToggle =
-    pathname === '/workspace/'
-      ? await evaluate('document.querySelector("#desk-width").value')
-      : null;
-  const unitsBefore = await evaluate(
-    'document.querySelector("[data-unit-toggle]").getAttribute("aria-pressed")',
-  );
-  await press(' ', 'Space', 32);
-  const unitsAfter = await evaluate(
-    'document.querySelector("[data-unit-toggle]").getAttribute("aria-pressed")',
-  );
-  const unitFocus = await evaluate(
-    '({ tag: document.activeElement.tagName, id: document.activeElement.id, pressed: document.activeElement.getAttribute("aria-pressed") })',
-  );
-  const unitBehavior = await evaluate(`(() => {
-    const button = document.querySelector('[data-unit-toggle]');
-    const system = document.documentElement.dataset.unitSystem;
+  await tabUntil('input[data-unit-choice]:checked', 60);
+  const unitInputBefore = await evaluate(`(() => {
+    const input = document.querySelector('#desk-width, #fit-item-width, [data-service-control="length"]');
+    return input?.value ?? null;
+  })()`);
+  const resultBeforeUnits = await evaluate(`(() => {
+    const summary = document.querySelector('.fit-summary');
     return {
-      text: button.textContent.trim(),
-      label: button.getAttribute('aria-label'),
-      pressed: button.getAttribute('aria-pressed'),
-      system,
-      stored: localStorage.getItem('fitwise-unit-system'),
-      note: button.parentElement?.querySelector('.unit-toggle__note')?.textContent.trim(),
-      workspaceInput: document.querySelector('#desk-width')?.value ?? null,
+      origin: summary?.dataset.fitOrigin ?? null,
+      label: summary?.querySelector('[data-field=label]')?.textContent.trim() ?? '',
     };
   })()`);
-  assert(
-    unitsBefore !== unitsAfter,
-    `${pathname}: Space did not toggle units (${unitsBefore} -> ${unitsAfter}; active=${JSON.stringify(unitFocus)}).`,
-  );
-  assert(
-    unitBehavior.pressed === String(unitBehavior.system === 'imperial') &&
-      unitBehavior.stored === unitBehavior.system &&
-      unitBehavior.text ===
-        `Show ${unitBehavior.system === 'imperial' ? 'metric' : 'imperial'} results` &&
-      unitBehavior.label.includes('Entered measurements will not change') &&
-      unitBehavior.note.includes('display only') &&
-      (workspaceInputBeforeToggle === null ||
-        unitBehavior.workspaceInput === workspaceInputBeforeToggle),
-    `${pathname}: unit toggle altered input semantics or omitted its display-only scope: ${JSON.stringify(unitBehavior)}.`,
-  );
+  const unitCycle = { metric: 'imperial', imperial: 'both', both: 'metric' };
+  for (let cycle = 0; cycle < 3; cycle += 1) {
+    const currentUnit = await evaluate('document.documentElement.dataset.unitSystem ?? "metric"');
+    const expectedUnit = unitCycle[currentUnit];
+    await press('ArrowRight', 'ArrowRight', 39);
+    const unitState = await evaluate(`(() => {
+      const metric = document.querySelector('[data-unit="metric"]');
+      const imperial = document.querySelector('[data-unit="imperial"]');
+      const separator = document.querySelector('[data-unit="separator"]');
+      const summary = document.querySelector('.fit-summary');
+      const input = document.querySelector('#desk-width, #fit-item-width, [data-service-control="length"]');
+      return {
+        system: document.documentElement.dataset.unitSystem ?? 'metric',
+        checked: document.querySelector('[data-unit-choice]:checked')?.value ?? '',
+        stored: localStorage.getItem('fitwise-unit-system'),
+        metricVisible: metric ? getComputedStyle(metric).display !== 'none' : false,
+        imperialVisible: imperial ? getComputedStyle(imperial).display !== 'none' : false,
+        separatorVisible: separator ? getComputedStyle(separator).display !== 'none' : false,
+        displays: [metric, imperial, separator].map((element) => element ? getComputedStyle(element).display : null),
+        unitMarkup: metric?.parentElement?.outerHTML ?? '',
+        unitRules: [...document.styleSheets].flatMap((sheet) => {
+          try {
+            return [...sheet.cssRules].map((rule) => rule.cssText).filter((text) => text.includes('data-unit'));
+          } catch {
+            return [];
+          }
+        }),
+        input: input?.value ?? null,
+        origin: summary?.dataset.fitOrigin ?? null,
+        label: summary?.querySelector('[data-field=label]')?.textContent.trim() ?? '',
+      };
+    })()`);
+    const expectedVisibility = {
+      metric: [true, false, false],
+      imperial: [false, true, false],
+      both: [true, true, true],
+    }[expectedUnit];
+    assert(
+      unitState.system === expectedUnit &&
+        unitState.checked === expectedUnit &&
+        unitState.stored === expectedUnit &&
+        [unitState.metricVisible, unitState.imperialVisible, unitState.separatorVisible].every(
+          (value, index) => value === expectedVisibility[index],
+        ) &&
+        unitState.input === unitInputBefore &&
+        unitState.origin === resultBeforeUnits.origin &&
+        unitState.label === resultBeforeUnits.label,
+      `${pathname}: changing result units reinterpreted input or changed result origin: ${JSON.stringify(unitState)}.`,
+    );
+  }
   const dimensionField =
     pathname === '/workspace/'
       ? '#desk-width'
@@ -1479,11 +1852,30 @@ async function smokePage(pathname, scope) {
       currentServiceStep -= 1;
     }
   }
+  const targetCoreStep = await evaluate(
+    `(() => { const section = document.querySelector(${JSON.stringify(dimensionField)})?.closest('[data-core-calculator-step]'); return section ? Number(section.dataset.stepIndex) : null; })()`,
+  );
+  if (typeof targetCoreStep === 'number') {
+    let currentCoreStep = await evaluate(
+      `Number(document.querySelector('[data-core-calculator-step]:not([hidden])')?.dataset.stepIndex ?? 0)`,
+    );
+    while (currentCoreStep < targetCoreStep) {
+      await evaluate('document.querySelector("[data-core-step-next]").focus()');
+      await press(' ', 'Space', 32);
+      currentCoreStep += 1;
+    }
+    while (currentCoreStep > targetCoreStep) {
+      await evaluate('document.querySelector("[data-core-step-previous]").focus()');
+      await press(' ', 'Space', 32);
+      currentCoreStep -= 1;
+    }
+  }
   const dimensionReady = await evaluate(`(() => {
     const field = document.querySelector(${JSON.stringify(dimensionField)});
     const wrapper = field?.closest('[data-service-field]');
     const step = field?.closest('[data-fit-service-step]');
-    return { exists: Boolean(field), wrapperHidden: Boolean(wrapper?.hidden), stepIndex: step?.dataset.stepIndex ?? null, stepHidden: Boolean(step?.hidden), activeIndex: document.querySelector('[data-fit-service-step]:not([hidden])')?.dataset.stepIndex ?? null };
+    const coreStep = field?.closest('[data-core-calculator-step]');
+    return { exists: Boolean(field), wrapperHidden: Boolean(wrapper?.hidden), stepIndex: step?.dataset.stepIndex ?? coreStep?.dataset.stepIndex ?? null, stepHidden: Boolean(step?.hidden ?? coreStep?.hidden), activeIndex: document.querySelector('[data-fit-service-step]:not([hidden]), [data-core-calculator-step]:not([hidden])')?.dataset.stepIndex ?? null };
   })()`);
   assert(
     dimensionReady.exists && !dimensionReady.wrapperHidden && !dimensionReady.stepHidden,
@@ -1500,11 +1892,19 @@ async function smokePage(pathname, scope) {
       const message = document.getElementById(id);
       return message?.getAttribute('role') === 'alert' && message.textContent.trim().length > 0;
     });
-    return { invalid: control.getAttribute('aria-invalid'), messageId: control.getAttribute('aria-describedby'), associatedError };
+    return {
+      invalid: control.getAttribute('aria-invalid'),
+      messageId: control.getAttribute('aria-describedby'),
+      associatedError,
+      value: control.value,
+      name: control.name,
+      hidden: Boolean(control.closest('[hidden]')),
+      activeStep: document.querySelector('[data-core-calculator-step]:not([hidden])')?.dataset.stepIndex,
+    };
   })()`);
   assert(
     errorState.invalid === 'true',
-    `${pathname}: invalid keyboard-entered value was not marked aria-invalid.`,
+    `${pathname}: invalid keyboard-entered value was not marked aria-invalid: ${JSON.stringify(errorState)}.`,
   );
   assert(
     Boolean(errorState.messageId) && errorState.associatedError,
@@ -1638,7 +2038,7 @@ try {
         .map((link) => link.getAttribute('href'))
         .filter((href) => ['/access/', '/tv/', '/home-gym/', '/storage/', '/game-room/', '/vehicle/'].includes(href)),
       gardenFeaturedCards: [...document.querySelectorAll('.hero__card')].filter((card) => card.getAttribute('href') === '/garden/').length,
-      hasAllChecksCard: [...document.querySelectorAll('.hero__card')].some((card) => card.getAttribute('href') === '/fit-services/'),
+      hasAllChecksCard: [...document.querySelectorAll('.hero__card')].some((card) => card.getAttribute('href') === '/fit-checks/'),
       pageWidth: document.documentElement.scrollWidth,
       viewport: innerWidth,
       panelRight: bounds?.right ?? 0,
@@ -1670,7 +2070,7 @@ try {
     'Fit-check navigation did not close with Enter.',
   );
   console.log('Mobile grouped navigation passed keyboard expansion, taxonomy and overflow checks.');
-  await cdp('Page.navigate', { url: new URL('/fit-services/', baseUrl).toString() });
+  await cdp('Page.navigate', { url: new URL('/fit-checks/', baseUrl).toString() });
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if ((await evaluate('document.readyState')) === 'complete') break;
     await delay(50);
@@ -1678,17 +2078,18 @@ try {
   await evaluate('document.activeElement?.blur()');
   await tabUntil('.skip-link', 20);
   await press('Enter', 'Enter', 13);
-  await tabUntil('.fit-check-directory__tool-link', 24);
+  await tabUntil('.fit-check-directory__advanced a', 60);
   await press('Enter', 'Enter', 13);
   const directoryJump = await evaluate(`(() => ({
-    hash: location.hash,
-    targetVisible: document.querySelector('#fit-services-tool')?.getBoundingClientRect().top < innerHeight,
+    pathname: location.pathname,
+    heading: document.querySelector('h1')?.textContent.trim(),
   }))()`);
   assert(
-    directoryJump.hash === '#fit-services-tool' && directoryJump.targetVisible,
-    `Keyboard directory shortcut did not reach the calculator: ${JSON.stringify(directoryJump)}.`,
+    directoryJump.pathname === '/fit-services/' &&
+      directoryJump.heading === 'Advanced all-in-one fit checker',
+    `Keyboard directory link did not open the named advanced checker: ${JSON.stringify(directoryJump)}.`,
   );
-  console.log('Keyboard directory shortcut to the Fit Services calculator passed.');
+  console.log('Keyboard directory link to the advanced all-in-one checker passed.');
   await cdp('Page.navigate', { url: new URL('/workspace/', baseUrl).toString() });
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if ((await evaluate('document.readyState')) === 'complete') break;
@@ -1703,11 +2104,22 @@ try {
     const summary = document.querySelector('[data-measurement-help="desk-width-help"] .measurement-help__details > summary');
     const details = summary?.closest('details');
     const diagram = details?.querySelector('.measurement-help__diagram svg');
-    return { open: Boolean(details?.open), targetHeight: summary?.getBoundingClientRect().height ?? 0, hasDiagram: Boolean(diagram?.getAttribute('aria-labelledby')), hasCaption: Boolean(details?.querySelector('figcaption')?.textContent.trim()) };
+    return {
+      open: Boolean(details?.open),
+      targetHeight: summary?.getBoundingClientRect().height ?? 0,
+      inlineHelp: summary?.querySelector('.measurement-help__summary')?.textContent.trim() ?? '',
+      helpName: summary?.getAttribute('aria-label') ?? '',
+      questionMark: summary?.querySelector('.measurement-help__indicator')?.textContent.trim() ?? '',
+      hasDiagram: Boolean(diagram?.getAttribute('aria-labelledby')),
+      hasCaption: Boolean(details?.querySelector('figcaption')?.textContent.trim()),
+    };
   })()`);
   assert(
     measurementHelp.open &&
       measurementHelp.targetHeight >= 44 &&
+      measurementHelp.inlineHelp.length > 0 &&
+      measurementHelp.helpName.startsWith('Show detailed measuring help:') &&
+      measurementHelp.questionMark === '?' &&
       measurementHelp.hasDiagram &&
       measurementHelp.hasCaption,
     `Measurement help was not keyboard/touch usable: ${JSON.stringify(measurementHelp)}.`,
@@ -1813,16 +2225,125 @@ try {
       if (ready) break;
       await delay(50);
     }
+    await evaluate(
+      'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))',
+    );
+    await delay(50);
+    const globalNavigation = await evaluate(`(() => {
+      const header = document.querySelector('header');
+      const nav = header?.querySelector('[data-global-navigation][aria-label="Primary"]');
+      return {
+        sharedCount: header?.querySelectorAll('[data-global-navigation][aria-label="Primary"]').length ?? 0,
+        legacyPrimaryCount: header?.querySelectorAll('nav[aria-label="Primary"]').length ?? 0,
+        fitGroupCount: header?.querySelectorAll('[data-nav-group="fit-checks"]').length ?? 0,
+        guideGroupCount: header?.querySelectorAll('[data-nav-group="guides"]').length ?? 0,
+        currentItems: header ? [...header.querySelectorAll('[aria-current="page"], [aria-current="location"]')].map((item) => item.textContent.trim()) : [],
+        fitSection: nav?.querySelector('[data-nav-group="fit-checks"] summary')?.textContent.trim() ?? '',
+      };
+    })()`);
+    assert(
+      globalNavigation.sharedCount === 1 &&
+        globalNavigation.legacyPrimaryCount === 1 &&
+        globalNavigation.fitGroupCount === 1 &&
+        globalNavigation.guideGroupCount === 1 &&
+        globalNavigation.currentItems.length > 0,
+      `${route}: expected one shared primary navigation with a current page/section: ${JSON.stringify(globalNavigation)}.`,
+    );
+    const fitPlanDiagram = await evaluate(`(() => {
+      const svg = document.querySelector('[data-fit-service-preview-svg] svg');
+      if (!svg) return null;
+      const labelledBy = (svg.getAttribute('aria-labelledby') ?? '').split(/\\s+/).filter(Boolean);
+      const container = document.querySelector('[data-fit-service-preview-svg]');
+      const textAlternative = document.querySelector('.fit-service-preview__text');
+      return {
+        role: svg.getAttribute('role'),
+        viewBox: svg.getAttribute('viewBox'),
+        labelledBy,
+        titleText: document.getElementById(labelledBy[0])?.textContent.trim() ?? '',
+        descriptionText: document.getElementById(labelledBy[1])?.textContent.trim() ?? '',
+        titleAndDescription: labelledBy.length === 2 && labelledBy.every((id) => document.getElementById(id)?.textContent.trim()),
+        width: svg.getBoundingClientRect().width,
+        containerWidth: container?.getBoundingClientRect().width ?? 0,
+        textAlternativeCollapsed: Boolean(textAlternative && !textAlternative.open),
+        textPlan: document.querySelector('[data-fit-service-preview-ascii]')?.textContent.trim() ?? '',
+      };
+    })()`);
+    if (fitPlanDiagram) {
+      assert(
+        fitPlanDiagram.role === 'img' &&
+          fitPlanDiagram.viewBox?.startsWith('0 0 360 ') &&
+          fitPlanDiagram.titleAndDescription &&
+          fitPlanDiagram.width <= fitPlanDiagram.containerWidth + 1 &&
+          fitPlanDiagram.textAlternativeCollapsed &&
+          fitPlanDiagram.textPlan.length > 0,
+        `${route}: SVG plan is not responsive/accessibly named or lacks a text alternative: ${JSON.stringify(fitPlanDiagram)}.`,
+      );
+    }
     const crawlCheck = await evaluate(`(async () => {
       const canonical = document.querySelector('link[rel="canonical"]')?.href;
       const robots = document.querySelector('meta[name="robots"]')?.content?.toLowerCase() ?? '';
       const breadcrumbs = [...document.querySelectorAll('script[type="application/ld+json"]')].some((node) => {
         try { return JSON.parse(node.textContent)['@type'] === 'BreadcrumbList'; } catch { return node.textContent.includes('BreadcrumbList'); }
       });
+      const breadcrumbNavs = [...document.querySelectorAll('nav[aria-label="Breadcrumb"]')];
+      const visibleBreadcrumb = location.pathname === '/' || (
+        breadcrumbNavs.length === 1 &&
+        breadcrumbNavs[0].querySelectorAll('li').length >= 2 &&
+        Boolean(breadcrumbNavs[0].querySelector('[aria-current="page"]'))
+      );
       const status = await fetch(location.href).then((response) => response.status);
-      return { path: location.pathname, status, canonicalPath: canonical ? new URL(canonical).pathname : null, noindex: robots.includes('noindex'), hasH1: Boolean(document.querySelector('h1')), breadcrumbs: location.pathname === '/' || breadcrumbs, pageWidth: document.documentElement.scrollWidth, viewport: innerWidth, floatingArtifact: /[0-9]+[.][0-9]{8,}/.test(document.body.innerText) };
+      return { path: location.pathname, status, canonicalPath: canonical ? new URL(canonical).pathname : null, noindex: robots.includes('noindex'), hasH1: Boolean(document.querySelector('h1')), breadcrumbs: location.pathname === '/' || breadcrumbs, visibleBreadcrumb, breadcrumbCount: breadcrumbNavs.length, breadcrumbLabels: breadcrumbNavs.map((nav) => nav.textContent.trim()), breadcrumbCurrent: breadcrumbNavs.some((nav) => Boolean(nav.querySelector('[aria-current="page"]'))), pageWidth: document.documentElement.scrollWidth, viewport: innerWidth, floatingArtifact: /[0-9]+[.][0-9]{8,}/.test(document.body.innerText) };
     })()`);
     await assertAccessibleForm(route);
+    await assertKeyboardReachability(route);
+    const preparation = await evaluate(`(() => {
+      const items = [...document.querySelectorAll('[data-before-you-start-items] [data-preparation-type]')];
+      return items.map((item) => ({ type: item.dataset.preparationType, text: item.textContent.trim() }));
+    })()`);
+    if (preparation.length > 0) {
+      assert(
+        preparation.length >= 3 &&
+          preparation.some((item) => item.type === 'required') &&
+          preparation.every(
+            (item) => ['required', 'optional', 'verification'].includes(item.type) && item.text,
+          ),
+        `${route}: Before you start must label required, optional and verification preparation clearly: ${JSON.stringify(preparation)}.`,
+      );
+    }
+    const incompleteResult = await evaluate(`(() => {
+      const summary = document.querySelector('.fit-summary[data-fit-state="needs_information"]');
+      if (!summary) return null;
+      const items = [...summary.querySelectorAll('.fit-summary__missing li')];
+      return {
+        count: items.length,
+        requirements: items.map((item) => ({
+          label: item.querySelector('strong')?.textContent.trim() ?? '',
+          explanation: item.querySelector('p')?.textContent.trim() ?? '',
+          action: item.querySelector('p:last-child')?.textContent.trim() ?? '',
+        })),
+        copy: summary.querySelector('[data-fit-summary-content]')?.textContent ?? '',
+      };
+    })()`);
+    if (incompleteResult) {
+      assert(
+        incompleteResult.count > 0 &&
+          incompleteResult.requirements.every(
+            (requirement) =>
+              requirement.label &&
+              requirement.explanation &&
+              requirement.action.startsWith('Action:'),
+          ) &&
+          !/reviewRequired|needsInformation|\[object Object\]|undefined|result\.\.|assessment\.\./i.test(
+            incompleteResult.copy,
+          ),
+        `${route}: incomplete result did not render structured missing requirements: ${JSON.stringify(incompleteResult)}.`,
+      );
+      console.log(`Structured missing-information result passed: ${route}`);
+    }
+    const serviceStepCount = await evaluate(
+      'document.querySelectorAll("[data-fit-services] [data-fit-service-step]").length',
+    );
+    if (serviceStepCount > 1) await exerciseMobileServiceSteps(route, serviceStepCount);
     assert(
       ready &&
         crawlCheck.status === 200 &&
@@ -1830,12 +2351,79 @@ try {
         !crawlCheck.noindex &&
         crawlCheck.hasH1 &&
         crawlCheck.breadcrumbs &&
+        crawlCheck.visibleBreadcrumb &&
         crawlCheck.pageWidth <= crawlCheck.viewport + 1 &&
         !crawlCheck.floatingArtifact,
       `Indexable route failed live crawler QA: ${JSON.stringify(crawlCheck)}.`,
     );
   }
   console.log(`Live sitemap crawl QA passed for ${sitemapRoutes.length} indexable routes.`);
+  await cdp('Page.navigate', {
+    url: new URL('/storage/what-fits-in-storage/', baseUrl).toString(),
+  });
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    if ((await evaluate('document.readyState')) === 'complete') break;
+    await delay(50);
+  }
+  await evaluate(
+    'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))',
+  );
+  const exactStorageFit = await evaluate(`(() => {
+    const values = {
+      'service-itemWidth': '1000 mm',
+      'service-itemDepth': '1000 mm',
+      'service-itemHeight': '500 mm',
+      'service-spaceWidth': '1000 mm',
+      'service-spaceDepth': '2000 mm',
+      'service-spaceHeight': '600 mm',
+      'service-edgeClearance': '0 mm',
+      'service-itemGap': '0 mm',
+      'service-requestedQuantity': '1',
+      'service-availableAisle': '1000 mm',
+      'service-targetAisle': '900 mm',
+    };
+    for (const [id, value] of Object.entries(values)) {
+      const input = document.getElementById(id);
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    const summary = document.getElementById('fit-services-summary');
+    return {
+      state: summary.dataset.fitState,
+      exact: summary.dataset.fitExact,
+      origin: summary.dataset.fitOrigin,
+      label: summary.querySelector('[data-field=label]').textContent.trim(),
+      warning: summary.querySelector('.fit-summary__tolerance-warning')?.textContent.trim(),
+    };
+  })()`);
+  assert(
+    exactStorageFit.state === 'fits' &&
+      exactStorageFit.exact === 'true' &&
+      exactStorageFit.origin === 'user' &&
+      exactStorageFit.label === 'Your result — Fits exactly' &&
+      exactStorageFit.warning?.includes('No measurement tolerance remains'),
+    `Storage did not show the shared exact-fit result at raw zero margin: ${JSON.stringify(exactStorageFit)}.`,
+  );
+  const positiveStorageFit = await evaluate(`(() => {
+    const input = document.getElementById('service-spaceWidth');
+    input.value = '1000.1 mm';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    const summary = document.getElementById('fit-services-summary');
+    return {
+      state: summary.dataset.fitState,
+      exact: summary.dataset.fitExact,
+      label: summary.querySelector('[data-field=label]').textContent.trim(),
+      warning: summary.querySelector('.fit-summary__tolerance-warning'),
+    };
+  })()`);
+  assert(
+    positiveStorageFit.state === 'fits' &&
+      positiveStorageFit.exact === 'false' &&
+      positiveStorageFit.label === 'Your result — Fits' &&
+      positiveStorageFit.warning === null,
+    `Storage mislabeled a positive margin as exact: ${JSON.stringify(positiveStorageFit)}.`,
+  );
+  console.log('Storage exact-zero and sub-display-positive margins passed shared result copy.');
   console.log('Keyboard QA passed in headless Chrome using real Tab, Enter, and Space key events.');
 } catch (error) {
   console.error(`Keyboard QA failed: ${error.message}`);

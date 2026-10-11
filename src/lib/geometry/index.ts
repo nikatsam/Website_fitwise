@@ -65,4 +65,4 @@ export {
   type FitServiceEvaluation,
   type FitServiceValues,
 } from './fit-services';
-export { getFitServiceMobileSteps, type FitServiceMobileStep } from './fit-service-mobile-steps';
+export { getFitServiceSteps, type FitServiceStep } from './fit-service-steps';

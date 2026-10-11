@@ -5,6 +5,7 @@ import {
   renderFitSummaryContentHtml,
 } from '../../src/lib/fit/summary-copy';
 import type { DimensionDisplayRow } from '../../src/lib/fit/display';
+import type { MissingRequirement } from '../../src/lib/fit/missing-requirement';
 
 const fitRow: DimensionDisplayRow = {
   dimension: 'width',
@@ -16,6 +17,13 @@ const fitRow: DimensionDisplayRow = {
   targetMarginMm: 58,
   hardFit: true,
   recommendedFit: true,
+};
+
+const installationClearanceRequirement: MissingRequirement = {
+  type: 'manual_reference',
+  label: 'Installation clearance source',
+  explanation: 'The exact model installation clearance has not been verified.',
+  action: 'Add the exact model manual or manufacturer specification.',
 };
 
 describe('shared result summary copy', () => {
@@ -100,15 +108,22 @@ describe('shared result summary copy', () => {
 
   it('names missing information and the next thing to supply', () => {
     const summary = getFitSummaryCopy('needs_information', [fitRow], {
-      needsInformation: ['exact model manual reference'],
+      missingRequirements: [installationClearanceRequirement],
       compatibilityChecks: [{ label: 'VESA pattern', compatible: true }],
     });
 
     expect(summary.physicalStatus).toBe('Yes');
     expect(summary.clearanceStatus).toBe('Not confirmed');
     expect(summary.compatibilityStatus).toBe('Needs verification');
-    expect(summary.explanation).toContain('exact model manual reference');
-    expect(summary.nextAction).toContain('exact model manual reference');
+    expect(summary.explanation).not.toContain('exact model manual reference');
+    expect(summary.missingRequirements).toEqual([installationClearanceRequirement]);
+    expect(summary.nextAction).toContain('verification steps listed below');
+
+    const html = renderFitSummaryContentHtml(summary);
+    expect(html).toContain('What is missing');
+    expect(html).toContain('Installation clearance source');
+    expect(html).toContain('The exact model installation clearance has not been verified.');
+    expect(html).toContain('Add the exact model manual or manufacturer specification.');
   });
 
   it('renders semantic facts, dual-unit margins and explicit next action', () => {
@@ -131,7 +146,14 @@ describe('shared result summary copy', () => {
       compatibilityChecks: [{ label: 'VESA pattern.. ', compatible: false }],
     });
     const needsInformation = getFitSummaryCopy('needs_information', [fitRow], {
-      needsInformation: ['Clearance source..', '   '],
+      missingRequirements: [
+        {
+          ...installationClearanceRequirement,
+          label: 'Clearance source..',
+          explanation: 'Clearance source is not verified..',
+          action: 'Provide exact source..',
+        },
+      ],
     });
 
     expect(tight.bindingLabel).toBe('Desk width');
@@ -139,8 +161,22 @@ describe('shared result summary copy', () => {
     expect(tight.explanation).not.toMatch(/\.\.|\s,/);
     expect(compatibility.explanation).toContain('VESA pattern.');
     expect(compatibility.explanation).not.toContain('..');
-    expect(needsInformation.explanation).toBe('Fit is not confirmed. Supply Clearance source.');
-    expect(needsInformation.nextAction).toBe('Provide Clearance source, then run the check again.');
+    expect(needsInformation.missingRequirements[0]?.label).toBe('Clearance source');
+    expect(needsInformation.missingRequirements[0]?.explanation).toBe(
+      'Clearance source is not verified.',
+    );
+    expect(needsInformation.missingRequirements[0]?.action).toBe('Provide exact source.');
+    expect(needsInformation.explanation).not.toMatch(/\.\.|result\.|assessment\./);
+    expect(needsInformation.nextAction).toMatch(/run the check again\.$/);
+  });
+
+  it('provides safe structured fallback details when a needs-information state has no requirements', () => {
+    const summary = getFitSummaryCopy('needs_information', [fitRow]);
+    expect(summary.missingRequirements).toHaveLength(1);
+    expect(summary.missingRequirements[0]?.label).toBe(
+      'Required measurements or exact model source',
+    );
+    expect(renderFitSummaryContentHtml(summary)).toContain('What is missing');
   });
 
   it('terminates each state explanation and action with one sentence mark', () => {
@@ -157,7 +193,7 @@ describe('shared result summary copy', () => {
         },
       ]),
       getFitSummaryCopy('needs_information', [fitRow], {
-        needsInformation: ['source reference.'],
+        missingRequirements: [installationClearanceRequirement],
       }),
     ];
     for (const summary of cases) {

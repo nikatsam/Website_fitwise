@@ -16,23 +16,22 @@ export const FIT_STATE_BADGE_COPY: Record<FitState, FitStateBadgeCopy> = {
   fits: {
     icon: '✓',
     label: 'Fits',
-    meaning: 'All hard dimensions and every selected or verified clearance target pass.',
+    meaning: 'Hard physical requirements and selected or verified targets pass.',
   },
   tight: {
     icon: '△',
     label: 'Tight',
-    meaning: 'The hard physical fit passes, but one or more selected clearance targets are short.',
+    meaning: 'Physical fit passes, but one or more selected targets do not.',
   },
   does_not_fit: {
     icon: '✕',
     label: 'Does not fit',
-    meaning:
-      'At least one hard physical or enabled access requirement exceeds the available space.',
+    meaning: 'At least one hard physical or access requirement fails.',
   },
   needs_information: {
     icon: '?',
     label: 'Needs information',
     meaning:
-      'A required measurement, model/manual reference or verification detail is missing, so fit cannot be confirmed.',
+      'Required measurement, source, model, manual or compatibility data has not been verified.',
   },
 };

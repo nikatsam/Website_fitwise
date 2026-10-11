@@ -288,6 +288,13 @@
     "renderer": "static"
   },
   {
+    "pageIntentId": "pi-feature-fit-checks-directory",
+    "route": "/fit-checks/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
     "pageIntentId": "pi-feature-garden-hub",
     "route": "/garden/",
     "intentStatus": "published",

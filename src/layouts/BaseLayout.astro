@@ -96,15 +96,15 @@ const ogLocale = language.includes('-') ? language.replace('-', '_') : undefined
         }
         try {
           const storedUnit = localStorage.getItem('fitwise-unit-system');
-          if (storedUnit === 'imperial') {
-            document.documentElement.setAttribute('data-unit-system', 'imperial');
+          if (storedUnit === 'metric' || storedUnit === 'imperial' || storedUnit === 'both') {
+            document.documentElement.setAttribute('data-unit-system', storedUnit);
           }
         } catch {
           /* localStorage unavailable; default metric display applies. */
         }
       })();
     </script>
-    <style>
+    <style is:global>
       /*
         Critical, render-blocking fallback so background/text color are correct
         on first paint even before tokens.css/global.css finish loading (Astro
@@ -130,8 +130,11 @@ const ogLocale = language.includes('-') ? language.replace('-', '_') : undefined
       html[data-theme='dark'] .brand__logo--dark {
         display: block;
       }
-      /* Same early-paint guarantee for dual-unit values (src/components/fit/UnitValue.astro). */
+      /* Same early-paint guarantee for metric/imperial/both values (UnitValue.astro). */
       [data-unit='imperial'] {
+        display: none;
+      }
+      [data-unit='separator'] {
         display: none;
       }
       html[data-unit-system='imperial'] [data-unit='imperial'] {
@@ -139,6 +142,10 @@ const ogLocale = language.includes('-') ? language.replace('-', '_') : undefined
       }
       html[data-unit-system='imperial'] [data-unit='metric'] {
         display: none;
+      }
+      html[data-unit-system='both'] [data-unit='imperial'],
+      html[data-unit-system='both'] [data-unit='separator'] {
+        display: inline;
       }
     </style>
   </head>

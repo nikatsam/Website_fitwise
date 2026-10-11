@@ -115,7 +115,7 @@ describe('toDimensionDisplayRows', () => {
       icon: '?',
       label: 'Needs information',
       meaning:
-        'A required measurement, model/manual reference or verification detail is missing, so fit cannot be confirmed.',
+        'Required measurement, source, model, manual or compatibility data has not been verified.',
     });
   });
 
@@ -129,5 +129,16 @@ describe('toDimensionDisplayRows', () => {
     expect(Object.values(FIT_STATE_BADGE_COPY).every((state) => state.meaning.length > 20)).toBe(
       true,
     );
+    expect(
+      Object.fromEntries(
+        Object.entries(FIT_STATE_BADGE_COPY).map(([state, copy]) => [state, copy.meaning]),
+      ),
+    ).toEqual({
+      fits: 'Hard physical requirements and selected or verified targets pass.',
+      tight: 'Physical fit passes, but one or more selected targets do not.',
+      does_not_fit: 'At least one hard physical or access requirement fails.',
+      needs_information:
+        'Required measurement, source, model, manual or compatibility data has not been verified.',
+    });
   });
 });

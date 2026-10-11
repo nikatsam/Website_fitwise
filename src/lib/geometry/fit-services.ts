@@ -1,4 +1,4 @@
-import type { DimensionCheck, FitState } from '../fit';
+import type { DimensionCheck, FitState, MissingRequirement } from '../fit';
 import { evaluateFit } from '../fit';
 import { buildDiningFitPlan } from './dining';
 import { buildObjectFitPlan } from './object-fit';
@@ -619,7 +619,7 @@ export interface FitServicePlan {
   capacityRequested?: number;
   extra?: string;
   candidates?: FitServiceCandidate[];
-  reviewRequired?: string[];
+  missingRequirements?: MissingRequirement[];
 }
 
 export interface FitServiceEvaluation {
@@ -730,11 +730,17 @@ export function buildFitServicePlan(
       const referenceVerified =
         clearanceReference.trim().length > 0 &&
         clearanceReference.trim().toLowerCase() !== 'not entered';
-      const reviewRequired =
+      const missingRequirements: MissingRequirement[] =
         clearanceSource === 'unknown' ||
         (['exact-manual', 'manufacturer-page'].includes(clearanceSource) && !referenceVerified)
           ? [
-              'Installation clearance source/reference is not verified; physical fit is only a partial result.',
+              {
+                type: 'manual_reference',
+                label: 'Installation clearance source',
+                explanation:
+                  'The model-specific installation clearance has not been verified against an exact source.',
+                action: 'Add the exact model manual or manufacturer specification.',
+              },
             ]
           : [];
       return {
@@ -772,7 +778,7 @@ export function buildFitServicePlan(
             : []),
           'This mode does not model hoses, plugs, doors, packaging or delivery route.',
         ],
-        reviewRequired,
+        missingRequirements,
       };
     }
     case 'delivery-route': {
@@ -906,12 +912,18 @@ export function buildFitServicePlan(
             : []),
           'The result does not model arm reach, joint collision, edge clamp shape or wall clearance.',
         ],
-        reviewRequired:
+        missingRequirements:
           compatibilitySource === 'unknown' ||
           (['exact-manual', 'manufacturer-page'].includes(compatibilitySource) &&
             !compatibilityReferenceProvided)
             ? [
-                'VESA pattern and arm load must be verified against the exact monitor and arm data before compatibility is confirmed.',
+                {
+                  type: 'compatibility_data',
+                  label: 'Monitor and arm compatibility data',
+                  explanation:
+                    'The monitor VESA pattern and weight have not been verified against the arm pattern and load rating.',
+                  action: 'Check the exact monitor and arm manuals or manufacturer specifications.',
+                },
               ]
             : [],
       };
@@ -1020,11 +1032,20 @@ export function buildFitServicePlan(
                 ]
               : []),
           ],
-          reviewRequired:
+          missingRequirements:
             mountDataSource === 'unknown' ||
             (['exact-manual', 'manufacturer-page'].includes(mountDataSource) &&
               !mountReferenceProvided)
-              ? ['VESA and mount-load values are not verified against exact product data.']
+              ? [
+                  {
+                    type: 'compatibility_data',
+                    label: 'TV and mount compatibility data',
+                    explanation:
+                      'The VESA pattern and mount load rating have not been verified against exact TV and mount specifications.',
+                    action:
+                      'Add the exact TV and mount manual or manufacturer specification references.',
+                  },
+                ]
               : [],
         };
       }
@@ -1489,11 +1510,17 @@ export function buildFitServicePlan(
             ? ['Clearances are personal targets, not manufacturer-verified service requirements.']
             : []),
         ],
-        reviewRequired:
+        missingRequirements:
           source === 'unknown' ||
           (['exact-manual', 'manufacturer-page'].includes(source) && !referenceProvided)
             ? [
-                'Hot-tub service and cover instructions are not verified against an exact model source.',
+                {
+                  type: 'manual_reference',
+                  label: 'Hot-tub service and cover instructions',
+                  explanation:
+                    'Service-panel and cover-removal clearances have not been verified against the exact tub model.',
+                  action: 'Add the exact hot-tub manual or manufacturer specification reference.',
+                },
               ]
             : [],
       };
@@ -1587,10 +1614,16 @@ export function buildFitServicePlan(
           'The equipment use zone is safety-sensitive and must be copied from the exact manufacturer manual; Fitwise supplies no generic use-zone dimensions.',
           'A physical footprint fit does not establish safe fall zones, impact surface, anchors, overhead hazards or supervision requirements.',
         ],
-        reviewRequired: useZoneVerified
+        missingRequirements: useZoneVerified
           ? []
           : [
-              'Manufacturer use-zone dimensions and a manual/model reference are required before treating this as a complete play-space assessment.',
+              {
+                type: 'safety_use_zone',
+                label: 'Manufacturer play-equipment use zone',
+                explanation:
+                  'The footprint is separate from the manufacturer-required use zone; its dimensions and exact manual/model source are not verified.',
+                action: 'Enter all four use-zone dimensions and the exact manual/model reference.',
+              },
             ],
       };
     }
@@ -1603,7 +1636,7 @@ export function evaluateFitServicePlan(plan: FitServicePlan): FitServiceEvaluati
   const result = evaluateFit(plan.checks, plan.assumptions);
   const state: FitState = !result.hardFit
     ? 'does_not_fit'
-    : plan.reviewRequired && plan.reviewRequired.length > 0
+    : plan.missingRequirements && plan.missingRequirements.length > 0
       ? 'needs_information'
       : plan.compatibility.some((check) => !check.compatible)
         ? 'does_not_fit'

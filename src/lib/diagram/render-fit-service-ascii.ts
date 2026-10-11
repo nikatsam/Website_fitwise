@@ -1,5 +1,5 @@
 import type { FitServiceMode, FitServiceValues } from '../geometry/fit-services';
-import { formatMeasurement } from '../units';
+import { formatMeasurement, type MeasurementDisplay } from '../units';
 
 interface FitServiceScene {
   spaceLabel: string;
@@ -26,8 +26,8 @@ const numberValue = (values: FitServiceValues, key: string): number => {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0;
 };
 
-const dimension = (width: number, depth: number) =>
-  `${formatMeasurement(width)} x ${formatMeasurement(depth)}`;
+const dimension = (width: number, depth: number, display: MeasurementDisplay) =>
+  `${formatMeasurement(width, display)} x ${formatMeasurement(depth, display)}`;
 
 function drawRect(
   grid: string[][],
@@ -60,7 +60,11 @@ function drawRect(
   put(right, bottom, corners === '.' || corners === '#' ? corners : '+');
 }
 
-function sceneFor(mode: FitServiceMode, values: FitServiceValues): FitServiceScene {
+function sceneFor(
+  mode: FitServiceMode,
+  values: FitServiceValues,
+  display: MeasurementDisplay,
+): FitServiceScene {
   const v = (key: string) => numberValue(values, key);
   switch (mode) {
     case 'appliance-install':
@@ -136,7 +140,7 @@ function sceneFor(mode: FitServiceMode, values: FitServiceValues): FitServiceSce
         zoneWidth: v('itemWidth') + 2 * v('edgeClearance'),
         zoneDepth: v('itemDepth') + 2 * v('edgeClearance'),
         zoneLabel: 'EDGE ALLOWANCE',
-        note: `Aisle target: ${formatMeasurement(v('targetAisle'))}. Grid capacity is listed in the results.`,
+        note: `Aisle target: ${formatMeasurement(v('targetAisle'), display)}. Grid capacity is listed in the results.`,
       };
     case 'pool-room':
       return {
@@ -162,7 +166,7 @@ function sceneFor(mode: FitServiceMode, values: FitServiceValues): FitServiceSce
         zoneWidth: doorAccess,
         zoneDepth: v('vehicleLength') + v('frontClearance') + v('rearClearance'),
         zoneLabel: 'OPEN-DOOR / PARKING ZONE',
-        note: `Door opening: ${formatMeasurement(v('garageOpeningWidth'))} wide. Approach and turning path are not shown.`,
+        note: `Door opening: ${formatMeasurement(v('garageOpeningWidth'), display)} wide. Approach and turning path are not shown.`,
       };
     }
     case 'garden-structure': {
@@ -213,7 +217,7 @@ function sceneFor(mode: FitServiceMode, values: FitServiceValues): FitServiceSce
         zoneWidth: v('itemWidth') + v('itemGap'),
         zoneDepth: v('itemDepth') + v('itemGap'),
         zoneLabel: 'ITEM FOOTPRINT',
-        note: `Aisle target: ${formatMeasurement(v('aisleTarget'))}. Single-layer capacity is listed in the results.`,
+        note: `Aisle target: ${formatMeasurement(v('aisleTarget'), display)}. Single-layer capacity is listed in the results.`,
       };
     case 'garden-greenhouse':
       return {
@@ -226,7 +230,7 @@ function sceneFor(mode: FitServiceMode, values: FitServiceValues): FitServiceSce
         zoneWidth: v('greenhouseWidth') + 2 * (v('roofOverhangSide') + v('maintenanceSide')),
         zoneDepth: v('greenhouseDepth') + 2 * (v('roofOverhangEnd') + v('maintenanceEnd')),
         zoneLabel: 'ROOF / MAINTENANCE ZONE',
-        note: `Inside aisle target: ${formatMeasurement(v('centralAisleTarget'))}. Staging layout is summarized in the results.`,
+        note: `Inside aisle target: ${formatMeasurement(v('centralAisleTarget'), display)}. Staging layout is summarized in the results.`,
       };
     case 'garden-hot-tub':
       return {
@@ -272,7 +276,10 @@ function sceneFor(mode: FitServiceMode, values: FitServiceValues): FitServiceSce
   }
 }
 
-function renderRoutePreview(values: FitServiceValues): FitServiceAsciiPreview {
+function renderRoutePreview(
+  values: FitServiceValues,
+  display: MeasurementDisplay,
+): FitServiceAsciiPreview {
   const points = [
     ['FRONT DOOR', 'frontDoorWidth'],
     ['HALL', 'hallWidth'],
@@ -281,7 +288,7 @@ function renderRoutePreview(values: FitServiceValues): FitServiceAsciiPreview {
     ['DEST. DOOR', 'destinationDoorWidth'],
   ] as const;
   const segments = points.map(([label, key]) => {
-    const width = formatMeasurement(numberValue(values, key));
+    const width = formatMeasurement(numberValue(values, key), display);
     return `${label}: ${width}`;
   });
   const art = [
@@ -306,10 +313,11 @@ function renderRoutePreview(values: FitServiceValues): FitServiceAsciiPreview {
 export function renderFitServiceAsciiPreview(
   mode: FitServiceMode,
   values: FitServiceValues,
+  display: MeasurementDisplay = 'metric',
 ): FitServiceAsciiPreview {
-  if (mode === 'delivery-route') return renderRoutePreview(values);
+  if (mode === 'delivery-route') return renderRoutePreview(values, display);
 
-  const scene = sceneFor(mode, values);
+  const scene = sceneFor(mode, values, display);
   const targetWidth = Math.max(scene.zoneWidth, scene.objectWidth);
   const targetDepth = Math.max(scene.zoneDepth, scene.objectDepth);
   const scaleWidth = 26 / Math.max(scene.spaceWidth, targetWidth, 1);
@@ -347,13 +355,13 @@ export function renderFitServiceAsciiPreview(
     `${viewLabel} (SCHEMATIC, NOT TO SCALE)`,
     `SPACE: ${scene.spaceLabel}`,
     ...grid.map((row) => row.join('').replace(/\s+$/, '')),
-    `OBJECT: ${scene.objectLabel} (${dimension(scene.objectWidth, scene.objectDepth)})`,
+    `OBJECT: ${scene.objectLabel} (${dimension(scene.objectWidth, scene.objectDepth, display)})`,
     `ZONE: . . . ${scene.zoneLabel}`,
   ].join('\n');
   const summary = [
-    `${scene.spaceLabel}: ${dimension(scene.spaceWidth, scene.spaceDepth)}`,
-    `${scene.objectLabel}: ${dimension(scene.objectWidth, scene.objectDepth)}`,
-    `${scene.zoneLabel}: ${dimension(targetWidth, targetDepth)}`,
+    `${scene.spaceLabel}: ${dimension(scene.spaceWidth, scene.spaceDepth, display)}`,
+    `${scene.objectLabel}: ${dimension(scene.objectWidth, scene.objectDepth, display)}`,
+    `${scene.zoneLabel}: ${dimension(targetWidth, targetDepth, display)}`,
     scene.note,
   ]
     .filter(Boolean)

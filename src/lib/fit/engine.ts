@@ -42,10 +42,17 @@ export interface FitResult {
   assumptions: string[];
 }
 
+const NUMERICAL_MARGIN_TOLERANCE_MM = 0.01;
+
+function normalizeFloatingPointMargin(marginMm: number): number {
+  // This removes sub-hundredth-mm arithmetic noise only; it is not a measurement allowance.
+  return Math.abs(marginMm) <= NUMERICAL_MARGIN_TOLERANCE_MM ? 0 : marginMm;
+}
+
 function evaluateDimension(check: DimensionCheck): DimensionResult {
   const recommendedMm = check.recommendedMm ?? check.minimumMm;
-  const marginMm = check.availableMm - check.minimumMm;
-  const recommendedMarginMm = check.availableMm - recommendedMm;
+  const marginMm = normalizeFloatingPointMargin(check.availableMm - check.minimumMm);
+  const recommendedMarginMm = normalizeFloatingPointMargin(check.availableMm - recommendedMm);
 
   return {
     dimension: check.dimension,

@@ -1,6 +1,7 @@
 ---
 import AssumptionList from '../fit/AssumptionList.astro';
 import CalculatorStep from '../fit/CalculatorStep.astro';
+import ExampleDataNotice from '../fit/ExampleDataNotice.astro';
 import DimensionTable from '../fit/DimensionTable.astro';
 import FitSummary from '../fit/FitSummary.astro';
 import MeasurementFieldHelp from '../fit/MeasurementFieldHelp.astro';
@@ -47,12 +48,14 @@ const initialOrientation =
 const initialReport = `Best floor orientation: ${initialOrientation}. Maximum single-layer grid estimate: ${sample.quantityCapacity} item(s).`;
 ---
 
-<div class="universal-fitcheck calculator-split" data-universal-fitcheck>
-  <form class="universal-fitcheck__form" data-universal-fitcheck-form novalidate>
-    <p class="fit-example-notice" data-fit-example-notice role="note">
-      <strong>Example setup.</strong> These starter dimensions are illustrative. Enter the item's
-      measured outer size and your actual space before relying on the fit review.
-    </p>
+<div class="universal-fitcheck calculator-split" data-universal-fitcheck data-fit-result-scope>
+  <form
+    class="universal-fitcheck__form"
+    data-universal-fitcheck-form
+    data-core-progressive-form
+    novalidate
+  >
+    <ExampleDataNotice note="Enter the item's measured outside dimensions and your actual space before relying on the fit result." />
     <CalculatorStep
       step={1}
       title="What are you fitting?"
@@ -181,10 +184,6 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
           />
         </div>
       </div>
-      <p class="field__note">
-        Accepted units: mm, cm, m, in, ft, or ft/in. You can separate the number and unit with a
-        space; a bare number defaults to mm.
-      </p>
       <div class="field">
         <label for="fit-clearance">Extra planning space on each side (optional)</label>
         <input
@@ -220,101 +219,115 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
     </CalculatorStep>
 
     <details class="universal-fitcheck__optional">
-      <summary>Optional route and quantity checks</summary>
+      <summary>Advanced options · Optional</summary>
       <CalculatorStep
         step={3}
-        title="Extra space and access"
-        description="Add side allowances, a delivery route, or a single-layer quantity estimate."
+        title="Advanced options"
+        description="Check a delivery route or estimate a single-layer arrangement for identical items."
       >
-        <label class="check-option">
-          <input type="checkbox" id="fit-check-route" name="checkRoute" />
-          Check a doorway and corridor for upright passage
-        </label>
-        <div class="field-grid" data-fit-route-fields hidden>
-          <div class="field">
-            <label for="fit-door-width">Clear doorway width</label>
-            <input
-              id="fit-door-width"
-              name="doorwayWidth"
-              type="text"
-              inputmode="text"
-              value="90 cm"
-              aria-describedby="fit-door-width-error fit-door-width-help"
-            />
-            <span class="field__error" id="fit-door-width-error" role="alert"></span>
-            <MeasurementFieldHelp
-              calculator="universal"
-              fieldId="fit-door-width"
-              id="fit-door-width-help"
-            />
+        <section
+          class="advanced-options__group"
+          data-advanced-options-group
+          aria-labelledby="fit-route-options-heading"
+        >
+          <h3 id="fit-route-options-heading">Check a delivery route</h3>
+          <label class="check-option">
+            <input type="checkbox" id="fit-check-route" name="checkRoute" />
+            Check a doorway and corridor for upright passage
+          </label>
+          <div class="field-grid" data-fit-route-fields hidden>
+            <div class="field">
+              <label for="fit-door-width">Clear doorway width</label>
+              <input
+                id="fit-door-width"
+                name="doorwayWidth"
+                type="text"
+                inputmode="text"
+                value="90 cm"
+                aria-describedby="fit-door-width-error fit-door-width-help"
+              />
+              <span class="field__error" id="fit-door-width-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="universal"
+                fieldId="fit-door-width"
+                id="fit-door-width-help"
+              />
+            </div>
+            <div class="field">
+              <label for="fit-door-height">Clear doorway height</label>
+              <input
+                id="fit-door-height"
+                name="doorwayHeight"
+                type="text"
+                inputmode="text"
+                value="2 m"
+                aria-describedby="fit-door-height-error fit-door-height-help"
+              />
+              <span class="field__error" id="fit-door-height-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="universal"
+                fieldId="fit-door-height"
+                id="fit-door-height-help"
+              />
+            </div>
+            <div class="field">
+              <label for="fit-corridor-width">Narrowest corridor width</label>
+              <input
+                id="fit-corridor-width"
+                name="corridorWidth"
+                type="text"
+                inputmode="text"
+                value="1 m"
+                aria-describedby="fit-corridor-width-error fit-corridor-width-help"
+              />
+              <span class="field__error" id="fit-corridor-width-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="universal"
+                fieldId="fit-corridor-width"
+                id="fit-corridor-width-help"
+              />
+            </div>
           </div>
-          <div class="field">
-            <label for="fit-door-height">Clear doorway height</label>
-            <input
-              id="fit-door-height"
-              name="doorwayHeight"
-              type="text"
-              inputmode="text"
-              value="2 m"
-              aria-describedby="fit-door-height-error fit-door-height-help"
-            />
-            <span class="field__error" id="fit-door-height-error" role="alert"></span>
-            <MeasurementFieldHelp
-              calculator="universal"
-              fieldId="fit-door-height"
-              id="fit-door-height-help"
-            />
+        </section>
+        <section
+          class="advanced-options__group"
+          data-advanced-options-group
+          aria-labelledby="fit-quantity-options-heading"
+        >
+          <h3 id="fit-quantity-options-heading">Estimate a single-layer item arrangement</h3>
+          <div class="field-grid">
+            <div class="field">
+              <label for="fit-quantity">Identical items to place</label>
+              <input
+                id="fit-quantity"
+                name="quantity"
+                type="number"
+                min="1"
+                step="1"
+                value={DEFAULTS.requestedQuantity}
+                aria-describedby="fit-quantity-error"
+              />
+              <span class="field__error" id="fit-quantity-error" role="alert"></span>
+            </div>
+            <div class="field">
+              <label for="fit-item-gap">Gap between items (optional)</label>
+              <input
+                id="fit-item-gap"
+                name="itemGap"
+                type="text"
+                inputmode="text"
+                value="0 mm"
+                aria-describedby="fit-item-gap-error fit-item-gap-help"
+              />
+              <span class="field__error" id="fit-item-gap-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="universal"
+                fieldId="fit-item-gap"
+                id="fit-item-gap-help"
+              />
+            </div>
           </div>
-          <div class="field">
-            <label for="fit-corridor-width">Narrowest corridor width</label>
-            <input
-              id="fit-corridor-width"
-              name="corridorWidth"
-              type="text"
-              inputmode="text"
-              value="1 m"
-              aria-describedby="fit-corridor-width-error fit-corridor-width-help"
-            />
-            <span class="field__error" id="fit-corridor-width-error" role="alert"></span>
-            <MeasurementFieldHelp
-              calculator="universal"
-              fieldId="fit-corridor-width"
-              id="fit-corridor-width-help"
-            />
-          </div>
-        </div>
-        <div class="field-grid">
-          <div class="field">
-            <label for="fit-quantity">Identical items to place</label>
-            <input
-              id="fit-quantity"
-              name="quantity"
-              type="number"
-              min="1"
-              step="1"
-              value={DEFAULTS.requestedQuantity}
-              aria-describedby="fit-quantity-error"
-            />
-            <span class="field__error" id="fit-quantity-error" role="alert"></span>
-          </div>
-          <div class="field">
-            <label for="fit-item-gap">Gap between items (optional)</label>
-            <input
-              id="fit-item-gap"
-              name="itemGap"
-              type="text"
-              inputmode="text"
-              value="0 mm"
-              aria-describedby="fit-item-gap-error fit-item-gap-help"
-            />
-            <span class="field__error" id="fit-item-gap-error" role="alert"></span>
-            <MeasurementFieldHelp
-              calculator="universal"
-              fieldId="fit-item-gap"
-              id="fit-item-gap-help"
-            />
-          </div>
-        </div>
+        </section>
       </CalculatorStep>
     </details>
 
@@ -368,15 +381,6 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface-raised);
-  }
-
-  .fit-example-notice {
-    margin: 0;
-    padding: var(--space-3);
-    border-left: 0.2rem solid var(--color-accent-1);
-    background: var(--color-surface);
-    font-size: var(--fs-sm);
-    line-height: 1.5;
   }
 
   .universal-fitcheck__optional > summary {

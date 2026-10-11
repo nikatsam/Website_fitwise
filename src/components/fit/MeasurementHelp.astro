@@ -8,27 +8,45 @@ import {
 interface Props {
   id: string;
   label: string;
-  summary: string;
-  detail?: string;
+  summaryHelp: string;
+  measureHelp: string;
   example?: string;
+  warning?: string;
+  sourceRequirement?: string;
   diagram?: MeasurementDiagram;
 }
 
-const { id, label, summary, detail, example, diagram } = Astro.props;
+const { id, label, summaryHelp, measureHelp, example, warning, sourceRequirement, diagram } =
+  Astro.props;
 const diagramCopy = diagram ? MEASUREMENT_DIAGRAM_COPY[diagram] : null;
 ---
 
 <div class="measurement-help" data-measurement-help={id}>
-  <p class="measurement-help__summary" id={id}>
-    {summary}
-  </p>
   <details class="measurement-help__details">
-    <summary>{label}</summary>
+    <summary aria-label={`Show detailed measuring help: ${label}`}>
+      <span class="measurement-help__summary" id={id}>
+        {summaryHelp}
+      </span>
+      <span class="measurement-help__indicator" aria-hidden="true">
+        ?
+      </span>
+    </summary>
     <div class="measurement-help__content">
-      {detail && <p>{detail}</p>}
+      <h3>{label}</h3>
+      <p>{measureHelp}</p>
       {example && (
         <p class="measurement-help__example">
           <strong>Example:</strong> {example}
+        </p>
+      )}
+      {warning && (
+        <p class="measurement-help__warning">
+          <strong>Check:</strong> {warning}
+        </p>
+      )}
+      {sourceRequirement && (
+        <p class="measurement-help__source">
+          <strong>Source requirement:</strong> {sourceRequirement}
         </p>
       )}
       <slot />

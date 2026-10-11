@@ -136,4 +136,43 @@ describe('evaluateFit — equality and ±1 mm boundaries', () => {
     ]);
     expect(result.state).toBe('fits');
   });
+
+  it('normalizes only floating-point noise at zero margin, not meaningful shortfalls', () => {
+    const availableMm = 1300 - 0.005;
+    const roundingNoise = evaluateFit([
+      { dimension: 'width', minimumMm: 1200, recommendedMm: 1300, availableMm },
+    ]);
+    expect(roundingNoise.state).toBe('fits');
+    expect(roundingNoise.dimensions[0]?.recommendedMarginMm).toBe(0);
+    expect(roundingNoise.marginsMm.width).toBeCloseTo(99.995, 10);
+
+    const positiveNoise = evaluateFit([
+      {
+        dimension: 'width',
+        minimumMm: 1200,
+        recommendedMm: 1300,
+        availableMm: 1300 + 0.005,
+      },
+    ]);
+    expect(positiveNoise.state).toBe('fits');
+    expect(positiveNoise.dimensions[0]?.recommendedMarginMm).toBe(0);
+
+    const hardNoise = evaluateFit([
+      {
+        dimension: 'width',
+        minimumMm: 1300,
+        recommendedMm: 1300,
+        availableMm: 1300 - 0.005,
+      },
+    ]);
+    expect(hardNoise.state).toBe('fits');
+    expect(hardNoise.dimensions[0]?.hardFit).toBe(true);
+    expect(hardNoise.marginsMm.width).toBe(0);
+
+    const actualShortfall = evaluateFit([
+      { dimension: 'width', minimumMm: 1200, recommendedMm: 1300, availableMm: 1300 - 0.02 },
+    ]);
+    expect(actualShortfall.state).toBe('tight');
+    expect(actualShortfall.dimensions[0]?.recommendedMarginMm).toBeLessThan(0);
+  });
 });

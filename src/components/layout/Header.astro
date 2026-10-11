@@ -1,17 +1,32 @@
 ---
 import {
+  ADVANCED_FIT_CHECK_LINK,
   ALL_FIT_CHECKS_LINK,
   FIT_CHECK_GROUPS,
   GUIDE_LINKS,
   UNIVERSAL_FIT_LINK,
+  getNavigationCurrent,
 } from '../../data/navigation';
 
 const currentPath = new URL(Astro.request.url).pathname;
+const fitCheckLinks = FIT_CHECK_GROUPS.flatMap((group) => [
+  ...group.links,
+  ...(group.specialistGroups?.flatMap((specialistGroup) => specialistGroup.links) ?? []),
+]);
+const activeFitCheck =
+  (currentPath === ADVANCED_FIT_CHECK_LINK.href ? ADVANCED_FIT_CHECK_LINK : undefined) ??
+  fitCheckLinks.find((link) => getNavigationCurrent(currentPath, link.href) === 'page') ??
+  fitCheckLinks.find((link) => getNavigationCurrent(currentPath, link.href) === 'location');
 ---
 
 <header class="site-header">
   <div class="wrapper site-header__inner">
-    <a href="/" class="brand" aria-label="Fitwise.stream home">
+    <a
+      href="/"
+      class="brand"
+      aria-label="Fitwise.stream home"
+      aria-current={currentPath === '/' ? 'page' : undefined}
+    >
       <img
         src="/assets/images/logo.svg"
         alt=""
@@ -28,19 +43,24 @@ const currentPath = new URL(Astro.request.url).pathname;
       />
     </a>
 
-    <nav class="site-nav" aria-label="Primary">
+    <nav class="site-nav" aria-label="Primary" data-global-navigation>
       <ul class="site-nav__list">
         <li>
           <a
             href={UNIVERSAL_FIT_LINK.href}
-            aria-current={currentPath === UNIVERSAL_FIT_LINK.href ? 'page' : undefined}
+            aria-current={getNavigationCurrent(currentPath, UNIVERSAL_FIT_LINK.href)}
           >
             {UNIVERSAL_FIT_LINK.label}
           </a>
         </li>
         <li class="site-nav__group">
           <details data-nav-group="fit-checks">
-            <summary>Fit checks</summary>
+            <summary>
+              Fit checks
+              {activeFitCheck && (
+                <span class="site-nav__current">Current: {activeFitCheck.label}</span>
+              )}
+            </summary>
             <div class="site-nav__mega">
               {FIT_CHECK_GROUPS.map((group) => (
                 <section class="site-nav__mega-group">
@@ -50,7 +70,7 @@ const currentPath = new URL(Astro.request.url).pathname;
                       <li>
                         <a
                           href={item.href}
-                          aria-current={currentPath === item.href ? 'page' : undefined}
+                          aria-current={getNavigationCurrent(currentPath, item.href)}
                         >
                           {item.label}
                         </a>
@@ -65,7 +85,11 @@ const currentPath = new URL(Astro.request.url).pathname;
         <li>
           <a
             href={ALL_FIT_CHECKS_LINK.href}
-            aria-current={currentPath === ALL_FIT_CHECKS_LINK.href ? 'page' : undefined}
+            aria-current={getNavigationCurrent(
+              currentPath,
+              ALL_FIT_CHECKS_LINK.href,
+              ALL_FIT_CHECKS_LINK.activeRoutes,
+            )}
           >
             {ALL_FIT_CHECKS_LINK.label}
           </a>
@@ -76,7 +100,7 @@ const currentPath = new URL(Astro.request.url).pathname;
             <ul class="site-nav__submenu">
               {GUIDE_LINKS.map((item) => (
                 <li>
-                  <a href={item.href} aria-current={currentPath === item.href ? 'page' : undefined}>
+                  <a href={item.href} aria-current={getNavigationCurrent(currentPath, item.href)}>
                     {item.label}
                   </a>
                 </li>
@@ -85,15 +109,12 @@ const currentPath = new URL(Astro.request.url).pathname;
           </details>
         </li>
         <li>
-          <a
-            href="/methodology/"
-            aria-current={currentPath === '/methodology/' ? 'page' : undefined}
-          >
+          <a href="/methodology/" aria-current={getNavigationCurrent(currentPath, '/methodology/')}>
             Methodology
           </a>
         </li>
         <li>
-          <a href="/about/" aria-current={currentPath === '/about/' ? 'page' : undefined}>
+          <a href="/about/" aria-current={getNavigationCurrent(currentPath, '/about/')}>
             About
           </a>
         </li>
@@ -177,6 +198,13 @@ const currentPath = new URL(Astro.request.url).pathname;
     font-size: var(--fs-sm);
     padding: var(--space-2) 0;
     position: relative;
+  }
+
+  .site-nav__current {
+    margin-inline-start: var(--space-1);
+    color: var(--color-accent-1);
+    font-size: var(--fs-xs);
+    font-weight: 700;
   }
 
   .site-nav summary {
@@ -267,11 +295,13 @@ const currentPath = new URL(Astro.request.url).pathname;
     background: var(--color-surface);
   }
 
-  .site-nav a[aria-current='page'] {
+  .site-nav a[aria-current='page'],
+  .site-nav a[aria-current='location'] {
     color: var(--color-text-primary);
   }
 
-  .site-nav a[aria-current='page']::after {
+  .site-nav a[aria-current='page']::after,
+  .site-nav a[aria-current='location']::after {
     content: '';
     position: absolute;
     left: 0;

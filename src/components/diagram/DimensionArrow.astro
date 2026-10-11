@@ -49,6 +49,10 @@ const labelY = isHorizontal ? y1 - labelOffsetPx : (y1 + y2) / 2;
     transform={isHorizontal ? undefined : `rotate(-90 ${labelX} ${labelY})`}
   >
     <tspan data-unit="metric">{formatMeasurement(valueMm, 'metric')}</tspan>
+    <tspan data-unit="separator" aria-hidden="true">
+      {' '}
+      /{' '}
+    </tspan>
     <tspan data-unit="imperial">{formatMeasurement(valueMm, 'imperial')}</tspan>
   </text>
 </g>

@@ -1,6 +1,7 @@
 ---
 import AssumptionList from '../fit/AssumptionList.astro';
 import CalculatorStep from '../fit/CalculatorStep.astro';
+import ExampleDataNotice from '../fit/ExampleDataNotice.astro';
 import DimensionTable from '../fit/DimensionTable.astro';
 import FitSummary from '../fit/FitSummary.astro';
 import MeasurementFieldHelp from '../fit/MeasurementFieldHelp.astro';
@@ -43,12 +44,19 @@ const diagramMarkup = renderDiningDiagramMarkup({
 const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMeasurement(DEFAULTS.roomLengthMm)} room, ${formatMeasurement(DEFAULTS.tableWidthMm)} by ${formatMeasurement(DEFAULTS.tableLengthMm)} rectangular table, ${initialPlan.seats} sample seats, and ${formatMeasurement(DEFAULTS.walkingClearanceMm)} user-selected circulation target.`;
 ---
 
-<div class="dining-fitcheck calculator-split" data-dining-fitcheck data-diagram-id={DIAGRAM_ID}>
-  <form class="dining-fitcheck__form" data-dining-fitcheck-form novalidate>
-    <p class="fit-example-notice" data-fit-example-notice role="note">
-      <strong>Example setup.</strong> Room, table, chair and circulation values are editable
-      examples. Replace them with your own measured furniture and selected movement space.
-    </p>
+<div
+  class="dining-fitcheck calculator-split"
+  data-dining-fitcheck
+  data-fit-result-scope
+  data-diagram-id={DIAGRAM_ID}
+>
+  <form
+    class="dining-fitcheck__form"
+    data-dining-fitcheck-form
+    data-core-progressive-form
+    novalidate
+  >
+    <ExampleDataNotice note="Replace the starter room, table, and chair values with your own measurements and movement-space choices." />
 
     <CalculatorStep
       step={1}
@@ -155,97 +163,118 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
     </CalculatorStep>
 
     <details class="dining-fitcheck__advanced">
-      <summary>Optional seating and circulation</summary>
+      <summary>Advanced options · Optional</summary>
       <CalculatorStep
         step={3}
-        title="Extra space and clearances"
-        description="Set the chair layout and any extra walking space you want to reserve."
+        title="Advanced options"
+        description="Choose a seating layout, measure chair movement, or reserve additional walking space."
       >
-        <div class="field-grid">
-          <div class="field">
-            <label for="dining-chairs-long">Chairs per long side</label>
-            <input
-              id="dining-chairs-long"
-              name="chairsPerLongSide"
-              type="number"
-              min="0"
-              max="6"
-              step="1"
-              value={DEFAULTS.chairsPerLongSide}
-              aria-describedby="dining-chairs-long-error"
-            />
-            <span class="field__error" id="dining-chairs-long-error" role="alert"></span>
+        <section
+          class="advanced-options__group"
+          data-advanced-options-group
+          aria-labelledby="dining-seating-layout-heading"
+        >
+          <h3 id="dining-seating-layout-heading">Choose a seating layout</h3>
+          <div class="field-grid">
+            <div class="field">
+              <label for="dining-chairs-long">Chairs per long side</label>
+              <input
+                id="dining-chairs-long"
+                name="chairsPerLongSide"
+                type="number"
+                min="0"
+                max="6"
+                step="1"
+                value={DEFAULTS.chairsPerLongSide}
+                aria-describedby="dining-chairs-long-error"
+              />
+              <span class="field__error" id="dining-chairs-long-error" role="alert"></span>
+            </div>
+            <div class="field">
+              <label for="dining-chairs-end">Chairs at each end</label>
+              <input
+                id="dining-chairs-end"
+                name="chairsPerEnd"
+                type="number"
+                min="0"
+                max="2"
+                step="1"
+                value={DEFAULTS.chairsPerEnd}
+                aria-describedby="dining-chairs-end-error"
+              />
+              <span class="field__error" id="dining-chairs-end-error" role="alert"></span>
+            </div>
           </div>
-          <div class="field">
-            <label for="dining-chairs-end">Chairs at each end</label>
-            <input
-              id="dining-chairs-end"
-              name="chairsPerEnd"
-              type="number"
-              min="0"
-              max="2"
-              step="1"
-              value={DEFAULTS.chairsPerEnd}
-              aria-describedby="dining-chairs-end-error"
-            />
-            <span class="field__error" id="dining-chairs-end-error" role="alert"></span>
+        </section>
+        <section
+          class="advanced-options__group"
+          data-advanced-options-group
+          aria-labelledby="dining-chair-space-heading"
+        >
+          <h3 id="dining-chair-space-heading">Measure chair space</h3>
+          <div class="field-grid">
+            <div class="field">
+              <label for="dining-chair-width">Measured chair width</label>
+              <input
+                id="dining-chair-width"
+                name="chairWidthMm"
+                type="text"
+                inputmode="text"
+                value={formatMeasurement(DEFAULTS.chairWidthMm)}
+                aria-describedby="dining-chair-width-error dining-chair-width-help"
+              />
+              <span class="field__error" id="dining-chair-width-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="dining"
+                fieldId="dining-chair-width"
+                id="dining-chair-width-help"
+              />
+            </div>
+            <div class="field">
+              <label for="dining-chair-depth">Pulled-out chair envelope from table edge</label>
+              <input
+                id="dining-chair-depth"
+                name="chairEnvelopeDepthMm"
+                type="text"
+                inputmode="text"
+                value={formatMeasurement(DEFAULTS.chairEnvelopeDepthMm)}
+                aria-describedby="dining-chair-depth-error dining-chair-depth-help"
+              />
+              <span class="field__error" id="dining-chair-depth-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="dining"
+                fieldId="dining-chair-depth"
+                id="dining-chair-depth-help"
+              />
+            </div>
           </div>
-        </div>
-        <div class="field-grid">
+        </section>
+        <section
+          class="advanced-options__group"
+          data-advanced-options-group
+          aria-labelledby="dining-walking-space-heading"
+        >
+          <h3 id="dining-walking-space-heading">Reserve walking space</h3>
           <div class="field">
-            <label for="dining-chair-width">Measured chair width</label>
+            <label for="dining-walking-clearance">
+              Extra user-selected walking space beyond pulled-out chairs
+            </label>
             <input
-              id="dining-chair-width"
-              name="chairWidthMm"
+              id="dining-walking-clearance"
+              name="walkingClearanceMm"
               type="text"
               inputmode="text"
-              value={formatMeasurement(DEFAULTS.chairWidthMm)}
-              aria-describedby="dining-chair-width-error dining-chair-width-help"
+              value={formatMeasurement(DEFAULTS.walkingClearanceMm)}
+              aria-describedby="dining-walking-clearance-error dining-walking-clearance-help"
             />
-            <span class="field__error" id="dining-chair-width-error" role="alert"></span>
+            <span class="field__error" id="dining-walking-clearance-error" role="alert"></span>
             <MeasurementFieldHelp
               calculator="dining"
-              fieldId="dining-chair-width"
-              id="dining-chair-width-help"
+              fieldId="dining-walking-clearance"
+              id="dining-walking-clearance-help"
             />
           </div>
-          <div class="field">
-            <label for="dining-chair-depth">Pulled-out chair envelope from table edge</label>
-            <input
-              id="dining-chair-depth"
-              name="chairEnvelopeDepthMm"
-              type="text"
-              inputmode="text"
-              value={formatMeasurement(DEFAULTS.chairEnvelopeDepthMm)}
-              aria-describedby="dining-chair-depth-error dining-chair-depth-help"
-            />
-            <span class="field__error" id="dining-chair-depth-error" role="alert"></span>
-            <MeasurementFieldHelp
-              calculator="dining"
-              fieldId="dining-chair-depth"
-              id="dining-chair-depth-help"
-            />
-          </div>
-        </div>
-        <div class="field">
-          <label for="dining-walking-clearance">
-            Extra user-selected walking space beyond pulled-out chairs
-          </label>
-          <input
-            id="dining-walking-clearance"
-            name="walkingClearanceMm"
-            type="text"
-            inputmode="text"
-            value={formatMeasurement(DEFAULTS.walkingClearanceMm)}
-            aria-describedby="dining-walking-clearance-error dining-walking-clearance-help"
-          />
-          <span class="field__error" id="dining-walking-clearance-error" role="alert"></span>
-          <MeasurementFieldHelp
-            calculator="dining"
-            fieldId="dining-walking-clearance"
-            id="dining-walking-clearance-help"
-          />
-        </div>
+        </section>
       </CalculatorStep>
     </details>
 
@@ -307,15 +336,6 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface-raised);
-  }
-
-  .fit-example-notice {
-    margin: 0;
-    padding: var(--space-3);
-    border-left: 0.2rem solid var(--color-accent-1);
-    background: var(--color-surface);
-    font-size: var(--fs-sm);
-    line-height: 1.5;
   }
 
   .dining-fitcheck__advanced > summary {

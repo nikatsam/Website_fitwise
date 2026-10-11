@@ -12,6 +12,7 @@ export {
   type DimensionDisplayRow,
 } from './display';
 export { FIT_STATE_BADGE_COPY, type FitStateBadgeCopy } from './copy';
+export { type MissingRequirement, type MissingRequirementType } from './missing-requirement';
 export {
   getFitSummaryCopy,
   getFitSummaryResultLabel,

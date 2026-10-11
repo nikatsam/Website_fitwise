@@ -1,6 +1,7 @@
 ---
 import FitSummary from '../fit/FitSummary.astro';
 import CalculatorStep from '../fit/CalculatorStep.astro';
+import ExampleDataNotice from '../fit/ExampleDataNotice.astro';
 import MeasurementFieldHelp from '../fit/MeasurementFieldHelp.astro';
 import DimensionTable from '../fit/DimensionTable.astro';
 import AssumptionList from '../fit/AssumptionList.astro';
@@ -90,13 +91,16 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
 <div
   class="workspace-fitcheck calculator-split"
   data-workspace-fitcheck
+  data-fit-result-scope
   data-diagram-id={DIAGRAM_ID}
 >
-  <form class="workspace-fitcheck__form" data-workspace-fitcheck-form novalidate>
-    <p class="fit-example-notice" data-fit-example-notice role="note">
-      <strong>Example setup.</strong> Starter dimensions are illustrative; change them to your
-      measured equipment and desk before relying on the result.
-    </p>
+  <form
+    class="workspace-fitcheck__form"
+    data-workspace-fitcheck-form
+    data-core-progressive-form
+    novalidate
+  >
+    <ExampleDataNotice note="Replace the starter equipment and desk values with your own measurements." />
     <CalculatorStep
       step={1}
       title="What are you fitting?"
@@ -194,128 +198,148 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
     </CalculatorStep>
 
     <details class="workspace-fitcheck__advanced">
-      <summary>Optional clearance and spacing assumptions</summary>
+      <summary>Advanced options · Optional</summary>
       <CalculatorStep
         step={3}
-        title="Extra space and clearances"
-        description="Adjust the stand depth, reserved use zones, side target and monitor spacing if needed."
+        title="Advanced options"
+        description="Measure the exact monitor setup, reserve workspace, or set monitor spacing and clearance targets."
       >
-        <div class="field">
-          <label for="monitor-depth">Monitor stand/base depth (editable example)</label>
-          <input
-            type="text"
-            inputmode="text"
-            id="monitor-depth"
-            name="monitorStandDepthMm"
-            value={`${DEFAULTS.monitorDepthMm} mm`}
-            aria-describedby="monitor-depth-error monitor-depth-help"
-          />
-          <span class="field__error" id="monitor-depth-error" role="alert"></span>
-          <MeasurementFieldHelp
-            calculator="workspace"
-            fieldId="monitor-depth"
-            id="monitor-depth-help"
-          >
-            <p>
-              See the{' '}
-              <a href="/workspace/desk-depth-for-monitor/">Samsung M7 stand-depth example</a>.
+        <section
+          class="advanced-options__group"
+          data-advanced-options-group
+          aria-labelledby="workspace-monitor-footprint-heading"
+        >
+          <h3 id="workspace-monitor-footprint-heading">Measure the actual monitor footprint</h3>
+          <div class="field">
+            <label for="monitor-depth">Monitor stand/base depth (editable example)</label>
+            <input
+              type="text"
+              inputmode="text"
+              id="monitor-depth"
+              name="monitorStandDepthMm"
+              value={`${DEFAULTS.monitorDepthMm} mm`}
+              aria-describedby="monitor-depth-error monitor-depth-help"
+            />
+            <span class="field__error" id="monitor-depth-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="workspace"
+              fieldId="monitor-depth"
+              id="monitor-depth-help"
+            >
+              <p>
+                See the{' '}
+                <a href="/workspace/desk-depth-for-monitor/">Samsung M7 stand-depth example</a>.
+              </p>
+            </MeasurementFieldHelp>
+          </div>
+          <div class="field">
+            <label for="monitor-width-override">Exact overall monitor width including bezel</label>
+            <input
+              type="text"
+              inputmode="text"
+              id="monitor-width-override"
+              name="monitorWidthOverrideMm"
+              data-step-optional
+              placeholder="Auto from size"
+              aria-describedby="monitor-width-override-error monitor-width-override-help"
+            />
+            <span class="field__error" id="monitor-width-override-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="workspace"
+              fieldId="monitor-width-override"
+              id="monitor-width-override-help"
+            />
+          </div>
+        </section>
+
+        <section
+          class="advanced-options__group"
+          data-advanced-options-group
+          aria-labelledby="workspace-working-space-heading"
+        >
+          <h3 id="workspace-working-space-heading">Reserve cable and keyboard space</h3>
+          <div class="field">
+            <label for="rear-cable-clearance">Rear cable/vent allowance</label>
+            <input
+              type="text"
+              inputmode="text"
+              id="rear-cable-clearance"
+              name="rearCableClearanceMm"
+              value={`${DEFAULTS.rearCableClearanceMm} mm`}
+              aria-describedby="rear-cable-clearance-error rear-cable-clearance-help"
+            />
+            <span class="field__error" id="rear-cable-clearance-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="workspace"
+              fieldId="rear-cable-clearance"
+              id="rear-cable-clearance-help"
+            />
+          </div>
+          <div class="field">
+            <label for="keyboard-zone">Keyboard/mouse surface zone (user-selected)</label>
+            <input
+              type="text"
+              inputmode="text"
+              id="keyboard-zone"
+              name="keyboardZoneMm"
+              value={`${DEFAULTS.keyboardZoneMm} mm`}
+              aria-describedby="keyboard-zone-error keyboard-zone-help"
+            />
+            <span class="field__error" id="keyboard-zone-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="workspace"
+              fieldId="keyboard-zone"
+              id="keyboard-zone-help"
+            />
+            <p class="field__note">
+              Viewing distance is not added to desk depth. Enter the actual keyboard/cable areas you
+              want to reserve; zero means they are excluded.
             </p>
-          </MeasurementFieldHelp>
-        </div>
-        <div class="field">
-          <label for="rear-cable-clearance">Rear cable/vent allowance</label>
-          <input
-            type="text"
-            inputmode="text"
-            id="rear-cable-clearance"
-            name="rearCableClearanceMm"
-            value={`${DEFAULTS.rearCableClearanceMm} mm`}
-            aria-describedby="rear-cable-clearance-error rear-cable-clearance-help"
-          />
-          <span class="field__error" id="rear-cable-clearance-error" role="alert"></span>
-          <MeasurementFieldHelp
-            calculator="workspace"
-            fieldId="rear-cable-clearance"
-            id="rear-cable-clearance-help"
-          />
-        </div>
-        <div class="field">
-          <label for="keyboard-zone">Keyboard/mouse surface zone (user-selected)</label>
-          <input
-            type="text"
-            inputmode="text"
-            id="keyboard-zone"
-            name="keyboardZoneMm"
-            value={`${DEFAULTS.keyboardZoneMm} mm`}
-            aria-describedby="keyboard-zone-error keyboard-zone-help"
-          />
-          <span class="field__error" id="keyboard-zone-error" role="alert"></span>
-          <MeasurementFieldHelp
-            calculator="workspace"
-            fieldId="keyboard-zone"
-            id="keyboard-zone-help"
-          />
-          <p class="field__note">
-            Viewing distance is not added to desk depth. Enter the actual keyboard/cable areas you
-            want to reserve; zero means they are excluded.
-          </p>
-        </div>
+          </div>
+        </section>
 
-        <div class="field">
-          <label for="monitor-width-override">
-            Exact overall monitor width incl. bezel (optional)
-          </label>
-          <input
-            type="text"
-            inputmode="text"
-            id="monitor-width-override"
-            name="monitorWidthOverrideMm"
-            placeholder="Auto from size"
-            aria-describedby="monitor-width-override-error monitor-width-override-help"
-          />
-          <span class="field__error" id="monitor-width-override-error" role="alert"></span>
-          <MeasurementFieldHelp
-            calculator="workspace"
-            fieldId="monitor-width-override"
-            id="monitor-width-override-help"
-          />
-        </div>
+        <section
+          class="advanced-options__group"
+          data-advanced-options-group
+          aria-labelledby="workspace-monitor-spacing-heading"
+        >
+          <h3 id="workspace-monitor-spacing-heading">Set monitor spacing and side clearance</h3>
+          <div class="field">
+            <label for="monitor-gap">Gap between monitors</label>
+            <input
+              type="text"
+              inputmode="text"
+              id="monitor-gap"
+              name="gapMm"
+              value={`${DEFAULTS.gapMm} mm`}
+              aria-describedby="monitor-gap-error monitor-gap-help"
+            />
+            <span class="field__error" id="monitor-gap-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="workspace"
+              fieldId="monitor-gap"
+              id="monitor-gap-help"
+            />
+          </div>
 
-        <div class="field">
-          <label for="monitor-gap">Gap between monitors</label>
-          <input
-            type="text"
-            inputmode="text"
-            id="monitor-gap"
-            name="gapMm"
-            value={`${DEFAULTS.gapMm} mm`}
-            aria-describedby="monitor-gap-error monitor-gap-help"
-          />
-          <span class="field__error" id="monitor-gap-error" role="alert"></span>
-          <MeasurementFieldHelp
-            calculator="workspace"
-            fieldId="monitor-gap"
-            id="monitor-gap-help"
-          />
-        </div>
-
-        <div class="field">
-          <label for="side-margin">Recommended side clearance target</label>
-          <input
-            type="text"
-            inputmode="text"
-            id="side-margin"
-            name="sideMarginMm"
-            value={`${DEFAULTS.sideMarginMm} mm`}
-            aria-describedby="side-margin-error side-margin-help"
-          />
-          <span class="field__error" id="side-margin-error" role="alert"></span>
-          <MeasurementFieldHelp
-            calculator="workspace"
-            fieldId="side-margin"
-            id="side-margin-help"
-          />
-        </div>
+          <div class="field">
+            <label for="side-margin">Recommended side clearance target</label>
+            <input
+              type="text"
+              inputmode="text"
+              id="side-margin"
+              name="sideMarginMm"
+              value={`${DEFAULTS.sideMarginMm} mm`}
+              aria-describedby="side-margin-error side-margin-help"
+            />
+            <span class="field__error" id="side-margin-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="workspace"
+              fieldId="side-margin"
+              id="side-margin-help"
+            />
+          </div>
+        </section>
       </CalculatorStep>
     </details>
 
@@ -368,15 +392,6 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface-raised);
-  }
-
-  .fit-example-notice {
-    margin: 0;
-    padding: var(--space-3);
-    border-left: 0.2rem solid var(--color-accent-1);
-    background: var(--color-surface);
-    font-size: var(--fs-sm);
-    line-height: 1.5;
   }
 
   .field {

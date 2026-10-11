@@ -1,53 +1,83 @@
 ---
 ---
 
-<div class="unit-toggle__group">
-  <button
-    type="button"
-    class="unit-toggle"
-    data-unit-toggle
-    aria-label="Show imperial results. Entered measurements will not change."
-    aria-pressed="false"
-  >
-    Show imperial results
-  </button>
-  <p class="unit-toggle__note">Changes result display only; entered measurements stay unchanged.</p>
-</div>
+<fieldset class="unit-toggle" data-unit-toggle aria-describedby="unit-display-note unit-entry-note">
+  <legend>Result display units</legend>
+  <div class="unit-toggle__options">
+    <label class="unit-toggle__option">
+      <input type="radio" name="unit-system" value="metric" data-unit-choice checked />
+      <span>Metric</span>
+    </label>
+    <label class="unit-toggle__option">
+      <input type="radio" name="unit-system" value="imperial" data-unit-choice />
+      <span>Imperial</span>
+    </label>
+    <label class="unit-toggle__option">
+      <input type="radio" name="unit-system" value="both" data-unit-choice />
+      <span>Both</span>
+    </label>
+  </div>
+  <p class="unit-toggle__note" id="unit-display-note">
+    Changes result display only; measurements already entered stay unchanged.
+  </p>
+  <p class="unit-toggle__note" id="unit-entry-note">
+    Enter lengths with mm, cm, m, in, ft, or ft/in. A number without a unit defaults to mm.
+  </p>
+</fieldset>
 
 <script>
   import '../../scripts/unit-system';
 </script>
 
 <style>
-  .unit-toggle__group {
+  .unit-toggle {
     display: grid;
-    justify-items: start;
-    gap: var(--space-1);
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
   }
 
-  .unit-toggle {
+  .unit-toggle legend {
+    margin-bottom: var(--space-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+  }
+
+  .unit-toggle__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .unit-toggle__option {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
     border: 1px solid var(--color-border);
     background: var(--color-surface-raised);
     color: var(--color-text-primary);
-    border-radius: var(--radius-pill);
-    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
     font-size: var(--fs-sm);
     font-weight: 600;
     cursor: pointer;
-    transition:
-      transform var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
-  .unit-toggle:hover {
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
+  .unit-toggle__option:focus-within {
+    outline: 3px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .unit-toggle__option input {
+    accent-color: var(--color-accent-1);
   }
 
   .unit-toggle__note {
     margin: 0;
     color: var(--color-text-secondary);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-sm);
     line-height: 1.4;
   }
 </style>

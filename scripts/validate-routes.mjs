@@ -2,6 +2,7 @@ import { access, readFile } from 'node:fs/promises';
 import { Console } from 'node:console';
 import path from 'node:path';
 import process from 'node:process';
+import { URL } from 'node:url';
 
 const console = new Console(process.stdout, process.stderr);
 const dist = path.resolve(process.env.FITWISE_DIST_DIR ?? path.join(process.cwd(), 'dist'));
@@ -52,6 +53,175 @@ function checkPage(route, source, { heading, includes = [] }) {
   }
 }
 
+function checkUnitUX(route, source) {
+  const labels = [...source.matchAll(/<label\b[^>]*>([\s\S]*?)<\/label>/gi)].map((match) =>
+    match[1]
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  );
+  const millimetreOnlyLabels = labels.filter((label) => /\(\s*mm\s*\)\s*$/i.test(label));
+  const unitChoiceCount = [...source.matchAll(/<input\b[^>]*\bdata-unit-choice\b[^>]*>/gi)].length;
+  const entryNoteCount = [...source.matchAll(/id="unit-entry-note"/g)].length;
+  const defaultUnitNoteCount = [...source.matchAll(/A number without a unit defaults to mm\./g)]
+    .length;
+
+  assert(
+    millimetreOnlyLabels.length === 0,
+    `${route}: input labels imply mm-only input: ${JSON.stringify(millimetreOnlyLabels)}.`,
+  );
+  assert(
+    unitChoiceCount === 3 &&
+      ['metric', 'imperial', 'both'].every((unit) => source.includes(`value="${unit}"`)),
+    `${route}: expected Metric/Imperial/Both output selection (choices=${unitChoiceCount}, values=${['metric', 'imperial', 'both'].map((unit) => `${unit}:${source.includes(`value="${unit}"`)}`).join(',')}).`,
+  );
+  assert(
+    entryNoteCount === 1 && defaultUnitNoteCount === 1,
+    `${route}: bare-number default must be explained once per calculator.`,
+  );
+}
+
+function checkPreparationGuidance(route, source) {
+  const types = [...source.matchAll(/<li\b[^>]*data-preparation-type="([^"]+)"/gi)].map(
+    (match) => match[1],
+  );
+  assert(
+    types.length >= 3,
+    `${route}: Before you start needs at least three service-specific items.`,
+  );
+  assert(
+    types.every((type) => ['required', 'optional', 'verification'].includes(type)) &&
+      types.includes('required'),
+    `${route}: Before you start must distinguish required inputs from optional/verification information.`,
+  );
+}
+
+function checkCoreCalculatorShell(route, source) {
+  const stepCount = [...source.matchAll(/class="calculator-step(?:\s|"?)/g)].length;
+  const advancedGroupCount = [...source.matchAll(/data-advanced-options-group/g)].length;
+  const resultIndex = source.indexOf('class="fit-summary"');
+  const detailIndex = source.indexOf('class="dimension-table__details"');
+  const checks = [
+    ['data-calculator-shell', 'shared calculator page shell'],
+    ['aria-label="Breadcrumb"', 'visible breadcrumb'],
+    ['data-shell-section="before-start"', 'Before you start section'],
+    ['data-fit-example-notice', 'Example data notice'],
+    ['Example data loaded', 'Example data loaded label'],
+    ['The values below are illustrative.', 'illustrative sample-data copy'],
+    ['Example result — ', 'initial Example result label'],
+    ['data-fit-result-scope', 'shared result-origin scope'],
+    ['data-core-progressive-form', 'mobile progressive form'],
+    ['What this means', 'result interpretation'],
+    ['fit-summary__next', 'explicit next action'],
+    ['assumption-list', 'assumptions/source list'],
+    ['dimension-table__details', 'collapsed calculation details'],
+  ];
+
+  for (const [snippet, description] of checks) {
+    assert(source.includes(snippet), `${route}: missing newest-shell ${description}.`);
+  }
+  checkPreparationGuidance(route, source);
+  checkUnitUX(route, source);
+  assert(stepCount >= 2, `${route}: expected grouped calculator input steps, found ${stepCount}.`);
+  assert(
+    [...source.matchAll(/data-core-calculator-step/g)].length >= 2,
+    `${route}: mobile step groups are not available for progressive navigation.`,
+  );
+  assert(
+    /<details\b[^>]*>\s*<summary\b[^>]*>Advanced options\s*·\s*Optional\b/i.test(source),
+    `${route}: advanced controls need the shared Advanced options · Optional disclosure.`,
+  );
+  assert(
+    advancedGroupCount >= 2,
+    `${route}: optional controls must be grouped by task, found ${advancedGroupCount} groups.`,
+  );
+  assert(
+    !/<details\b[^>]*\bopen(?:[\s=>])/i.test(source),
+    `${route}: optional calculator disclosures must not render open by default.`,
+  );
+  assert(
+    resultIndex >= 0 && detailIndex > resultIndex,
+    `${route}: raw dimension details must follow the result summary.`,
+  );
+  assert(
+    !source.includes('More assumptions'),
+    `${route}: legacy More assumptions interaction remains present.`,
+  );
+}
+
+function checkSpecialistCalculatorShell(route, source) {
+  const stepCount = [...source.matchAll(/data-calculator-step/g)].length;
+  const helpCount = [...source.matchAll(/data-measurement-help=/g)].length;
+  const summaryIndex = source.indexOf('class="fit-summary"');
+  const detailIndex = source.indexOf('class="dimension-table__details"');
+  const checks = [
+    ['data-calculator-shell', 'shared calculator page shell'],
+    ['data-fit-services', 'Fit Services calculator component'],
+    ['data-fit-result-scope', 'shared result-origin state'],
+    ['data-before-you-start-items', 'service-specific Before you start guidance'],
+    ['data-fit-example-notice', 'shared Example data notice'],
+    ['Example data loaded', 'shared Example data loaded label'],
+    ['The values below are illustrative.', 'illustrative sample-data copy'],
+    ['Example result — ', 'initial Example result label'],
+    ['data-fit-sticky', 'persistent result link'],
+    ['data-fit-service-preview-svg', 'responsive SVG dimension preview'],
+    ['class="fit-service-plan-svg"', 'shared SVG plan implementation'],
+    [
+      'aria-labelledby="fit-service-plan-svg-title fit-service-plan-svg-description"',
+      'accessible SVG title and description',
+    ],
+    ['fit-service-preview__text', 'collapsed text-plan alternative'],
+    ['data-fit-service-preview-ascii', 'preserved text preview'],
+    ['What this means', 'plain-language result interpretation'],
+    ['fit-summary__next', 'explicit next action'],
+  ];
+
+  for (const [snippet, description] of checks) {
+    assert(source.includes(snippet), `${route}: missing newest specialist shell ${description}.`);
+  }
+  checkPreparationGuidance(route, source);
+  checkUnitUX(route, source);
+  assert(stepCount > 1, `${route}: specialist inputs are still a flat field grid.`);
+  assert(helpCount > 0, `${route}: no standard contextual measurement help was rendered.`);
+  assert(
+    summaryIndex >= 0 && detailIndex > summaryIndex,
+    `${route}: calculation details must follow the shared result summary.`,
+  );
+  assert(
+    !source.includes('More assumptions'),
+    `${route}: legacy More assumptions interaction remains present.`,
+  );
+}
+
+function checkGlobalNavigation(route, source, { requireCurrent = true } = {}) {
+  const header = source.match(/<header\b[\s\S]*?<\/header>/i)?.[0] ?? '';
+  const primaryNavs = [
+    ...header.matchAll(
+      /<nav\b(?=[^>]*aria-label="Primary")(?=[^>]*data-global-navigation)[^>]*>/gi,
+    ),
+  ];
+  const legacyPrimaryNavs = [...header.matchAll(/<nav\b(?=[^>]*aria-label="Primary")[^>]*>/gi)];
+  const fitGroups = [...header.matchAll(/<details\b[^>]*data-nav-group="fit-checks"/gi)];
+  const guideGroups = [...header.matchAll(/<details\b[^>]*data-nav-group="guides"/gi)];
+  const currentItems = [...header.matchAll(/\baria-current="(?:page|location)"/gi)];
+
+  assert(Boolean(header), `${route}: shared global header is missing.`);
+  assert(
+    primaryNavs.length === 1 && legacyPrimaryNavs.length === 1,
+    `${route}: expected exactly one shared primary navigation component, received ${primaryNavs.length} shared/${legacyPrimaryNavs.length} total.`,
+  );
+  assert(
+    fitGroups.length === 1 && guideGroups.length === 1,
+    `${route}: shared navigation has missing/duplicate fit or guide groups (${fitGroups.length}/${guideGroups.length}).`,
+  );
+  if (requireCurrent) {
+    assert(
+      currentItems.length > 0,
+      `${route}: shared navigation does not identify the current page or section.`,
+    );
+  }
+}
+
 function breadcrumbLabels(source) {
   const nav = source.match(/<nav\b[^>]*aria-label="Breadcrumb"[^>]*>([\s\S]*?)<\/nav>/i)?.[1];
   if (!nav) return [];
@@ -62,6 +232,58 @@ function breadcrumbLabels(source) {
       .replaceAll('&amp;', '&')
       .replace(/\s+/g, ' ')
       .trim(),
+  );
+}
+
+function checkVisibleBreadcrumb(route, source) {
+  const breadcrumbNavs = [
+    ...source.matchAll(/<nav\b[^>]*aria-label="Breadcrumb"[^>]*>([\s\S]*?)<\/nav>/gi),
+  ];
+  const nav = breadcrumbNavs[0]?.[1];
+  assert(Boolean(nav), `${route}: non-home page is missing its visible breadcrumb.`);
+  assert(breadcrumbNavs.length === 1, `${route}: expected exactly one visible breadcrumb trail.`);
+  if (!nav) return;
+
+  const labels = breadcrumbLabels(source);
+  assert(
+    labels.length >= 2 && labels[0] === 'Home' && /aria-current="page"/.test(nav),
+    `${route}: breadcrumb must show Home and the current page in order (${labels.join(' > ')}).`,
+  );
+
+  const structured = [
+    ...source.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi),
+  ]
+    .map((match) => {
+      try {
+        return JSON.parse(match[1]);
+      } catch {
+        return null;
+      }
+    })
+    .find((record) => record?.['@type'] === 'BreadcrumbList');
+  assert(Boolean(structured), `${route}: visible breadcrumb lacks matching BreadcrumbList data.`);
+  if (!structured) return;
+
+  const structuredItems = structured.itemListElement ?? [];
+  const structuredLabels = structuredItems.map((item) => item.name);
+  const structuredPaths = structuredItems.map((item) => {
+    try {
+      return new URL(item.item).pathname;
+    } catch {
+      return null;
+    }
+  });
+  const visiblePaths = [
+    ...[...nav.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>/gi)].map(
+      (match) => new URL(match[1], 'https://fitwise.stream').pathname,
+    ),
+    route.endsWith('/') ? route : `${route}/`,
+  ];
+
+  assert(
+    JSON.stringify(structuredLabels) === JSON.stringify(labels) &&
+      JSON.stringify(structuredPaths) === JSON.stringify(visiblePaths),
+    `${route}: visible breadcrumb hierarchy differs from BreadcrumbList structured data.`,
   );
 }
 
@@ -80,7 +302,7 @@ checkPage('/', home, {
     '/will-it-fit/',
     '/dining/',
     '/garden/',
-    '/fit-services/',
+    '/fit-checks/',
     '/workspace/',
     '/bedroom/',
     '/appliances/',
@@ -105,25 +327,29 @@ checkPage('/will-it-fit/', universalFit, {
   heading: 'Will it fit?',
   includes: [
     'data-universal-fitcheck-form',
-    'Example setup.',
+    'Example data loaded',
+    'The values below are illustrative.',
     'data-fit-sticky',
     'fit-item-width',
     'fit-door-width',
     'fit-quantity',
     'rel="canonical"',
     'BreadcrumbList',
-    'Accepted units:',
+    'id="unit-entry-note"',
+    'Enter lengths with mm, cm, m, in, ft, or ft/in.',
     'ft/in',
-    'bare number defaults to mm',
+    'defaults to mm',
   ],
 });
+checkCoreCalculatorShell('/will-it-fit/', universalFit);
 
 const dining = await html('/dining/');
 checkPage('/dining/', dining, {
   heading: 'Will the dining table and chairs fit?',
   includes: [
     'data-dining-fitcheck-form',
-    'Example setup.',
+    'Example data loaded',
+    'The values below are illustrative.',
     'data-fit-sticky',
     'dining-fitcheck-table',
     'Rectangular tables only',
@@ -132,6 +358,7 @@ checkPage('/dining/', dining, {
     'BreadcrumbList',
   ],
 });
+checkCoreCalculatorShell('/dining/', dining);
 
 const garden = await html('/garden/');
 checkPage('/garden/', garden, {
@@ -176,10 +403,25 @@ checkPage('/appliances/fridge-fit/', fridgeFit, {
   heading: 'Will this fridge fit the opening?',
   includes: [
     'What to check next',
-    'installation manual or specification open',
+    'exact model manual or manufacturer specification',
     'If the fridge must be carried into the room',
   ],
 });
+checkSpecialistCalculatorShell('/appliances/fridge-fit/', fridgeFit);
+for (const route of [
+  '/appliances/washer-fit/',
+  '/access/furniture-route-fit/',
+  '/tv/tv-stand-fit/',
+  '/garden/structure-fit/',
+  '/garden/play-equipment-use-zone/',
+  '/workspace/monitor-arm-compatibility/',
+  '/home-gym/power-rack-room-size/',
+  '/storage/what-fits-in-storage/',
+  '/game-room/pool-table-fit/',
+  '/vehicle/garage-fit/',
+]) {
+  checkSpecialistCalculatorShell(route, await html(route));
+}
 const vehicleFit = await html('/vehicle/garage-fit/');
 assert(
   !/<nav\b[^>]*aria-label="Related next checks"/.test(vehicleFit),
@@ -190,18 +432,34 @@ assert(
   '/garden/: semicolon candidate-size text entry must be replaced with structured width/depth rows.',
 );
 
-const fitServices = await html('/fit-services/');
-checkPage('/fit-services/', fitServices, {
+const fitChecks = await html('/fit-checks/');
+checkPage('/fit-checks/', fitChecks, {
   heading: 'All fit checks',
   includes: [
     'id="all-fit-checks"',
     'Rooms &amp; spaces',
     'Appliance installation clearance',
-    'Vehicle in a garage',
+    'Vehicle/garage fit',
     '/garden/play-equipment-use-zone/',
+    'Advanced all-in-one checker',
+    'Browse focused calculators by the item',
+    'rel="canonical"',
+    'BreadcrumbList',
+  ],
+});
+assert(
+  !fitChecks.includes('data-fit-services-form'),
+  '/fit-checks/: browse directory must not embed an active all-in-one calculator.',
+);
+
+const advancedFitServices = await html('/fit-services/');
+checkPage('/fit-services/', advancedFitServices, {
+  heading: 'Advanced all-in-one fit checker',
+  includes: [
     'id="fit-services-tool"',
     'data-fit-services-form',
-    'Example setup.',
+    'Example data',
+    'The values below are illustrative.',
     'data-fit-sticky',
     'appliance-install',
     'delivery-route',
@@ -211,10 +469,14 @@ checkPage('/fit-services/', fitServices, {
     'storage',
     'pool-room',
     'vehicle-garage',
+    'href="/fit-checks/"',
     'rel="canonical"',
-    'BreadcrumbList',
   ],
 });
+assert(
+  !advancedFitServices.includes('id="all-fit-checks"'),
+  '/fit-services/: advanced checker must not duplicate the full directory.',
+);
 
 const aboutAndSources = await html('/about/');
 checkPage('/about/', aboutAndSources, {
@@ -253,7 +515,8 @@ checkPage('/workspace/', workspace, {
   heading: 'Will your monitors fit your desk?',
   includes: [
     'data-workspace-fitcheck-form',
-    'Example setup.',
+    'Example data',
+    'The values below are illustrative.',
     'data-fit-sticky',
     'Physical margin',
     'Target margin',
@@ -266,13 +529,15 @@ checkPage('/workspace/', workspace, {
     '/workspace/monitor-size-chart/',
   ],
 });
+checkCoreCalculatorShell('/workspace/', workspace);
 
 const bedroom = await html('/bedroom/');
 checkPage('/bedroom/', bedroom, {
   heading: 'Will your bed fit your room?',
   includes: [
     'data-bedroom-fitcheck-form',
-    'Example setup.',
+    'Example data',
+    'The values below are illustrative.',
     'data-fit-sticky',
     'Physical margin',
     'Target margin',
@@ -285,6 +550,7 @@ checkPage('/bedroom/', bedroom, {
     '/bedroom/uk-bed-size-dimensions/',
   ],
 });
+checkCoreCalculatorShell('/bedroom/', bedroom);
 assert(
   ['140.0 cm', '20.0 cm', 'Physical margin', 'Extra space beyond target', 'Tightest point'].every(
     (value) => bedroom.includes(value),
@@ -503,6 +769,7 @@ checkPage('/404.html', notFound, {
   heading: 'Page not found',
   includes: ['Return to the homepage'],
 });
+checkGlobalNavigation('/404.html', notFound, { requireCurrent: false });
 
 for (const file of ['sitemap.xml', 'robots.txt']) {
   try {
@@ -534,6 +801,11 @@ for (const record of routeDispositions) {
     );
     if (exists) {
       const source = await readFile(fileForRoute(record.route), 'utf8');
+      checkGlobalNavigation(record.route, source);
+      if (record.route !== '/') checkVisibleBreadcrumb(record.route, source);
+      if (source.includes('data-fit-services')) {
+        checkSpecialistCalculatorShell(record.route, source);
+      }
       const noindex = /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(source);
       const canonical = /<link\b[^>]*rel="canonical"[^>]*href="[^"]+"[^>]*>/i.test(source);
       assert(

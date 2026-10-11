@@ -10,8 +10,21 @@ describe('Before you start guidance', () => {
     expect(Object.values(CORE_CALCULATOR_START_GUIDANCE)).toHaveLength(4);
     for (const items of Object.values(CORE_CALCULATOR_START_GUIDANCE)) {
       expect(items).toHaveLength(3);
-      expect(items.every((item) => item.trim().length > 20)).toBe(true);
+      expect(items.every((item) => item.text.trim().length > 20)).toBe(true);
+      expect(items.some((item) => item.type === 'required')).toBe(true);
+      expect(
+        items.every((item) => ['required', 'optional', 'verification'].includes(item.type)),
+      ).toBe(true);
     }
+    expect(CORE_CALCULATOR_START_GUIDANCE.workspace.map((item) => item.text).join(' ')).toMatch(
+      /monitor.*desk|desk.*monitor/i,
+    );
+    expect(CORE_CALCULATOR_START_GUIDANCE.bedroom.map((item) => item.text).join(' ')).toMatch(
+      /bed frame.*room|room.*bed frame/i,
+    );
+    expect(CORE_CALCULATOR_START_GUIDANCE.dining.map((item) => item.text).join(' ')).toMatch(
+      /table.*chair|chair.*table/i,
+    );
   });
 
   it('provides at least three preparation tips for every service mode', () => {
@@ -22,7 +35,15 @@ describe('Before you start guidance', () => {
       );
       expect(items.length, definition.mode).toBeGreaterThanOrEqual(3);
       expect(
-        items.every((item) => item.trim().length > 20),
+        items.every((item) => item.text.trim().length > 20),
+        definition.mode,
+      ).toBe(true);
+      expect(
+        items.some((item) => item.type === 'required'),
+        definition.mode,
+      ).toBe(true);
+      expect(
+        items.every((item) => ['required', 'optional', 'verification'].includes(item.type)),
         definition.mode,
       ).toBe(true);
     }
@@ -40,15 +61,63 @@ describe('Before you start guidance', () => {
       'garden-play-equipment',
     ] as const;
     for (const mode of modes) {
-      expect(getFitServiceStartGuidance(mode, getFitServiceDefaults(mode)).join(' '), mode).toMatch(
-        /manual|manufacturer|instructions|specification/i,
-      );
+      expect(
+        getFitServiceStartGuidance(mode, getFitServiceDefaults(mode))
+          .map((item) => item.text)
+          .join(' '),
+        mode,
+      ).toMatch(/manual|manufacturer|instructions|specification/i);
     }
 
     const wallTv = getFitServiceDefaults('tv-fit');
     wallTv.setup = 'wall';
-    expect(getFitServiceStartGuidance('tv-fit', wallTv).join(' ')).toMatch(
-      /exact TV and mount manuals/i,
+    expect(
+      getFitServiceStartGuidance('tv-fit', wallTv)
+        .map((item) => item.text)
+        .join(' '),
+    ).toMatch(/exact TV and mount manuals/i);
+  });
+
+  it('marks optional information separately from required measurements and verification sources', () => {
+    expect(CORE_CALCULATOR_START_GUIDANCE.workspace.map((item) => item.type)).toContain(
+      'verification',
     );
+    expect(CORE_CALCULATOR_START_GUIDANCE.dining.map((item) => item.type)).toContain('optional');
+    expect(
+      getFitServiceStartGuidance(
+        'garden-play-equipment',
+        getFitServiceDefaults('garden-play-equipment'),
+      ).map((item) => item.type),
+    ).toContain('verification');
+  });
+
+  it('keeps each service preparation list anchored to its task', () => {
+    const taskTerms: Record<(typeof FIT_SERVICE_DEFINITIONS)[number]['mode'], RegExp> = {
+      'appliance-install': /appliance|installation opening/i,
+      'delivery-route': /doorway|corridor|turn|stair/i,
+      'workspace-compatibility': /monitor|desk|arm/i,
+      'tv-fit': /TV|stand|mount/i,
+      'home-gym': /equipment|operating|ceiling/i,
+      storage: /stored object|storage|aisle/i,
+      'pool-room': /table|cue/i,
+      'vehicle-garage': /vehicle|garage/i,
+      'garden-structure': /structure|plot|overhang/i,
+      'garden-patio-dining': /table|chair|patio/i,
+      'garden-shed-storage': /shed|stored object/i,
+      'garden-greenhouse': /greenhouse|plot/i,
+      'garden-hot-tub': /tub|patio|cover/i,
+      'garden-outdoor-kitchen': /kitchen|patio|work/i,
+      'garden-play-equipment': /play|equipment|use.zone/i,
+    };
+
+    for (const definition of FIT_SERVICE_DEFINITIONS) {
+      const copy = getFitServiceStartGuidance(
+        definition.mode,
+        getFitServiceDefaults(definition.mode),
+      )
+        .map((item) => item.text)
+        .join(' ');
+      expect(copy, definition.mode).toMatch(taskTerms[definition.mode]);
+    }
   });
 });

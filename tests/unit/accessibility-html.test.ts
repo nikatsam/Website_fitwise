@@ -31,6 +31,26 @@ describe('static HTML accessibility validation', () => {
     expect(result.brokenDescriptions).toEqual(['width: missing']);
   });
 
+  it('rejects generic-but-named controls and includes custom interactive roles', () => {
+    const result = auditAccessibilityHtml(`
+      <label for="width">[Input]</label><input id="width">
+      <div role="button" id="generic-button">Button</div>
+      <div role="button" aria-label="Open measurement help"></div>
+      <details><summary>Show measurement help</summary></details>
+    `);
+
+    expect(result.genericNames).toEqual(['input#width: [Input]', 'div#generic-button: Button']);
+    expect(result.unnamed).toEqual([]);
+  });
+
+  it('flags measurement labels that claim mm-only input', () => {
+    const result = auditAccessibilityHtml(
+      '<label for="width">Desk width (mm)</label><input id="width">',
+    );
+
+    expect(result.millimetreOnlyLabels).toEqual(['input#width: Desk width (mm)']);
+  });
+
   it('reports duplicate IDs and choice groups without a group label', () => {
     const result = auditAccessibilityHtml(`
       <input id="same" type="radio" name="orientation" aria-label="Portrait">

@@ -23,6 +23,23 @@ const voidElements = new Set([
   'track',
   'wbr',
 ]);
+const interactiveRoles = new Set([
+  'button',
+  'checkbox',
+  'combobox',
+  'img',
+  'image',
+  'listbox',
+  'menuitem',
+  'radio',
+  'searchbox',
+  'slider',
+  'spinbutton',
+  'switch',
+  'textbox',
+]);
+const genericAccessibleName =
+  /^\s*\[?\s*(?:input|select|textarea|button|checkbox|radio|text box|text field|textbox|control)\s*\]?\s*$/i;
 
 function parseAttributes(source) {
   const attributes = new Map();
@@ -100,8 +117,16 @@ export function auditAccessibilityHtml(source) {
   }
 
   const controls = nodes.filter((node) => {
-    if (node.tag === 'button' || node.tag === 'select' || node.tag === 'textarea') return true;
-    return node.tag === 'input' && node.attributes.get('type')?.toLowerCase() !== 'hidden';
+    if (
+      node.tag === 'button' ||
+      node.tag === 'select' ||
+      node.tag === 'textarea' ||
+      node.tag === 'summary'
+    ) {
+      return true;
+    }
+    if (node.tag === 'input') return node.attributes.get('type')?.toLowerCase() !== 'hidden';
+    return interactiveRoles.has(node.attributes.get('role') ?? '');
   });
   const hasCalculatorShell = nodes.some((node) => node.attributes.has('data-calculator-shell'));
   const hasBeforeYouStart = nodes.some((node) => node.attributes.has('data-before-you-start'));
@@ -134,8 +159,10 @@ export function auditAccessibilityHtml(source) {
         children: [],
       },
     );
-    if (explicitLabels.length || wrappedLabel) return [...explicitLabels, wrappedLabel].join(' ');
-    if (control.tag === 'button') return textContent(control);
+    if (explicitLabels.length) return explicitLabels.join(' ');
+    if (wrappedLabel) return wrappedLabel;
+    if (control.tag === 'button' || control.tag === 'summary') return textContent(control);
+    if (control.attributes.get('role') === 'button') return textContent(control);
     if (control.tag === 'input') {
       const type = control.attributes.get('type')?.toLowerCase();
       if (type === 'image') return control.attributes.get('alt')?.trim() ?? '';
@@ -148,6 +175,18 @@ export function auditAccessibilityHtml(source) {
   const unnamed = controls
     .filter((control) => !controlName(control))
     .map((control) => `${control.tag}#${control.attributes.get('id') ?? '(no id)'}`);
+  const genericNames = controls
+    .map((control) => ({ control, name: controlName(control) }))
+    .filter(({ name }) => genericAccessibleName.test(name))
+    .map(
+      ({ control, name }) => `${control.tag}#${control.attributes.get('id') ?? '(no id)'}: ${name}`,
+    );
+  const millimetreOnlyLabels = controls
+    .map((control) => ({ control, name: controlName(control) }))
+    .filter(({ name }) => /\(\s*mm\s*\)\s*$/i.test(name))
+    .map(
+      ({ control, name }) => `${control.tag}#${control.attributes.get('id') ?? '(no id)'}: ${name}`,
+    );
   const duplicateIds = [...ids].filter(([, elements]) => elements.length > 1).map(([id]) => id);
   const brokenDescriptions = controls.flatMap((control) =>
     (control.attributes.get('aria-describedby') ?? '')
@@ -202,6 +241,8 @@ export function auditAccessibilityHtml(source) {
     missingCalculatorShell: hasFitCalculator && !hasCalculatorShell,
     missingBeforeYouStart: hasFitCalculator && !hasBeforeYouStart,
     unnamed,
+    genericNames,
+    millimetreOnlyLabels,
     duplicateIds,
     brokenDescriptions,
     unassociatedMeasurementHelp,
@@ -239,6 +280,8 @@ async function validateBuiltHtml() {
     );
     if (
       result.unnamed.length ||
+      result.genericNames.length ||
+      result.millimetreOnlyLabels.length ||
       result.duplicateIds.length ||
       result.brokenDescriptions.length ||
       result.unassociatedMeasurementHelp.length ||
@@ -256,7 +299,7 @@ async function validateBuiltHtml() {
     process.exitCode = 1;
   } else {
     console.log(
-      `Accessibility HTML validation passed for ${files.length} pages and ${controlCount} form controls: names, unique IDs, describedby references, labeled choice groups and associated measurement help.`,
+      `Accessibility HTML validation passed for ${files.length} pages and ${controlCount} interactive controls: names, non-generic/non-mm-only names, unique IDs, describedby references, labeled choice groups and associated measurement help.`,
     );
   }
 }

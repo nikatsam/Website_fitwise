@@ -9,10 +9,18 @@ const { step, title, description } = Astro.props;
 const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 ---
 
-<section class="calculator-step" data-calculator-step={step} aria-labelledby={headingId}>
+<section
+  class="calculator-step"
+  data-calculator-step={step}
+  data-core-calculator-step
+  data-step-index={step - 1}
+  aria-labelledby={headingId}
+>
   <header class="calculator-step__header">
     <p>Step {step}</p>
-    <h2 id={headingId}>{title}</h2>
+    <h2 id={headingId} tabindex="-1">
+      {title}
+    </h2>
   </header>
   {description && <p class="calculator-step__description">{description}</p>}
   <div class="calculator-step__content">
@@ -65,3 +73,204 @@ const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0
     min-width: 0;
   }
 </style>
+
+<script>
+  const mobileCalculatorQuery = '(max-width: 62rem)';
+
+  function initCoreProgressiveForms(): void {
+    const media = window.matchMedia(mobileCalculatorQuery);
+    document
+      .querySelectorAll<HTMLFormElement>('form[data-core-progressive-form]')
+      .forEach((form) => {
+        const steps = [...form.querySelectorAll<HTMLElement>('[data-core-calculator-step]')];
+        if (steps.length < 2 || form.querySelector('[data-core-stepper]')) return;
+
+        let activeStep = 0;
+        const nav = document.createElement('nav');
+        nav.className = 'calculator-progress';
+        nav.setAttribute('aria-label', 'Calculator progress');
+        nav.dataset.coreStepper = '';
+        nav.hidden = true;
+
+        const list = document.createElement('ol');
+        list.className = 'calculator-progress__steps';
+        const titles = steps.map((section, index) => {
+          const heading = section.querySelector('h2');
+          const title =
+            heading?.textContent?.trim().replace(/^Step\s+\d+\s*:\s*/i, '') || `Step ${index + 1}`;
+          const item = document.createElement('li');
+          const button = document.createElement('button');
+          const number = document.createElement('span');
+          const name = document.createElement('span');
+          const state = document.createElement('span');
+
+          button.type = 'button';
+          button.className = 'calculator-progress__step';
+          button.dataset.coreStepJump = String(index);
+          number.className = 'calculator-progress__number';
+          number.textContent = String(index + 1);
+          name.className = 'calculator-progress__name';
+          name.textContent = title;
+          state.className = 'calculator-progress__state';
+          state.dataset.coreStepState = String(index);
+          button.append(number, name, state);
+          item.append(button);
+          list.append(item);
+          return title;
+        });
+
+        const controls = document.createElement('div');
+        controls.className = 'calculator-progress__controls';
+        const previous = document.createElement('button');
+        previous.type = 'button';
+        previous.className = 'calculator-progress__previous';
+        previous.dataset.coreStepPrevious = '';
+        previous.textContent = 'Previous';
+        const status = document.createElement('p');
+        status.className = 'calculator-progress__current';
+        status.dataset.coreStepStatus = '';
+        status.setAttribute('aria-live', 'polite');
+        status.setAttribute('aria-atomic', 'true');
+        const next = document.createElement('button');
+        next.type = 'button';
+        next.className = 'calculator-progress__next';
+        next.dataset.coreStepNext = '';
+        controls.append(previous, status, next);
+        nav.append(list, controls);
+        form.insertBefore(nav, steps[0]);
+
+        const stepComplete = (section: HTMLElement): boolean => {
+          const controls = [
+            ...section.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+              'input:not([type="hidden"]), select, textarea',
+            ),
+          ].filter((control) => {
+            if (control.disabled || control.getAttribute('aria-invalid') === 'true') return false;
+            if (
+              control instanceof HTMLInputElement &&
+              ['checkbox', 'radio'].includes(control.type)
+            ) {
+              return false;
+            }
+            for (
+              let parent = control.parentElement;
+              parent && parent !== section;
+              parent = parent.parentElement
+            ) {
+              if (parent.hidden || parent.getAttribute('aria-hidden') === 'true') return false;
+            }
+            return true;
+          });
+          return controls.every(
+            (control) =>
+              (control as HTMLInputElement).dataset.stepOptional === 'true' ||
+              control.value.trim().length > 0,
+          );
+        };
+
+        const setStep = (index: number, moveFocus = false): void => {
+          activeStep = Math.max(0, Math.min(steps.length - 1, index));
+          const mobile = media.matches;
+          const activeDetails = steps[activeStep].closest('details');
+          const stepDetails = new Set(
+            steps
+              .map((section) => section.closest('details'))
+              .filter(
+                (details): details is HTMLDetailsElement => details instanceof HTMLDetailsElement,
+              ),
+          );
+
+          nav.hidden = !mobile;
+          steps.forEach((section, stepIndex) => {
+            section.hidden = mobile && stepIndex !== activeStep;
+          });
+          stepDetails.forEach((details) => {
+            const summary = details.querySelector<HTMLElement>(':scope > summary');
+            if (mobile && details === activeDetails) {
+              details.open = true;
+              details.dataset.coreStepOpened = 'true';
+              if (summary) summary.hidden = true;
+            } else if (mobile) {
+              if (details.dataset.coreStepOpened === 'true') {
+                details.open = false;
+                delete details.dataset.coreStepOpened;
+              }
+              if (summary) summary.hidden = false;
+            } else {
+              if (details.dataset.coreStepOpened === 'true') {
+                details.open = false;
+                delete details.dataset.coreStepOpened;
+              }
+              if (summary) summary.hidden = false;
+            }
+          });
+
+          const isReady = stepComplete(steps[activeStep]);
+          const stepStatus = steps.map((section, stepIndex) => {
+            const ready = stepComplete(section);
+            if (stepIndex === activeStep)
+              return ready ? 'Current · measurements entered' : 'Current · add required values';
+            if (stepIndex < activeStep) return ready ? 'Complete' : 'Needs input';
+            return 'Not started';
+          });
+          [...list.querySelectorAll<HTMLButtonElement>('[data-core-step-jump]')].forEach(
+            (button) => {
+              const stepIndex = Number(button.dataset.coreStepJump);
+              const state = button.querySelector<HTMLElement>('[data-core-step-state]');
+              if (stepIndex === activeStep) button.setAttribute('aria-current', 'step');
+              else button.removeAttribute('aria-current');
+              button.dataset.stepComplete = String(stepComplete(steps[stepIndex]));
+              button.setAttribute(
+                'aria-label',
+                `Step ${stepIndex + 1}: ${titles[stepIndex]}. ${stepStatus[stepIndex]}`,
+              );
+              if (state) state.textContent = stepStatus[stepIndex];
+            },
+          );
+          previous.disabled = activeStep === 0;
+          next.textContent =
+            activeStep === steps.length - 1 ? 'View result' : `Next: ${titles[activeStep + 1]}`;
+          status.textContent = `Step ${activeStep + 1} of ${steps.length}: ${titles[activeStep]}${isReady ? ', measurements entered' : ''}`;
+
+          if (moveFocus && mobile) {
+            const heading = steps[activeStep].querySelector<HTMLElement>('h2');
+            heading?.focus({ preventScroll: true });
+            steps[activeStep].scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        };
+
+        previous.addEventListener('click', () => setStep(activeStep - 1, true));
+        next.addEventListener('click', () => {
+          if (activeStep === steps.length - 1) {
+            form
+              .closest('[data-fit-result-scope]')
+              ?.querySelector<HTMLElement>('.fit-summary')
+              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+          }
+          setStep(activeStep + 1, true);
+        });
+        list.addEventListener('click', (event) => {
+          if (!(event.target instanceof Element)) return;
+          const button = event.target.closest<HTMLButtonElement>('[data-core-step-jump]');
+          if (button) setStep(Number(button.dataset.coreStepJump), true);
+        });
+        form.addEventListener('click', (event) => {
+          if (!media.matches || !(event.target instanceof Element)) return;
+          const summary = event.target.closest<HTMLElement>('details > summary');
+          const details = summary?.parentElement;
+          const stepIndex = details ? steps.findIndex((section) => details.contains(section)) : -1;
+          if (summary && stepIndex >= 0) {
+            event.preventDefault();
+            setStep(stepIndex, true);
+          }
+        });
+        form.addEventListener('input', () => setStep(activeStep));
+        form.addEventListener('change', () => setStep(activeStep));
+        media.addEventListener('change', () => setStep(activeStep));
+        setStep(0);
+      });
+  }
+
+  initCoreProgressiveForms();
+</script>

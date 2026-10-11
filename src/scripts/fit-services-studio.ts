@@ -4,8 +4,8 @@ import {
   getFitServiceDefaults,
   getFitServiceModeForRoute,
   evaluateFitServicePlan,
-  getFitServiceMobileSteps,
-  type FitServiceMobileStep,
+  getFitServiceSteps,
+  type FitServiceStep,
   type FitServiceField,
   type FitServiceMode,
   type FitServiceValues,
@@ -20,6 +20,7 @@ import {
   type FitState,
 } from '../lib/fit';
 import { renderFitServiceAsciiPreview } from '../lib/diagram/render-fit-service-ascii';
+import { renderFitServiceSvgPlan } from '../lib/diagram/render-fit-service-svg';
 import {
   getFitServiceMeasurementGuidance,
   renderMeasurementHelpMarkup,
@@ -45,11 +46,11 @@ function escapeHtml(value: string): string {
 const mobileStepperQuery = '(max-width: 61.999rem)';
 let activeServiceStep = 0;
 let activeServiceMode: FitServiceMode | null = null;
-let activeServiceSteps: FitServiceMobileStep[] = [];
+let activeServiceSteps: FitServiceStep[] = [];
 
 function renderServiceStepMarkup(
   mode: FitServiceMode,
-  steps: FitServiceMobileStep[],
+  steps: FitServiceStep[],
   fields: FitServiceField[],
   values: FitServiceValues,
 ): string {
@@ -72,7 +73,7 @@ function renderServiceStepMarkup(
     .map((step, index) => {
       const headingId = `fit-service-step-${mode}-${step.id}-heading`;
       const fieldsMarkup = step.fields.map((field) => markupByName.get(field.name) ?? '').join('');
-      return `<section class="fit-services__step" data-fit-service-step data-step-index="${index}" aria-labelledby="${headingId}"><h2 id="${headingId}" data-step-heading tabindex="-1">Step ${index + 1} of ${steps.length}: ${escapeHtml(step.title)}</h2><div class="fit-services__step-fields field-grid">${fieldsMarkup}</div></section>`;
+      return `<section class="fit-services__step" data-fit-service-step data-calculator-step data-step-index="${index}" aria-labelledby="${headingId}"><h2 id="${headingId}" data-step-heading tabindex="-1">Step ${index + 1} of ${steps.length}: ${escapeHtml(step.title)}</h2><div class="fit-services__step-fields field-grid">${fieldsMarkup}</div></section>`;
     })
     .join('');
 }
@@ -106,23 +107,9 @@ function applyMobileServiceStep(focusHeading = false): void {
   }
 }
 
-function renderMobileServiceStepper(
-  mode: FitServiceMode,
-  steps: FitServiceMobileStep[] | undefined,
-): void {
+function renderMobileServiceStepper(mode: FitServiceMode, steps: FitServiceStep[]): void {
   const stepper = document.querySelector<HTMLElement>('[data-fit-service-stepper]');
   if (!stepper) return;
-  if (!steps || steps.length === 0) {
-    activeServiceSteps = [];
-    activeServiceMode = mode;
-    activeServiceStep = 0;
-    stepper.innerHTML = '';
-    stepper.hidden = true;
-    document
-      .querySelectorAll<HTMLElement>('[data-fit-service-step]')
-      .forEach((section) => (section.hidden = false));
-    return;
-  }
   if (activeServiceMode !== mode) activeServiceStep = 0;
   activeServiceMode = mode;
   activeServiceSteps = steps;
@@ -143,7 +130,7 @@ function revealStepForField(fieldId: string): void {
 function renderField(field: FitServiceField, mode: FitServiceMode, value: string): string {
   const id = `service-${field.name}`;
   const condition = field.showWhen;
-  const help = getFitServiceMeasurementGuidance(mode, field.name, field.label, field.type);
+  const help = getFitServiceMeasurementGuidance(mode, field.name);
   const descriptionIds = `${id}-error${help ? ` ${id}-help` : ''}${field.type === 'length' ? ' fit-service-unit-note' : ''}`;
   const helpMarkup = help ? renderMeasurementHelpMarkup(`${id}-help`, help) : '';
   const conditionAttributes = condition
@@ -308,9 +295,6 @@ function updateUnitNote(form: HTMLFormElement): void {
     .map((wrapper) => wrapper.querySelector<HTMLElement>('[data-service-control]'))
     .filter((control): control is HTMLElement => control !== null);
   const hints = [
-    ...(controls.some((control) => control.dataset.serviceControl === 'length')
-      ? ['Lengths accept mm, cm, m, in, ft or ft/in. Bare numbers default to mm.']
-      : []),
     ...(controls.some((control) => control.dataset.serviceControl === 'decimal')
       ? ['Weight fields use kg.']
       : []),
@@ -418,7 +402,7 @@ function formatDimensionRows(rows: DimensionDisplayRow[]): void {
 }
 
 function formatDualUnit(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span> <span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
+  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
 }
 
 function refreshCompatibility(
@@ -449,13 +433,13 @@ function updateSummary(
   state: FitState,
   rows: DimensionDisplayRow[],
   compatibility: ReturnType<typeof buildFitServicePlan>['compatibility'],
-  reviewRequired: string[],
+  missingRequirements: NonNullable<ReturnType<typeof buildFitServicePlan>['missingRequirements']>,
 ): void {
   const summary = document.getElementById('fit-services-summary');
   if (!summary) return;
   const copy = FIT_STATE_BADGE_COPY[state];
   const summaryCopy = getFitSummaryCopy(state, rows, {
-    needsInformation: reviewRequired,
+    missingRequirements,
     compatibilityChecks: compatibility,
   });
   const resultLabel = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
@@ -495,23 +479,8 @@ function renderFields(mode: FitServiceMode): void {
   if (!container || !description) return;
   const definition = getFitServiceDefinition(mode);
   const defaults = getFitServiceDefaults(mode);
-  const steps = getFitServiceMobileSteps(mode, definition.fields);
-  if (steps && steps.length > 0) {
-    container.innerHTML = renderServiceStepMarkup(mode, steps, definition.fields, defaults);
-  } else {
-    container.innerHTML = `<div class="field-grid">${definition.fields
-      .map((field) => {
-        const value = defaults[field.name] ?? field.defaultValue;
-        return renderField(
-          field,
-          mode,
-          field.type === 'length' && typeof value === 'number'
-            ? formatMeasurement(value)
-            : String(value),
-        );
-      })
-      .join('')}</div>`;
-  }
+  const steps = getFitServiceSteps(mode, definition.fields);
+  container.innerHTML = renderServiceStepMarkup(mode, steps, definition.fields, defaults);
   renderMobileServiceStepper(mode, steps);
   description.textContent = definition.description;
   refreshStartGuidance(mode, defaults);
@@ -521,9 +490,20 @@ function renderFields(mode: FitServiceMode): void {
 function refreshStartGuidance(mode: FitServiceMode, values: FitServiceValues): void {
   const list = document.querySelector<HTMLUListElement>('[data-before-you-start-items]');
   if (!list) return;
-  const items = getFitServiceStartGuidance(mode, values).map((text) => {
+  const importanceLabel = {
+    required: 'Required',
+    optional: 'Optional',
+    verification: 'For verification',
+  } as const;
+  const items = getFitServiceStartGuidance(mode, values).map(({ type, text }) => {
     const item = document.createElement('li');
-    item.textContent = text;
+    item.dataset.preparationType = type;
+    const label = document.createElement('span');
+    label.className = 'before-you-start__type';
+    label.textContent = importanceLabel[type];
+    const content = document.createElement('span');
+    content.textContent = text;
+    item.append(label, content);
     return item;
   });
   list.replaceChildren(...items);
@@ -534,25 +514,27 @@ function recompute(): void {
   if (!form) return;
   refreshStartGuidance(form.mode, form.values);
   const plan = buildFitServicePlan(form.mode, form.values);
-  const preview = renderFitServiceAsciiPreview(form.mode, form.values);
+  const { result, state } = evaluateFitServicePlan(plan);
+  const rows = toDimensionDisplayRows(plan.checks, { ...result, state });
+  const preferredDisplay = document.documentElement.dataset.unitSystem;
+  const display =
+    preferredDisplay === 'imperial' || preferredDisplay === 'both' ? preferredDisplay : 'metric';
+  const preview = renderFitServiceAsciiPreview(form.mode, form.values, display);
+  const svgPlan = renderFitServiceSvgPlan(rows, state, display);
+  const previewSvg = document.querySelector<HTMLElement>('[data-fit-service-preview-svg]');
   const previewArt = document.querySelector<HTMLElement>('[data-fit-service-preview-ascii]');
   const previewSummary = document.querySelector<HTMLElement>('[data-fit-service-preview-summary]');
+  if (previewSvg) previewSvg.innerHTML = svgPlan;
   if (previewArt) {
     previewArt.textContent = preview.art;
     previewArt.setAttribute('aria-label', preview.description);
   }
   if (previewSummary) previewSummary.textContent = preview.summary;
-  const reviewRequired = plan.reviewRequired ?? [];
-  const { result, state } = evaluateFitServicePlan(plan);
-  const rows = toDimensionDisplayRows(plan.checks, { ...result, state });
-  updateSummary(state, rows, plan.compatibility, reviewRequired);
+  const missingRequirements = plan.missingRequirements ?? [];
+  updateSummary(state, rows, plan.compatibility, missingRequirements);
   formatDimensionRows(rows);
   refreshCompatibility(plan.compatibility);
   refreshCandidates(plan.candidates);
-  const reviewList = document.querySelector<HTMLUListElement>('[data-fit-service-review]');
-  if (reviewList) {
-    reviewList.innerHTML = reviewRequired.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
-  }
   const assumptions = document.querySelector<HTMLElement>(
     '#fit-services-assumptions [data-field="items"]',
   );
@@ -607,6 +589,23 @@ function init(): void {
     const notice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
     if (notice) notice.hidden = false;
     recompute();
+    if (summary) {
+      const label = summary.querySelector<HTMLElement>('[data-field="label"]');
+      const stateLabel = label?.textContent
+        ?.trim()
+        .replace(/^(Example result|Your result)\s*—\s*/, '');
+      const resultLabel = `Example result — ${stateLabel ?? 'Fit result'}`;
+      if (label) label.textContent = resultLabel;
+      const sticky = summary.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
+      const stickyLabel = sticky?.querySelector<HTMLElement>('[data-field="sticky-label"]');
+      if (stickyLabel) stickyLabel.textContent = resultLabel;
+      if (sticky) {
+        sticky.setAttribute(
+          'aria-label',
+          `Fit services result: ${resultLabel}. View calculation details.`,
+        );
+      }
+    }
   });
 
   const handleChange = (event: Event) => {
@@ -614,14 +613,6 @@ function init(): void {
     if (!(target instanceof HTMLElement)) return;
     if (target.matches('[data-candidate-size-width], [data-candidate-size-depth]')) {
       syncCandidateSizeRows();
-    }
-    if (target.id !== 'service-setup') {
-      const notice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
-      if (notice && target.id.startsWith('service-')) {
-        notice.hidden = true;
-        const summary = document.getElementById('fit-services-summary');
-        if (summary?.dataset.fitOrigin) summary.dataset.fitOrigin = 'user';
-      }
     }
     updateConditionalFields();
     recompute();

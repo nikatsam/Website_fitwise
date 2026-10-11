@@ -14,6 +14,7 @@ import { buildBreadcrumb, buildContentNavigationLinks, getPublishedRoutes } from
 import { buildFamilyAnswer } from '../lib/content/build-family-answer';
 import {
   absoluteCanonical,
+  breadcrumbListStructuredData,
   buildPublicationBreadcrumbs,
   publicationStructuredData,
 } from '../lib/seo/metadata';
@@ -59,7 +60,7 @@ const breadcrumb = publication.indexable
 const h1 = publication.h1;
 const structuredData = publication.indexable
   ? publicationStructuredData(publication, breadcrumb)
-  : [];
+  : [breadcrumbListStructuredData(publication.canonicalPath, breadcrumb)];
 const alternateLanguages = (publication.alternatePageIds ?? []).map((alternatePageId) => {
   const alternatePublication = dataset.seoPublications.find(
     (record) => record.pageIntentId === alternatePageId,

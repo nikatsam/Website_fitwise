@@ -80,7 +80,7 @@ const VIEWPORT_HEIGHT_PX = 480;
 const DIAGRAM_PADDING_PX = 60;
 
 function unitValueHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span> <span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
+  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
 }
 
 function escapeHtml(value: string): string {
@@ -522,17 +522,7 @@ function initBedroomFitCheck(): void {
 
   updateFurnitureFieldVisibility();
   form.addEventListener('submit', (event) => event.preventDefault());
-  const handleChange = (event: Event) => {
-    const target = event.target;
-    if (
-      (target instanceof HTMLInputElement && target.type !== 'checkbox') ||
-      target instanceof HTMLSelectElement
-    ) {
-      const exampleNotice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
-      if (exampleNotice) exampleNotice.hidden = true;
-      const summary = document.getElementById('bedroom-fitcheck-summary');
-      if (summary?.dataset.fitOrigin) summary.dataset.fitOrigin = 'user';
-    }
+  const handleChange = () => {
     updateFurnitureFieldVisibility();
     recompute();
   };

@@ -1,5 +1,10 @@
 ---
-import type { FitState, DimensionDisplayRow, CompatibilitySummaryCheck } from '../../lib/fit';
+import type {
+  FitState,
+  DimensionDisplayRow,
+  CompatibilitySummaryCheck,
+  MissingRequirement,
+} from '../../lib/fit';
 import {
   FIT_STATE_BADGE_COPY,
   getFitSummaryCopy,
@@ -15,8 +20,8 @@ interface Props {
   id?: string;
   /** Optional dimension-table target for the mobile sticky result bar. */
   resultId?: string;
-  /** Required manufacturer/manual data that is not yet verified. */
-  needsInformation?: string[];
+  /** Structured sources, manuals or compatibility facts that remain unverified. */
+  missingRequirements?: MissingRequirement[];
   /** Product/manual compatibility results that are separate from physical dimensions. */
   compatibilityChecks?: CompatibilitySummaryCheck[];
   /** Marks server-rendered starter values as examples until the user edits the setup. */
@@ -28,11 +33,14 @@ const {
   rows,
   id,
   resultId,
-  needsInformation = [],
+  missingRequirements = [],
   compatibilityChecks = [],
   resultOrigin,
 } = Astro.props;
-const summaryCopy = getFitSummaryCopy(state, rows, { needsInformation, compatibilityChecks });
+const summaryCopy = getFitSummaryCopy(state, rows, {
+  missingRequirements,
+  compatibilityChecks,
+});
 const { icon } = FIT_STATE_BADGE_COPY[state];
 const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
 ---
@@ -103,6 +111,55 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
     </a>
   )}
 </div>
+
+<script>
+  function markEditedExampleAsUserResult(event: Event): void {
+    const target = event.target;
+    const isFieldChange =
+      !(target instanceof HTMLInputElement) &&
+      !(target instanceof HTMLSelectElement) &&
+      !(target instanceof HTMLTextAreaElement);
+    const isCandidateListChange =
+      event.type === 'click' &&
+      target instanceof Element &&
+      target.closest('button[data-candidate-size-add], button[data-candidate-size-remove]');
+    if (target instanceof HTMLInputElement && target.hasAttribute('data-unit-choice')) return;
+    if (isFieldChange && !isCandidateListChange) {
+      return;
+    }
+
+    const form = target instanceof Element ? target.closest('form') : null;
+    const scope = form?.closest<HTMLElement>('[data-fit-result-scope]');
+    const summary = scope?.querySelector<HTMLElement>('.fit-summary[data-fit-origin]');
+    if (!form || !summary || summary.dataset.fitOrigin !== 'example') return;
+
+    summary.dataset.fitOrigin = 'user';
+    const notice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
+    if (notice) notice.hidden = true;
+
+    const label = summary.querySelector<HTMLElement>('[data-field="label"]');
+    const stateLabel = label?.textContent
+      ?.trim()
+      .replace(/^(Example result|Your result)\s*—\s*/, '');
+    const resultLabel = `Your result — ${stateLabel ?? 'Fit result'}`;
+    if (label) label.textContent = resultLabel;
+
+    const sticky = summary.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
+    const stickyLabel = sticky?.querySelector<HTMLElement>('[data-field="sticky-label"]');
+    if (stickyLabel) stickyLabel.textContent = resultLabel;
+    if (sticky) {
+      sticky.setAttribute(
+        'aria-label',
+        sticky.getAttribute('aria-label')?.replace(/Example result\s*—\s*/, 'Your result — ') ??
+          `Fit result: ${resultLabel}. View calculation details.`,
+      );
+    }
+  }
+
+  document.addEventListener('input', markEditedExampleAsUserResult, true);
+  document.addEventListener('change', markEditedExampleAsUserResult, true);
+  document.addEventListener('click', markEditedExampleAsUserResult, true);
+</script>
 
 <style>
   .fit-summary {
@@ -216,6 +273,29 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
   .fit-summary__content :global(h3) {
     margin: 0 0 calc(-1 * var(--space-2));
     font-size: var(--fs-md);
+  }
+
+  .fit-summary__content :global(.fit-summary__missing) {
+    padding: var(--space-3);
+    border-left: 0.25rem solid var(--color-state-info-fg);
+    background: var(--color-surface);
+  }
+
+  .fit-summary__content :global(.fit-summary__missing h3),
+  .fit-summary__content :global(.fit-summary__missing p) {
+    margin: 0;
+  }
+
+  .fit-summary__content :global(.fit-summary__missing ul) {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-2) 0 0;
+    padding-inline-start: var(--space-5);
+  }
+
+  .fit-summary__content :global(.fit-summary__missing li) {
+    display: grid;
+    gap: var(--space-1);
   }
 
   .fit-summary__legend {

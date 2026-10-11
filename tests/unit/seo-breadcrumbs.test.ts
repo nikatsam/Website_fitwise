@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { dataset } from '../../src/data';
-import { buildPublicationBreadcrumbs, publicationStructuredData } from '../../src/lib/seo/metadata';
+import {
+  breadcrumbListStructuredData,
+  buildPublicationBreadcrumbs,
+  publicationStructuredData,
+} from '../../src/lib/seo/metadata';
 
 function breadcrumbsFor(route: string) {
   const pageIntent = dataset.pageIntents.find((item) => item.route === route);
@@ -50,5 +54,22 @@ describe('published breadcrumbs', () => {
       breadcrumbs.map((item) => item.href),
     );
     expect(items?.map((item) => item.position)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('can publish matching breadcrumb-only structured data for noindex pages', () => {
+    const items = [
+      { label: 'Home', href: '/' },
+      { label: 'Workspace', href: '/workspace/' },
+      { label: 'Monitor sizing preview', href: '/workspace/monitor-preview/' },
+    ];
+    const data = breadcrumbListStructuredData('/workspace/monitor-preview/', items);
+    const elements = data.itemListElement as { name: string; item: string; position: number }[];
+
+    expect(data['@type']).toBe('BreadcrumbList');
+    expect(elements.map((item) => item.name)).toEqual(items.map((item) => item.label));
+    expect(elements.map((item) => new URL(item.item).pathname)).toEqual(
+      items.map((item) => item.href),
+    );
+    expect(elements.map((item) => item.position)).toEqual([1, 2, 3]);
   });
 });

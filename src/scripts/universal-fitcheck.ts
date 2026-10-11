@@ -119,7 +119,7 @@ function readForm() {
 }
 
 function unitHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span> <span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
+  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
 }
 
 function renderRows(rows: DimensionDisplayRow[]): void {
@@ -242,23 +242,13 @@ function init(): void {
       clearError('fit-corridor-width');
     }
   };
-  const handleChange = (event: Event) => {
-    const target = event.target;
-    if (
-      (target instanceof HTMLInputElement && target.type !== 'checkbox') ||
-      target instanceof HTMLSelectElement
-    ) {
-      const exampleNotice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
-      if (exampleNotice) exampleNotice.hidden = true;
-      const summary = document.getElementById('universal-fit-summary');
-      if (summary?.dataset.fitOrigin) summary.dataset.fitOrigin = 'user';
-    }
+  const handleChange = () => {
     recompute();
   };
   form.addEventListener('input', handleChange);
-  form.addEventListener('change', (event) => {
+  form.addEventListener('change', () => {
     updateRouteVisibility();
-    handleChange(event);
+    handleChange();
   });
   form.addEventListener('submit', (event) => event.preventDefault());
   document.querySelector('[data-copy-fit-report]')?.addEventListener('click', async () => {

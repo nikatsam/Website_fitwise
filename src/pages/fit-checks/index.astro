@@ -1,0 +1,40 @@
+---
+import PublishedLayout from '../../components/layout/PublishedLayout.astro';
+import FitCheckDirectory from '../../components/content/FitCheckDirectory.astro';
+---
+
+<PublishedLayout pageIntentId="pi-feature-fit-checks-directory">
+  <section class="fit-checks-page wrapper" aria-labelledby="fit-checks-heading">
+    <h1 id="fit-checks-heading">All fit checks</h1>
+    <p class="fit-checks-page__intro">
+      Browse focused calculators by the item, room, route or outdoor space you need to check. Each
+      tool opens the relevant measurements and source requirements directly.
+    </p>
+    <FitCheckDirectory />
+  </section>
+</PublishedLayout>
+
+<style>
+  .fit-checks-page {
+    display: grid;
+    gap: var(--space-4);
+    padding-block: var(--space-5);
+  }
+
+  .fit-checks-page h1,
+  .fit-checks-page__intro {
+    max-width: 78ch;
+    margin: 0;
+  }
+
+  .fit-checks-page h1 {
+    font-size: var(--fs-3xl);
+    letter-spacing: -0.035em;
+  }
+
+  .fit-checks-page__intro {
+    color: var(--color-text-secondary);
+    font-size: var(--fs-md);
+    line-height: 1.6;
+  }
+</style>

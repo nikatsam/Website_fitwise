@@ -99,7 +99,7 @@ function readForm() {
 }
 
 function unitHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span> <span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
+  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
 }
 
 function renderRows(rows: DimensionDisplayRow[]): void {
@@ -219,16 +219,7 @@ function init(): void {
   const form = document.querySelector<HTMLFormElement>('[data-dining-fitcheck-form]');
   if (!form) return;
   form.addEventListener('submit', (event) => event.preventDefault());
-  const handleChange = (event: Event) => {
-    if (
-      (event.target instanceof HTMLInputElement && event.target.type !== 'checkbox') ||
-      event.target instanceof HTMLSelectElement
-    ) {
-      const notice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
-      if (notice) notice.hidden = true;
-      const summary = document.getElementById('dining-fitcheck-summary');
-      if (summary?.dataset.fitOrigin) summary.dataset.fitOrigin = 'user';
-    }
+  const handleChange = () => {
     recompute();
   };
   form.addEventListener('input', handleChange);

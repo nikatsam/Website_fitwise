@@ -1,0 +1,42 @@
+---
+interface Props {
+  note?: string;
+}
+
+const {
+  note = 'Replace the illustrative values with your own measurements before relying on the result.',
+} = Astro.props;
+---
+
+<aside
+  class="fit-example-notice"
+  data-fit-example-notice
+  role="note"
+  aria-label="Example data loaded"
+>
+  <strong>Example data loaded</strong>
+  <p>The values below are illustrative.</p>
+  <p>{note}</p>
+</aside>
+
+<style>
+  .fit-example-notice {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: var(--space-3);
+    border-left: 0.2rem solid var(--color-accent-1);
+    background: var(--color-surface);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+  }
+
+  .fit-example-notice strong {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .fit-example-notice p {
+    margin: 0;
+  }
+</style>

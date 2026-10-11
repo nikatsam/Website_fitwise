@@ -1,0 +1,153 @@
+{
+  "audit_date": "2026-10-11",
+  "site": "https://fitwise.stream",
+  "cycle": "UX11",
+  "verified_weight": 0,
+  "total_weight": 100,
+  "progress_percent": 0,
+  "status_legend": {
+    "OPEN": "Confirmed issue; no remediation verified yet",
+    "IN_PROGRESS": "Implementation underway",
+    "READY_FOR_RETEST": "Code complete; awaiting QA/retest",
+    "VERIFIED": "Acceptance criteria passed",
+    "BLOCKED": "Blocked by dependency or unresolved decision",
+    "DEFERRED": "Intentionally postponed with rationale"
+  },
+  "issues": [
+    {
+      "id": "UX11-001",
+      "severity": "P0",
+      "weight": 7,
+      "status": "READY_FOR_RETEST",
+      "title": "Canonical four-state result model"
+    },
+    {
+      "id": "UX11-002",
+      "severity": "P0",
+      "weight": 10,
+      "status": "READY_FOR_RETEST",
+      "title": "Eliminate unlabeled/generic controls"
+    },
+    {
+      "id": "UX11-003",
+      "severity": "P0",
+      "weight": 6,
+      "status": "READY_FOR_RETEST",
+      "title": "Replace generated incomplete-state sentence assembly"
+    },
+    {
+      "id": "UX11-004",
+      "severity": "P0",
+      "weight": 9,
+      "status": "BLOCKED",
+      "blocker": "Owner confirmation pending on whether Vehicle/Garage is part of the current product roadmap; retained under More fit checks as the safe existing placement.",
+      "title": "One global navigation component"
+    },
+    {
+      "id": "UX11-005",
+      "severity": "P0",
+      "weight": 6,
+      "status": "READY_FOR_RETEST",
+      "title": "Field help must be relevant to the field"
+    },
+    {
+      "id": "UX11-006",
+      "severity": "P1",
+      "weight": 12,
+      "status": "READY_FOR_RETEST",
+      "title": "Migrate core calculators to newest shell"
+    },
+    {
+      "id": "UX11-007",
+      "severity": "P1",
+      "weight": 8,
+      "status": "READY_FOR_RETEST",
+      "title": "Migrate intermediate specialist calculators"
+    },
+    {
+      "id": "UX11-008",
+      "severity": "P1",
+      "weight": 5,
+      "status": "READY_FOR_RETEST",
+      "title": "Standardise unit UX"
+    },
+    {
+      "id": "UX11-009",
+      "severity": "P1",
+      "weight": 4,
+      "status": "READY_FOR_RETEST",
+      "title": "Replace More assumptions"
+    },
+    {
+      "id": "UX11-010",
+      "severity": "P1",
+      "weight": 4,
+      "status": "READY_FOR_RETEST",
+      "title": "Before you start everywhere"
+    },
+    {
+      "id": "UX11-011",
+      "severity": "P1",
+      "weight": 5,
+      "status": "READY_FOR_RETEST",
+      "title": "Contextual help with progressive disclosure"
+    },
+    {
+      "id": "UX11-012",
+      "severity": "P1",
+      "weight": 4,
+      "status": "READY_FOR_RETEST",
+      "title": "Visible breadcrumbs"
+    },
+    {
+      "id": "UX11-013",
+      "severity": "P1",
+      "weight": 5,
+      "status": "BLOCKED",
+      "blocker": "Owner confirmation is pending on whether the advanced all-in-one checker should remain a permanent product. It remains at /fit-services/ as the safe reversible default.",
+      "title": "Split directory from advanced all-in-one calculator"
+    },
+    {
+      "id": "UX11-014",
+      "severity": "P1",
+      "weight": 4,
+      "status": "READY_FOR_RETEST",
+      "title": "Rationalise thin category hubs"
+    },
+    {
+      "id": "UX11-015",
+      "severity": "P1",
+      "weight": 3,
+      "status": "READY_FOR_RETEST",
+      "title": "Consistent example-data state"
+    },
+    {
+      "id": "UX11-016",
+      "severity": "P1",
+      "weight": 4,
+      "status": "READY_FOR_RETEST",
+      "title": "Finish mobile progressive interaction pattern"
+    },
+    {
+      "id": "UX11-017",
+      "severity": "P2",
+      "weight": 2,
+      "status": "READY_FOR_RETEST",
+      "title": "Responsive SVG plans"
+    },
+    {
+      "id": "UX11-018",
+      "severity": "P2",
+      "weight": 1,
+      "status": "READY_FOR_RETEST",
+      "title": "Contextual related checks"
+    },
+    {
+      "id": "UX11-019",
+      "severity": "P2",
+      "weight": 1,
+      "status": "READY_FOR_RETEST",
+      "title": "Global exact-fit/tolerance messaging"
+    }
+  ]
+}

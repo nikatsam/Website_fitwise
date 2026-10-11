@@ -58,13 +58,23 @@ describe('Universal copied fit review', () => {
       orientation: 'width-depth',
       quantityCapacity: 1,
       summary: getFitSummaryCopy('needs_information', rows, {
-        needsInformation: ['exact manual reference'],
+        missingRequirements: [
+          {
+            type: 'manual_reference',
+            label: 'Installation clearance source',
+            explanation: 'The exact model installation clearance has not been verified.',
+            action: 'Add the exact model manual or manufacturer specification.',
+          },
+        ],
       }),
       rows,
     });
 
     expect(report).toContain('Fitwise review: Item');
     expect(report).toContain('Needs information');
-    expect(report).toContain('exact manual reference');
+    expect(report).toContain('Missing: Installation clearance source');
+    expect(report).toContain('The exact model installation clearance has not been verified.');
+    expect(report).toContain('Action: Add the exact model manual or manufacturer specification.');
+    expect(report).not.toContain('..');
   });
 });

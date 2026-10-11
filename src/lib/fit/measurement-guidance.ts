@@ -1,60 +1,41 @@
-import type { FitServiceFieldType, FitServiceMode } from '../geometry/fit-services';
+import type { FitServiceMode } from '../geometry/fit-services';
 
 export type MeasurementDiagram = 'fixed-span' | 'clearance-envelope' | 'route' | 'operating-zone';
 export type CoreCalculator = 'universal' | 'workspace' | 'bedroom' | 'dining';
 
 export interface MeasurementGuidance {
   label: string;
-  summary: string;
-  detail: string;
-  example: string;
+  summaryHelp: string;
+  measureHelp: string;
+  example?: string;
+  warning?: string;
+  sourceRequirement?: string;
   diagram?: MeasurementDiagram;
-}
-
-function defaultExample(
-  label: string,
-  summary: string,
-  detail: string,
-  diagram?: MeasurementDiagram,
-): string {
-  const copy = `${label} ${summary} ${detail}`.toLowerCase();
-  if (diagram === 'route') {
-    return 'For example, the doorway, corridor and turn can each have a different narrow point.';
-  }
-  if (diagram === 'operating-zone') {
-    return 'For example, follow the exact model diagram to distinguish front, rear and side boundaries.';
-  }
-  if (diagram === 'clearance-envelope') {
-    return 'For example, keep the chosen extra space separate from the item’s measured footprint.';
-  }
-  if (/candidate sizes?/.test(copy)) {
-    return 'For example, 2.4 m width by 1.8 m depth is one illustrative row, not a recommended structure size.';
-  }
-  if (/manual|manufacturer|specification|vesa|reference/.test(copy)) {
-    return 'For example, record the exact manual section/page used; a similar model may list different values.';
-  }
-  if (/orientation|aspect ratio|angle|direction/.test(copy)) {
-    return 'For example, rotating a rectangular item swaps which edge is compared with the space width.';
-  }
-  if (/inside|opening|room|garage|plot|patio|usable|space/.test(copy)) {
-    return 'For example, a nominal frame width can exceed the clear opening measured between its inside edges.';
-  }
-  return 'For example, include a fixed handle or bezel that extends beyond the main body.';
 }
 
 const makeGuidance = (
   label: string,
-  summary: string,
-  detail: string,
+  summaryHelp: string,
+  measureHelp: string,
   diagram?: MeasurementDiagram,
   example?: string,
+  extras: Pick<MeasurementGuidance, 'warning' | 'sourceRequirement'> = {},
 ): MeasurementGuidance => ({
   label,
-  summary,
-  detail,
-  example: example ?? defaultExample(label, summary, detail, diagram),
-  diagram,
+  summaryHelp,
+  measureHelp,
+  ...(example ? { example } : {}),
+  ...(diagram ? { diagram } : {}),
+  ...extras,
 });
+
+const outsideDimensionFor = (object: string, axis: string, detail = '') =>
+  makeGuidance(
+    `How to measure ${object} ${axis}`,
+    `Measure the ${axis} of the ${object} between its fixed outermost points.`,
+    `Use exact model dimensions where available. Include fixed parts that remain on the ${object} in this setup.${detail ? ` ${detail}` : ''}`,
+    'fixed-span',
+  );
 
 const OUTSIDE_DIMENSION = makeGuidance(
   'How to measure the outside dimension',
@@ -74,13 +55,21 @@ const SOURCE_REFERENCE = makeGuidance(
   'Where to find the exact specification',
   'Use the current instructions or specification for the exact make and model.',
   'Select the source type, then enter the manual section/page or manufacturer specification reference. Do not use a value from a different model.',
+  undefined,
+  undefined,
+  {
+    sourceRequirement:
+      'Reference the exact model manual or manufacturer specification; do not infer values from a similar product.',
+  },
 );
 
 const USER_SELECTED_ALLOWANCE = makeGuidance(
   'How to enter this allowance',
   'Measure from the named item edge to the space or obstruction edge.',
-  'Enter only the additional space you want to reserve. This is a user-selected planning target, not a universal minimum or safety standard.',
+  'Enter only the additional space you want to reserve. It is added outside the item footprint.',
   'clearance-envelope',
+  undefined,
+  { warning: 'This allowance does not establish a code, accessibility or safety minimum.' },
 );
 
 export const CORE_MEASUREMENT_GUIDANCE: Record<
@@ -148,6 +137,7 @@ export const CORE_MEASUREMENT_GUIDANCE: Record<
       'Measure edge-to-edge between the adjacent item footprints.',
       'This is a spacing input between objects, not extra space around the room perimeter.',
       'fixed-span',
+      'For two adjacent boxes, measure the open distance between their closest outside edges.',
     ),
   },
   workspace: {
@@ -192,6 +182,7 @@ export const CORE_MEASUREMENT_GUIDANCE: Record<
       'Measure the edge-to-edge gap between adjacent monitor bodies.',
       'Do not measure from screen centers or include a side margin here.',
       'fixed-span',
+      'For two side-by-side monitors, measure the shortest clear distance between their outer bezels.',
     ),
     'side-margin': makeGuidance(
       'How to use the side margin target',
@@ -332,6 +323,9 @@ export const CORE_MEASUREMENT_GUIDANCE: Record<
 
 const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, MeasurementGuidance>>> = {
   'appliance-install': {
+    itemWidth: outsideDimensionFor('appliance', 'width'),
+    itemDepth: outsideDimensionFor('appliance', 'depth'),
+    itemHeight: outsideDimensionFor('appliance', 'height'),
     openingWidth: makeGuidance(
       'How to measure clear opening width',
       'Measure the usable opening between its narrowest fixed inside edges.',
@@ -368,11 +362,36 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
       'Use the exact model manual for ventilation and installation requirements.',
       'clearance-envelope',
     ),
-    clearanceSource: SOURCE_REFERENCE,
+    clearanceSource: makeGuidance(
+      'How to choose the clearance source',
+      'Select the manual/specification basis or mark the allowance as your own choice.',
+      'A selected personal allowance is not a manufacturer-verified requirement. Only exact model sources can verify model-specific installation clearance.',
+      undefined,
+      undefined,
+      {
+        sourceRequirement:
+          'To mark manufacturer clearance as verified, use an exact model manual or specification reference.',
+      },
+    ),
     clearanceManualReference: SOURCE_REFERENCE,
     clearanceSpecReference: SOURCE_REFERENCE,
   },
   'delivery-route': {
+    itemWidth: outsideDimensionFor(
+      'delivered item or package',
+      'width',
+      'Measure the outer package when it remains on during the move.',
+    ),
+    itemDepth: outsideDimensionFor(
+      'delivered item or package',
+      'depth',
+      'Measure the outer package when it remains on during the move.',
+    ),
+    itemHeight: outsideDimensionFor(
+      'delivered item or package',
+      'height',
+      'Measure the outer package when it remains on during the move.',
+    ),
     frontDoorWidth: makeGuidance(
       'How to measure clear door width',
       'Measure between the narrowest fixed inside edges of the open doorway.',
@@ -429,6 +448,12 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
     ),
   },
   'workspace-compatibility': {
+    monitorWidth: outsideDimensionFor('monitor body', 'width'),
+    monitorDepth: outsideDimensionFor(
+      'monitor and attached base',
+      'depth',
+      'Use the same stand or arm-base configuration that will be placed on the desk.',
+    ),
     deskWidth: USABLE_INSIDE_SPAN,
     deskDepth: makeGuidance(
       'How to measure usable desk depth',
@@ -456,6 +481,12 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
       'Where to find the monitor VESA pattern',
       'Use the exact monitor model’s listed VESA mounting pattern.',
       'Check the monitor manual/specification and the arm’s supported patterns; do not infer a pattern from screen size.',
+      undefined,
+      undefined,
+      {
+        sourceRequirement:
+          'Check the exact monitor model and arm specification; pattern support can vary by model.',
+      },
     ),
     armVesaPatterns: SOURCE_REFERENCE,
     compatibilitySource: SOURCE_REFERENCE,
@@ -463,6 +494,12 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
     compatibilitySpecReference: SOURCE_REFERENCE,
   },
   'tv-fit': {
+    tvWidth: outsideDimensionFor('television body', 'width'),
+    tvHeight: outsideDimensionFor('television body', 'height'),
+    standWidth: outsideDimensionFor('TV stand', 'width'),
+    standDepth: outsideDimensionFor('TV stand', 'depth'),
+    soundbarWidth: outsideDimensionFor('soundbar', 'width'),
+    soundbarDepth: outsideDimensionFor('soundbar', 'depth'),
     setup: makeGuidance(
       'Choose the TV setup being checked',
       'Select stand or wall mount to show the matching dimensions and manual checks.',
@@ -488,6 +525,12 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
       'Where to find the TV VESA pattern',
       'Use the exact TV model’s listed VESA pattern and weight.',
       'Compare with the exact mount specification for supported patterns and load. Do not infer compatibility from screen size.',
+      undefined,
+      undefined,
+      {
+        sourceRequirement:
+          'Verify the exact TV and mount models; do not infer VESA or load compatibility from screen size.',
+      },
     ),
     mountVesaPatterns: SOURCE_REFERENCE,
     mountDataSource: SOURCE_REFERENCE,
@@ -495,6 +538,9 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
     mountPageReference: SOURCE_REFERENCE,
   },
   'home-gym': {
+    equipmentWidth: outsideDimensionFor('equipment', 'width'),
+    equipmentDepth: outsideDimensionFor('equipment', 'depth'),
+    equipmentHeight: outsideDimensionFor('equipment', 'height'),
     roomWidth: USABLE_INSIDE_SPAN,
     roomDepth: makeGuidance(
       'How to measure room depth',
@@ -528,6 +574,9 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
     ),
   },
   storage: {
+    itemWidth: outsideDimensionFor('stored object', 'width'),
+    itemDepth: outsideDimensionFor('stored object', 'depth'),
+    itemHeight: outsideDimensionFor('stored object', 'height'),
     spaceWidth: USABLE_INSIDE_SPAN,
     spaceDepth: makeGuidance(
       'How to measure usable storage depth',
@@ -552,6 +601,7 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
       'Measure edge-to-edge spacing between adjacent objects.',
       'The item gap is separate from the aisle and outer edge clearance.',
       'fixed-span',
+      'For two adjacent boxes, measure the open distance between their closest outside edges.',
     ),
     availableAisle: makeGuidance(
       'How to measure the available aisle',
@@ -567,6 +617,14 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
     ),
   },
   'pool-room': {
+    tableWidth: outsideDimensionFor('pool table', 'width'),
+    tableLength: outsideDimensionFor('pool table', 'length'),
+    cueLength: makeGuidance(
+      'How to measure cue length',
+      'Measure the cue from its tip to the butt end.',
+      'Use the actual cue length being checked; cue clearance is calculated separately from table size.',
+      'fixed-span',
+    ),
     roomWidth: USABLE_INSIDE_SPAN,
     roomLength: makeGuidance(
       'How to measure clear room length',
@@ -582,6 +640,13 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
     ),
   },
   'vehicle-garage': {
+    vehicleWidth: outsideDimensionFor(
+      'vehicle in its parking configuration',
+      'width',
+      'Include mirrors or accessories only as they will be positioned while parking.',
+    ),
+    vehicleLength: outsideDimensionFor('vehicle', 'length'),
+    vehicleHeight: outsideDimensionFor('vehicle with roof equipment', 'height'),
     garageWidth: USABLE_INSIDE_SPAN,
     garageLength: makeGuidance(
       'How to measure garage usable length',
@@ -631,6 +696,8 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
   'garden-structure': {
     plotWidth: USABLE_INSIDE_SPAN,
     plotDepth: USABLE_INSIDE_SPAN,
+    bodyWidth: outsideDimensionFor('structure body', 'width'),
+    bodyDepth: outsideDimensionFor('structure body', 'depth'),
     roofOverhangSide: makeGuidance(
       'How to measure side roof overhang',
       'Measure the horizontal projection from the structure body side to the roof edge.',
@@ -695,6 +762,9 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
     ),
     clearWidth: USABLE_INSIDE_SPAN,
     clearDepth: USABLE_INSIDE_SPAN,
+    tableWidth: outsideDimensionFor('dining table', 'width'),
+    tableLength: outsideDimensionFor('dining table', 'length'),
+    chairWidth: outsideDimensionFor('chair', 'width'),
     chairEnvelope: makeGuidance(
       'How to measure pulled-out chair envelope',
       'Measure from the table edge to the back of the chair when pulled out.',
@@ -712,6 +782,9 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
     insideWidth: USABLE_INSIDE_SPAN,
     insideDepth: USABLE_INSIDE_SPAN,
     insideHeight: USABLE_INSIDE_SPAN,
+    itemWidth: outsideDimensionFor('stored item', 'width'),
+    itemDepth: outsideDimensionFor('stored item', 'depth'),
+    itemHeight: outsideDimensionFor('stored item', 'height'),
     aisleWidth: makeGuidance(
       'How to measure clear aisle width',
       'Measure the narrowest clear aisle between stored items and the opposite obstruction.',
@@ -729,11 +802,14 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
       'Measure edge-to-edge between neighboring objects.',
       'Keep item spacing separate from the outer aisle width.',
       'fixed-span',
+      'For two stored items, measure the open distance between their closest fixed outside edges.',
     ),
   },
   'garden-greenhouse': {
     plotWidth: USABLE_INSIDE_SPAN,
     plotDepth: USABLE_INSIDE_SPAN,
+    greenhouseWidth: outsideDimensionFor('greenhouse body', 'width'),
+    greenhouseDepth: outsideDimensionFor('greenhouse body', 'depth'),
     roofOverhangSide: makeGuidance(
       'How to measure side eave projection',
       'Measure from the greenhouse body side to the roof edge.',
@@ -772,9 +848,12 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
       'Compare with the outside width of equipment that must pass through.',
       'fixed-span',
     ),
-    wheelbarrowWidth: OUTSIDE_DIMENSION,
+    wheelbarrowWidth: outsideDimensionFor('wheelbarrow or equipment', 'width'),
   },
   'garden-hot-tub': {
+    tubWidth: outsideDimensionFor('hot tub', 'width'),
+    tubDepth: outsideDimensionFor('hot tub', 'depth'),
+    tubHeight: outsideDimensionFor('hot tub', 'height'),
     patioWidth: USABLE_INSIDE_SPAN,
     patioDepth: USABLE_INSIDE_SPAN,
     clearHeight: makeGuidance(
@@ -801,11 +880,24 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
       'Use the exact cover lifter/tub instructions for its movement envelope.',
       'operating-zone',
     ),
-    serviceSpaceSource: SOURCE_REFERENCE,
+    serviceSpaceSource: makeGuidance(
+      'How to choose the service-space source',
+      'Select an exact model source or identify the value as your own chosen allowance.',
+      'A personal allowance does not verify the manufacturer’s service-panel or cover-access requirements.',
+      undefined,
+      undefined,
+      {
+        sourceRequirement:
+          'Use the exact tub manual or specification when marking manufacturer clearances as verified.',
+      },
+    ),
     serviceManualReference: SOURCE_REFERENCE,
     serviceSpecReference: SOURCE_REFERENCE,
   },
   'garden-outdoor-kitchen': {
+    runWidth: outsideDimensionFor('outdoor-kitchen run', 'width'),
+    runDepth: outsideDimensionFor('outdoor-kitchen run', 'depth'),
+    runHeight: outsideDimensionFor('outdoor-kitchen run', 'height'),
     patioWidth: USABLE_INSIDE_SPAN,
     patioDepth: USABLE_INSIDE_SPAN,
     clearHeight: makeGuidance(
@@ -834,6 +926,9 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
     ),
   },
   'garden-play-equipment': {
+    equipmentWidth: outsideDimensionFor('play-equipment footprint', 'width'),
+    equipmentDepth: outsideDimensionFor('play-equipment footprint', 'depth'),
+    equipmentHeight: outsideDimensionFor('play equipment', 'height'),
     plotWidth: USABLE_INSIDE_SPAN,
     plotDepth: USABLE_INSIDE_SPAN,
     clearHeight: makeGuidance(
@@ -847,6 +942,11 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
       'Use the exact equipment model instructions for the use-zone diagram and measurements.',
       'Enter the manufacturer’s left, right, front and rear zone values. No generic child-safety zone is supplied.',
       'operating-zone',
+      undefined,
+      {
+        sourceRequirement:
+          'Use the exact model manual or manufacturer diagram. A footprint measurement does not verify the use zone.',
+      },
     ),
     manualReference: SOURCE_REFERENCE,
     useZoneLeft: makeGuidance(
@@ -876,13 +976,6 @@ const SERVICE_GUIDANCE: Partial<Record<FitServiceMode, Record<string, Measuremen
   },
 };
 
-const genericSourceGuidance = (label: string) =>
-  makeGuidance(
-    `Where to find ${label.toLowerCase()}`,
-    'Use the exact make/model manual or manufacturer specification.',
-    'Record the manual section/page or specification reference you used. Do not infer a value from a different product.',
-  );
-
 export function getCoreMeasurementGuidance(
   calculator: CoreCalculator,
   fieldId: string,
@@ -893,24 +986,8 @@ export function getCoreMeasurementGuidance(
 export function getFitServiceMeasurementGuidance(
   mode: FitServiceMode,
   fieldName: string,
-  label: string,
-  type: FitServiceFieldType,
 ): MeasurementGuidance | undefined {
-  const exact = SERVICE_GUIDANCE[mode]?.[fieldName];
-  if (exact) return exact;
-
-  const name = fieldName.toLowerCase();
-  const text = label.toLowerCase();
-  if (/source|manualreference|specreference|pagereference|vesa|weight|load|clamp/.test(name)) {
-    return genericSourceGuidance(label);
-  }
-
-  if (type !== 'length') return undefined;
-
-  if (/usable|inside|opening|room|garage|plot|patio|space|clearheight/.test(`${name} ${text}`)) {
-    return USABLE_INSIDE_SPAN;
-  }
-  return OUTSIDE_DIMENSION;
+  return SERVICE_GUIDANCE[mode]?.[fieldName];
 }
 
 export const MEASUREMENT_DIAGRAM_COPY: Record<
@@ -967,8 +1044,17 @@ export function renderMeasurementSketch(id: string, diagram: MeasurementDiagram)
 
 export function renderMeasurementHelpMarkup(id: string, guidance: MeasurementGuidance): string {
   const safeId = escapeHtml(id);
+  const example = guidance.example
+    ? `<p class="measurement-help__example"><strong>Example:</strong> ${escapeHtml(guidance.example)}</p>`
+    : '';
+  const warning = guidance.warning
+    ? `<p class="measurement-help__warning"><strong>Check:</strong> ${escapeHtml(guidance.warning)}</p>`
+    : '';
+  const sourceRequirement = guidance.sourceRequirement
+    ? `<p class="measurement-help__source"><strong>Source requirement:</strong> ${escapeHtml(guidance.sourceRequirement)}</p>`
+    : '';
   const diagram = guidance.diagram
     ? `<figure class="measurement-help__diagram">${renderMeasurementSketch(id, guidance.diagram)}<figcaption>Illustrative plan sketch; not to scale.</figcaption></figure>`
     : '';
-  return `<div class="measurement-help" data-measurement-help="${safeId}"><p class="measurement-help__summary" id="${safeId}">${escapeHtml(guidance.summary)}</p><details class="measurement-help__details"><summary>${escapeHtml(guidance.label)}</summary><div class="measurement-help__content"><p>${escapeHtml(guidance.detail)}</p><p class="measurement-help__example"><strong>Example:</strong> ${escapeHtml(guidance.example)}</p>${diagram}</div></details></div>`;
+  return `<div class="measurement-help" data-measurement-help="${safeId}"><details class="measurement-help__details"><summary aria-label="Show detailed measuring help: ${escapeHtml(guidance.label)}"><span class="measurement-help__summary" id="${safeId}">${escapeHtml(guidance.summaryHelp)}</span><span class="measurement-help__indicator" aria-hidden="true">?</span></summary><div class="measurement-help__content"><h3>${escapeHtml(guidance.label)}</h3><p>${escapeHtml(guidance.measureHelp)}</p>${example}${warning}${sourceRequirement}${diagram}</div></details></div>`;
 }

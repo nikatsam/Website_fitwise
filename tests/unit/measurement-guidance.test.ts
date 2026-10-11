@@ -54,48 +54,68 @@ describe('contextual measurement guidance', () => {
     ] as const;
 
     for (const [calculator, field] of fields) {
+      const guidance = getCoreMeasurementGuidance(calculator, field);
       expect(CORE_MEASUREMENT_GUIDANCE[calculator][field], `${calculator}:${field}`).toBeDefined();
-      expect(getCoreMeasurementGuidance(calculator, field)?.example.length).toBeGreaterThan(20);
+      expect(guidance?.summaryHelp.length, `${calculator}:${field} summary`).toBeGreaterThan(20);
+      expect(
+        guidance?.measureHelp.length,
+        `${calculator}:${field} measurement help`,
+      ).toBeGreaterThan(20);
+      if (guidance?.example) expect(guidance.example.length).toBeGreaterThan(20);
     }
   });
 
   it('provides contextual help for every measured length in every service mode', () => {
+    const missing: string[] = [];
     for (const definition of FIT_SERVICE_DEFINITIONS) {
       for (const field of definition.fields.filter((item) => item.type === 'length')) {
+        const guidance = getFitServiceMeasurementGuidance(definition.mode, field.name);
+        if (!guidance) {
+          missing.push(`${definition.mode}:${field.name}`);
+          continue;
+        }
         expect(
-          getFitServiceMeasurementGuidance(definition.mode, field.name, field.label, field.type),
-          `${definition.mode}:${field.name}`,
-        ).toBeDefined();
-        expect(
-          getFitServiceMeasurementGuidance(definition.mode, field.name, field.label, field.type)
-            ?.example.length,
-          `${definition.mode}:${field.name} example`,
+          guidance.summaryHelp.length,
+          `${definition.mode}:${field.name} summary`,
         ).toBeGreaterThan(20);
+        expect(
+          guidance.measureHelp.length,
+          `${definition.mode}:${field.name} help`,
+        ).toBeGreaterThan(20);
+        if (guidance.example) expect(guidance.example.length).toBeGreaterThan(20);
       }
     }
+    expect(missing).toEqual([]);
+  });
+
+  it('attaches exact-source guidance to every source/specification/compatibility input', () => {
+    const missing: string[] = [];
+    const sourceFields =
+      /source|manual.*reference|spec.*reference|page.*reference|vesa|weight|load|clamp/i;
+
+    for (const definition of FIT_SERVICE_DEFINITIONS) {
+      for (const field of definition.fields.filter((item) => sourceFields.test(item.name))) {
+        const guidance = getFitServiceMeasurementGuidance(definition.mode, field.name);
+        if (!guidance?.sourceRequirement) missing.push(`${definition.mode}:${field.name}`);
+      }
+    }
+
+    expect(missing).toEqual([]);
   });
 
   it('uses model-specific guidance and diagrams for source, route and safety zones', () => {
     const applianceSource = getFitServiceMeasurementGuidance(
       'appliance-install',
       'clearanceManualReference',
-      'Exact manual reference',
-      'text',
     );
-    const deliveryTurn = getFitServiceMeasurementGuidance(
-      'delivery-route',
-      'turnDepth',
-      'Turn landing depth',
-      'length',
-    );
-    const playZone = getFitServiceMeasurementGuidance(
-      'garden-play-equipment',
-      'useZoneFront',
-      'Manufacturer front use zone',
-      'length',
-    );
+    const deliveryTurn = getFitServiceMeasurementGuidance('delivery-route', 'turnDepth');
+    const playZone = getFitServiceMeasurementGuidance('garden-play-equipment', 'useZoneFront');
 
-    expect(applianceSource?.summary).toContain('exact make and model');
+    expect(applianceSource?.summaryHelp).toContain('exact make and model');
+    expect(applianceSource?.sourceRequirement).toContain('exact model');
+    expect(renderMeasurementHelpMarkup('appliance-source', applianceSource!)).toContain(
+      'measurement-help__source',
+    );
     expect(deliveryTurn?.diagram).toBe('route');
     expect(playZone?.diagram).toBe('operating-zone');
     expect(renderMeasurementHelpMarkup('play-front-help', playZone!)).toContain(
@@ -104,5 +124,37 @@ describe('contextual measurement guidance', () => {
     expect(renderMeasurementHelpMarkup('play-front-help', playZone!)).toMatch(
       /no generic child-safety zone/i,
     );
+  });
+
+  it('does not attach outside-dimension examples to object gaps', () => {
+    const universalGap = getCoreMeasurementGuidance('universal', 'fit-item-gap');
+    const storageGap = getFitServiceMeasurementGuidance('storage', 'itemGap');
+    const monitorGap = getCoreMeasurementGuidance('workspace', 'monitor-gap');
+    const userClearance = getFitServiceMeasurementGuidance('garden-structure', 'maintenanceLeft');
+
+    expect(universalGap?.example).toContain('adjacent boxes');
+    expect(storageGap?.example).toContain('adjacent boxes');
+    expect(monitorGap?.example).toContain('outer bezels');
+    expect(renderMeasurementHelpMarkup('storage-gap', storageGap!)).not.toMatch(
+      /handles or bezels/i,
+    );
+    expect(renderMeasurementHelpMarkup('storage-gap', storageGap!)).toContain(
+      'For two adjacent boxes, measure the open distance between their closest outside edges.',
+    );
+    expect(userClearance?.warning).toContain('does not establish a code');
+    expect(renderMeasurementHelpMarkup('clearance-help', userClearance!)).toContain(
+      'measurement-help__warning',
+    );
+  });
+
+  it('keeps one-line help visible and collapses details behind a named question control', () => {
+    const guidance = getCoreMeasurementGuidance('universal', 'fit-item-width');
+    const html = renderMeasurementHelpMarkup('item-width-help', guidance!);
+
+    expect(html).toContain('class="measurement-help__summary" id="item-width-help"');
+    expect(html).toContain('class="measurement-help__indicator" aria-hidden="true">?</span>');
+    expect(html).toContain('aria-label="Show detailed measuring help:');
+    expect(html).not.toMatch(/<details[^>]+\sopen(?:=|\s|>)/i);
+    expect(html).toContain('class="measurement-help__content"');
   });
 });

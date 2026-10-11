@@ -2,7 +2,7 @@ import type { Millimetres } from '../../types';
 import { mmToCm, mmToM, mmToInches, mmToFeetInches } from './convert';
 
 export type UnitSystem = 'metric' | 'imperial';
-export type MeasurementDisplay = 'mm' | 'cm' | 'm' | UnitSystem;
+export type MeasurementDisplay = 'mm' | 'cm' | 'm' | UnitSystem | 'both';
 
 /**
  * Rounds to a fixed number of decimals using a half-away-from-zero rule,
@@ -53,6 +53,7 @@ export function formatMeasurement(mm: Millimetres, display: MeasurementDisplay =
   if (display === 'm') return formatM(mm);
   if (display === 'metric') return formatMetric(mm);
   if (display === 'imperial') return formatFeetInches(mm);
+  if (display === 'both') return `${formatMetric(mm)} / ${formatFeetInches(mm)}`;
   const rounded = roundTo(mm, 1);
   const value = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
   return `${value} mm`;

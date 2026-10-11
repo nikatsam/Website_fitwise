@@ -75,6 +75,7 @@ describe('display formatting — deterministic', () => {
     expect(formatMeasurement(3047.999999999)).toBe('3048 mm');
     expect(formatMeasurement(1400, 'metric')).toBe('140.0 cm');
     expect(formatMeasurement(1400, 'imperial')).toBe('4 ft 7 in');
+    expect(formatMeasurement(1400, 'both')).toBe('140.0 cm / 4 ft 7 in');
     expect(() => formatMeasurement(Number.NaN)).toThrow(RangeError);
   });
 
@@ -129,6 +130,7 @@ describe('parseLength', () => {
     const inches = parseLength('55in');
     expect(inches.ok).toBe(true);
     if (inches.ok) expect(inches.valueMm).toBeCloseTo(1397, 0);
+    expect(parseLength('1400 mm')).toEqual({ ok: true, valueMm: 1400 });
   });
 
   it('parses combined feet-and-inches notation', () => {
@@ -139,6 +141,16 @@ describe('parseLength', () => {
     const spaced = parseLength('4 ft 7 in');
     expect(spaced.ok).toBe(true);
     if (spaced.ok && result.ok) expect(spaced.valueMm).toBeCloseTo(result.valueMm, 9);
+  });
+
+  it('parses an explicit feet-only value without a display preference affecting its meaning', () => {
+    const parsed = parseLength('4 ft');
+    const parsedWithDisplayPreference = parseLength('4 ft', { assumeUnit: 'mm' });
+    expect(parsed.ok && parsed.valueMm).toBeCloseTo(1219.2, 9);
+    expect(parsedWithDisplayPreference.ok && parsedWithDisplayPreference.valueMm).toBeCloseTo(
+      1219.2,
+      9,
+    );
   });
 
   it('rejects empty input with a clear message', () => {

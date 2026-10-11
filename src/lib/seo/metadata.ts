@@ -68,18 +68,26 @@ export function publicationStructuredData(
       breadcrumb: { '@id': `${canonical}#breadcrumb` },
       isPartOf: { '@id': `${SITE_ORIGIN}/#website` },
     },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      '@id': `${canonical}#breadcrumb`,
-      itemListElement: breadcrumb.map((item, index) => ({
-        '@type': 'ListItem',
-        position: index + 1,
-        name: item.label,
-        item: absoluteCanonical(item.href),
-      })),
-    },
+    breadcrumbListStructuredData(publication.canonicalPath, breadcrumb),
   ];
+}
+
+export function breadcrumbListStructuredData(
+  path: string,
+  breadcrumb: BreadcrumbItem[],
+): Record<string, unknown> {
+  const canonical = absoluteCanonical(path);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `${canonical}#breadcrumb`,
+    itemListElement: breadcrumb.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.label,
+      item: absoluteCanonical(item.href),
+    })),
+  };
 }
 
 export function serializeJsonLd(value: unknown): string {
