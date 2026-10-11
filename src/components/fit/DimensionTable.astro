@@ -51,6 +51,7 @@ const { rows, caption, id } = Astro.props;
             </span>
             <UnitValue
               mm={Math.abs(row.physicalMarginMm)}
+              margin
               id={id && `${id}-${row.dimension}-physical-margin`}
             />
           </td>
@@ -60,6 +61,7 @@ const { rows, caption, id } = Astro.props;
             </span>
             <UnitValue
               mm={Math.abs(row.targetMarginMm)}
+              margin
               id={id && `${id}-${row.dimension}-target-margin`}
             />
           </td>

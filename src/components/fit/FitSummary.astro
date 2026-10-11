@@ -98,7 +98,7 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
           'No tolerance remains'
         ) : summaryCopy.marginMm !== null && summaryCopy.marginLabel ? (
           <>
-            <UnitValue mm={summaryCopy.marginMm} /> {summaryCopy.marginLabel.toLowerCase()}
+            <UnitValue mm={summaryCopy.marginMm} margin /> {summaryCopy.marginLabel.toLowerCase()}
           </>
         ) : null}
         {state === 'does_not_fit' && summaryCopy.physicalStatus === 'No' && 'Physical fit failed'}

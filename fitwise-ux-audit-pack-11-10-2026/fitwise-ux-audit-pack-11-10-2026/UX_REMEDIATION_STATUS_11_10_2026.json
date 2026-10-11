@@ -39,8 +39,8 @@
       "id": "UX11-004",
       "severity": "P0",
       "weight": 9,
-      "status": "BLOCKED",
-      "blocker": "Owner confirmation pending on whether Vehicle/Garage is part of the current product roadmap; retained under More fit checks as the safe existing placement.",
+      "status": "READY_FOR_RETEST",
+      "ownerDecision": "Confirmed Vehicle/Garage remains in the roadmap and in More fit checks.",
       "title": "One global navigation component"
     },
     {
@@ -103,8 +103,8 @@
       "id": "UX11-013",
       "severity": "P1",
       "weight": 5,
-      "status": "BLOCKED",
-      "blocker": "Owner confirmation is pending on whether the advanced all-in-one checker should remain a permanent product. It remains at /fit-services/ as the safe reversible default.",
+      "status": "READY_FOR_RETEST",
+      "ownerDecision": "Confirmed the advanced all-in-one checker remains separate at /fit-services/.",
       "title": "Split directory from advanced all-in-one calculator"
     },
     {

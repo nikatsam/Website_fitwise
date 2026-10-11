@@ -1,5 +1,6 @@
+import { Buffer } from 'node:buffer';
 import { spawn } from 'node:child_process';
-import { access, mkdtemp, rm } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { Console } from 'node:console';
 import { createServer } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -22,7 +23,9 @@ const canonicalFitStates = [
       'Required measurement, source, model, manual or compatibility data has not been verified.',
   },
 ];
+const screenshotDirectory = process.env.FITWISE_QA_SCREENSHOT_DIR;
 const profile = await mkdtemp(path.join(os.tmpdir(), 'fitwise-keyboard-qa-'));
+if (screenshotDirectory) await mkdir(screenshotDirectory, { recursive: true });
 let chrome;
 let websocket;
 const pending = new Map();
@@ -101,6 +104,50 @@ async function evaluate(expression) {
     throw new Error(response.exceptionDetails.exception?.description ?? 'Page evaluation failed.');
   }
   return response.result.value;
+}
+
+async function captureScreenshot(name) {
+  if (!screenshotDirectory) return;
+  const screenshot = await cdp('Page.captureScreenshot', {
+    format: 'png',
+    captureBeyondViewport: false,
+    fromSurface: true,
+  });
+  const filePath = path.join(screenshotDirectory, `${name}.png`);
+  await writeFile(filePath, Buffer.from(screenshot.data, 'base64'));
+  console.log(`Browser screenshot saved: ${filePath}`);
+}
+
+async function captureRouteScreenshot(route, name, width, height, mobile) {
+  if (!screenshotDirectory) return;
+  await cdp('Emulation.setDeviceMetricsOverride', {
+    width,
+    height,
+    deviceScaleFactor: 1,
+    mobile,
+  });
+  await cdp('Page.navigate', { url: new URL(route, baseUrl).toString() });
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    if ((await evaluate('document.readyState')) === 'complete') break;
+    await delay(50);
+  }
+  await evaluate(
+    'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))',
+  );
+  await delay(100);
+  await captureScreenshot(name);
+}
+
+async function setScreenshotFormValues(values) {
+  return evaluate(`(() => {
+    for (const [id, value] of Object.entries(${JSON.stringify(values)})) {
+      const input = document.getElementById(id);
+      if (!input) throw new Error('Missing screenshot field: ' + id);
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    return true;
+  })()`);
 }
 
 async function press(key, code, virtualKeyCode) {
@@ -318,8 +365,6 @@ async function assertAccessibleForm(pathname) {
     'button',
     'checkbox',
     'combobox',
-    'image',
-    'img',
     'link',
     'listbox',
     'menuitem',
@@ -1070,7 +1115,7 @@ async function smokePage(pathname, scope) {
       'document.querySelector("#bedroom-fitcheck-summary .fit-summary__content").textContent',
     );
     assert(
-      /cm\s+\d+\s+ft/.test(detail),
+      /cm\s*\/\s*\d+\s+ft/.test(detail),
       `${pathname}: metric and imperial summary values are not visibly separated: ${detail}`,
     );
     await cdp('Emulation.setDeviceMetricsOverride', {
@@ -1993,13 +2038,61 @@ try {
       label: summary.querySelector('[data-field=label]').textContent.trim(),
       exact: summary.dataset.fitExact,
       warning: summary.querySelector('.fit-summary__tolerance-warning'),
+      margin: summary.querySelector('.fit-summary__margin .unit-value')?.innerHTML,
+      diagram: summary.closest('[data-universal-fitcheck]')
+        .querySelector('[data-universal-diagram]')?.textContent,
+      diagramCaption: document.getElementById('universal-fitcheck-diagram-caption')?.textContent,
     };
   })()`);
   assert(
     positiveFit.label === 'Your result — Fits' &&
       positiveFit.exact === 'false' &&
-      positiveFit.warning === null,
+      positiveFit.warning === null &&
+      positiveFit.margin?.includes('0.10 mm') &&
+      positiveFit.margin.includes('0.0039 in') &&
+      positiveFit.diagram?.includes('ITEM') &&
+      positiveFit.diagramCaption?.includes('1000.1 mm'),
     `Positive margin was mislabeled as exact: ${JSON.stringify(positiveFit)}.`,
+  );
+  const marginUnitModes = await evaluate(`(() => {
+    const summary = document.getElementById('universal-fit-summary');
+    const margin = summary.querySelector('.fit-summary__margin .unit-value');
+    const metric = margin.querySelector('[data-unit=metric]');
+    const imperial = margin.querySelector('[data-unit=imperial]');
+    const separator = margin.querySelector('[data-unit=separator]');
+    const diagram = document.querySelector('[data-universal-diagram]');
+    const diagramMetric = diagram.querySelector('[data-unit=metric]');
+    const diagramImperial = diagram.querySelector('[data-unit=imperial]');
+    const result = {};
+    for (const mode of ['metric', 'imperial', 'both']) {
+      document.documentElement.setAttribute('data-unit-system', mode);
+      result[mode] = {
+        metricVisible: getComputedStyle(metric).display !== 'none',
+        imperialVisible: getComputedStyle(imperial).display !== 'none',
+        separatorVisible: getComputedStyle(separator).display !== 'none',
+        diagramMetricVisible: getComputedStyle(diagramMetric).display !== 'none',
+        diagramImperialVisible: getComputedStyle(diagramImperial).display !== 'none',
+      };
+    }
+    return result;
+  })()`);
+  assert(
+    marginUnitModes.metric.metricVisible &&
+      !marginUnitModes.metric.imperialVisible &&
+      !marginUnitModes.metric.separatorVisible &&
+      !marginUnitModes.imperial.metricVisible &&
+      marginUnitModes.imperial.imperialVisible &&
+      !marginUnitModes.imperial.separatorVisible &&
+      marginUnitModes.both.metricVisible &&
+      marginUnitModes.both.imperialVisible &&
+      marginUnitModes.both.separatorVisible &&
+      marginUnitModes.metric.diagramMetricVisible &&
+      !marginUnitModes.metric.diagramImperialVisible &&
+      !marginUnitModes.imperial.diagramMetricVisible &&
+      marginUnitModes.imperial.diagramImperialVisible &&
+      marginUnitModes.both.diagramMetricVisible &&
+      marginUnitModes.both.diagramImperialVisible,
+    `Small positive margin did not follow all unit modes: ${JSON.stringify(marginUnitModes)}.`,
   );
   console.log('Universal zero-margin and small-positive-margin result distinction passed.');
   await smokePage('/dining/', 'dining-fitcheck');
@@ -2424,6 +2517,94 @@ try {
     `Storage mislabeled a positive margin as exact: ${JSON.stringify(positiveStorageFit)}.`,
   );
   console.log('Storage exact-zero and sub-display-positive margins passed shared result copy.');
+
+  if (screenshotDirectory) {
+    await captureRouteScreenshot(
+      '/will-it-fit/',
+      '00-universal-footprint-desktop',
+      1440,
+      1000,
+      false,
+    );
+    await evaluate(
+      'document.querySelector(".universal-fitcheck__visual")?.scrollIntoView({ block: "center" })',
+    );
+    await delay(100);
+    await captureScreenshot('00-universal-footprint-desktop-detail');
+    await captureRouteScreenshot('/will-it-fit/', '00-universal-footprint-mobile', 390, 844, true);
+    await evaluate(
+      'document.querySelector(".universal-fitcheck__visual")?.scrollIntoView({ block: "center" })',
+    );
+    await delay(100);
+    await captureScreenshot('00-universal-footprint-mobile-detail');
+    await captureRouteScreenshot('/fit-checks/', '01-fit-checks-desktop', 1440, 1000, false);
+    await captureRouteScreenshot('/fit-checks/', '02-fit-checks-mobile', 390, 844, true);
+    await captureRouteScreenshot('/fit-checks/', '03-fit-checks-mobile-320', 320, 740, true);
+    await captureRouteScreenshot(
+      '/fit-services/',
+      '04-advanced-checker-desktop',
+      1440,
+      1000,
+      false,
+    );
+    await captureRouteScreenshot('/fit-services/', '05-advanced-checker-mobile', 390, 844, true);
+    await captureRouteScreenshot('/workspace/', '06-workspace-example-mobile', 390, 844, true);
+    await setScreenshotFormValues({ 'desk-width': '1500 mm' });
+    await delay(100);
+    await captureScreenshot('07-workspace-your-result-mobile');
+    await captureRouteScreenshot(
+      '/appliances/fridge-fit/',
+      '08-fridge-needs-information-mobile',
+      390,
+      844,
+      true,
+    );
+    await captureRouteScreenshot(
+      '/home-gym/power-rack-room-size/',
+      '09-power-rack-mobile',
+      390,
+      844,
+      true,
+    );
+    await captureRouteScreenshot(
+      '/storage/what-fits-in-storage/',
+      '10-storage-example-mobile',
+      390,
+      844,
+      true,
+    );
+    await setScreenshotFormValues({
+      'service-itemWidth': '1000 mm',
+      'service-itemDepth': '1000 mm',
+      'service-itemHeight': '500 mm',
+      'service-spaceWidth': '1000 mm',
+      'service-spaceDepth': '2000 mm',
+      'service-spaceHeight': '600 mm',
+      'service-edgeClearance': '0 mm',
+      'service-itemGap': '0 mm',
+      'service-requestedQuantity': '1',
+      'service-availableAisle': '1000 mm',
+      'service-targetAisle': '900 mm',
+    });
+    await evaluate(`(() => {
+      const choice = document.querySelector('input[data-unit-choice][value="both"]');
+      choice.checked = true;
+      choice.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
+    await delay(100);
+    const screenshotExact = await evaluate(`(() => {
+      const summary = document.getElementById('fit-services-summary');
+      return summary?.querySelector('[data-field=label]')?.textContent.trim();
+    })()`);
+    assert(
+      screenshotExact === 'Your result — Fits exactly',
+      `Storage screenshot setup did not reach the exact-fit state: ${screenshotExact}.`,
+    );
+    await captureScreenshot('11-storage-fits-exactly-both-mobile');
+    await setScreenshotFormValues({ 'service-spaceWidth': '1000.1 mm' });
+    await delay(100);
+    await captureScreenshot('12-storage-small-positive-margin-both-mobile');
+  }
   console.log('Keyboard QA passed in headless Chrome using real Tab, Enter, and Space key events.');
 } catch (error) {
   console.error(`Keyboard QA failed: ${error.message}`);

@@ -67,6 +67,31 @@ export function formatMetric(mm: Millimetres): string {
   return mm >= 10 * 1000 ? formatM(mm) : formatCm(mm);
 }
 
+function formatMetricMargin(mm: Millimetres): string {
+  const absolute = Math.abs(mm);
+  if (absolute > 0 && absolute < 10) return `${roundTo(absolute, 2).toFixed(2)} mm`;
+  return formatMetric(absolute);
+}
+
+function formatImperialMargin(mm: Millimetres): string {
+  const absolute = Math.abs(mm);
+  if (absolute > 0 && absolute < 25.4) {
+    return `${roundTo(mmToInches(absolute), 4).toFixed(4)} in`;
+  }
+  return formatFeetInches(absolute);
+}
+
+/** Format margin magnitudes without rounding small nonzero values to zero. */
+export function formatMarginMeasurement(mm: Millimetres, display: UnitSystem | 'both'): string {
+  if (!Number.isFinite(mm)) throw new RangeError(`Measurement must be finite, got ${mm}.`);
+  const absolute = Math.abs(mm);
+  const metric = formatMetricMargin(absolute);
+  const imperial = formatImperialMargin(absolute);
+  if (display === 'metric') return metric;
+  if (display === 'imperial') return imperial;
+  return `${metric} / ${imperial}`;
+}
+
 export function formatLength(mm: Millimetres, system: UnitSystem): string {
   return formatMeasurement(mm, system);
 }
@@ -74,6 +99,6 @@ export function formatLength(mm: Millimetres, system: UnitSystem): string {
 export function formatSignedMeasurement(mm: Millimetres): string {
   if (!Number.isFinite(mm)) throw new RangeError(`Measurement must be finite, got ${mm}.`);
   const sign = mm > 0 ? '+' : mm < 0 ? '−' : '';
-  const magnitude = Math.abs(mm);
-  return `${sign}${formatMeasurement(magnitude, 'metric')} / ${sign}${formatMeasurement(magnitude, 'imperial')}`;
+  const [metric, imperial] = formatMarginMeasurement(Math.abs(mm), 'both').split(' / ');
+  return `${sign}${metric} / ${sign}${imperial}`;
 }

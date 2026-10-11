@@ -6,8 +6,15 @@ import DimensionTable from '../fit/DimensionTable.astro';
 import FitSummary from '../fit/FitSummary.astro';
 import MeasurementFieldHelp from '../fit/MeasurementFieldHelp.astro';
 import UnitToggle from '../fit/UnitToggle.astro';
+import ScaleDiagram from '../diagram/ScaleDiagram.astro';
 import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
 import { buildObjectFitPlan } from '../../lib/geometry';
+import { renderUniversalDiagramMarkup } from '../../lib/diagram';
+import { formatMeasurement } from '../../lib/units';
+
+const DIAGRAM_ID = 'universal-fitcheck-diagram';
+const DIAGRAM_WIDTH = 640;
+const DIAGRAM_HEIGHT = 430;
 
 const DEFAULTS = {
   itemName: 'Furniture item',
@@ -46,9 +53,24 @@ const initialRows = toDimensionDisplayRows(sample.checks, initialResult);
 const initialOrientation =
   sample.orientation === 'width-depth' ? 'width by depth' : 'depth by width';
 const initialReport = `Best floor orientation: ${initialOrientation}. Maximum single-layer grid estimate: ${sample.quantityCapacity} item(s).`;
+const initialDiagramMarkup = renderUniversalDiagramMarkup({
+  diagramId: DIAGRAM_ID,
+  spaceWidthMm: DEFAULTS.spaceWidthMm,
+  spaceDepthMm: DEFAULTS.spaceDepthMm,
+  objectWidthMm: DEFAULTS.itemWidthMm,
+  objectDepthMm: DEFAULTS.itemDepthMm,
+  clearanceEachSideMm: DEFAULTS.clearanceEachSideMm,
+  orientation: sample.orientation,
+});
+const initialDiagramSummary = `Proportional top-down comparison: ${formatMeasurement(DEFAULTS.spaceWidthMm)} by ${formatMeasurement(DEFAULTS.spaceDepthMm)} inside space and ${formatMeasurement(DEFAULTS.itemWidthMm)} by ${formatMeasurement(DEFAULTS.itemDepthMm)} item footprint, arranged ${initialOrientation}. The optional planning margin is ${formatMeasurement(DEFAULTS.clearanceEachSideMm)} on each side. Height, doorway/corridor and multi-item checks are not drawn here.`;
 ---
 
-<div class="universal-fitcheck calculator-split" data-universal-fitcheck data-fit-result-scope>
+<div
+  class="universal-fitcheck calculator-split"
+  data-universal-fitcheck
+  data-fit-result-scope
+  data-diagram-id={DIAGRAM_ID}
+>
   <form
     class="universal-fitcheck__form"
     data-universal-fitcheck-form
@@ -345,6 +367,24 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
     <p class="universal-fitcheck__orientation" data-fit-orientation>
       {initialReport}
     </p>
+    <section class="universal-fitcheck__visual" aria-label="Top-down footprint visualization">
+      <ScaleDiagram
+        id={DIAGRAM_ID}
+        widthPx={DIAGRAM_WIDTH}
+        heightPx={DIAGRAM_HEIGHT}
+        summary={initialDiagramSummary}
+      >
+        <Fragment set:html={initialDiagramMarkup} />
+      </ScaleDiagram>
+      <p class="universal-fitcheck__diagram-key">
+        Dashed outline: usable space. Solid fill: item footprint. Dotted outline: optional
+        user-selected planning margin.
+      </p>
+      <p class="universal-fitcheck__diagram-note">
+        Proportional top-down view only. Height, delivery route and multi-item arrangement are
+        checked in the result table, not drawn here.
+      </p>
+    </section>
     <DimensionTable
       id="universal-fit-table"
       rows={initialRows}
@@ -447,6 +487,20 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
     border-radius: var(--radius-md);
     background: var(--color-surface-raised);
     font-size: var(--fs-sm);
+  }
+
+  .universal-fitcheck__visual {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .universal-fitcheck__diagram-key,
+  .universal-fitcheck__diagram-note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
   }
 
   @media (max-width: 61.999rem) {

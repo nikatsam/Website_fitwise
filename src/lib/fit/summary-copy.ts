@@ -1,7 +1,7 @@
 import type { FitState } from './engine';
 import { FIT_STATE_BADGE_COPY } from './copy';
 import { selectSummaryDimension, type DimensionDisplayRow } from './display';
-import { formatMeasurement } from '../units';
+import { formatMarginMeasurement, formatMeasurement } from '../units';
 import type { MissingRequirement } from './missing-requirement';
 
 export interface CompatibilitySummaryCheck {
@@ -208,8 +208,9 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#39;');
 }
 
-function unitValueHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${escapeHtml(formatMeasurement(mm, 'metric'))}</span> <span data-unit="imperial">${escapeHtml(formatMeasurement(mm, 'imperial'))}</span></span>`;
+function unitValueHtml(mm: number, margin = false): string {
+  const format = margin ? formatMarginMeasurement : formatMeasurement;
+  return `<span class="unit-value"><span data-unit="metric">${escapeHtml(format(mm, 'metric'))}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${escapeHtml(format(mm, 'imperial'))}</span></span>`;
 }
 
 export function renderFitSummaryContentHtml(copy: FitSummaryCopy): string {
@@ -218,7 +219,7 @@ export function renderFitSummaryContentHtml(copy: FitSummaryCopy): string {
     : '';
   const margin =
     copy.marginLabel && copy.marginMm !== null
-      ? `<p class="fit-summary__margin"><strong>${escapeHtml(copy.marginLabel)}:</strong> ${unitValueHtml(copy.marginMm)}</p>`
+      ? `<p class="fit-summary__margin"><strong>${escapeHtml(copy.marginLabel)}:</strong> ${unitValueHtml(copy.marginMm, true)}</p>`
       : '';
   const exactFitWarning = copy.isExactFit
     ? '<p class="fit-summary__tolerance-warning"><strong>Fits exactly:</strong> No measurement tolerance remains. Re-check actual dimensions before relying on this result.</p>'

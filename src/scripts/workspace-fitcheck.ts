@@ -15,7 +15,7 @@ import {
   type MonitorAspectRatioKey,
 } from '../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../lib/diagram';
-import { formatMeasurement, parseLength } from '../lib/units';
+import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
 
 interface FormValues {
   deskWidthMm: number;
@@ -59,8 +59,9 @@ const VIEWPORT_WIDTH_PX = 640;
 const VIEWPORT_HEIGHT_PX = 360;
 const DIAGRAM_PADDING_PX = 60;
 
-function unitValueHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
+function unitValueHtml(mm: number, margin = false): string {
+  const format = margin ? formatMarginMeasurement : formatMeasurement;
+  return `<span class="unit-value"><span data-unit="metric">${format(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${format(mm, 'imperial')}</span></span>`;
 }
 
 function escapeHtml(value: string): string {
@@ -179,13 +180,14 @@ function readAndValidateForm(): FormValues | null {
   };
 }
 
-function patchUnitValue(id: string, mm: number): void {
+function patchUnitValue(id: string, mm: number, margin = false): void {
   const el = document.getElementById(id);
   if (!el) return;
   const metric = el.querySelector<HTMLElement>('[data-unit="metric"]');
   const imperial = el.querySelector<HTMLElement>('[data-unit="imperial"]');
-  if (metric) metric.textContent = formatMeasurement(mm, 'metric');
-  if (imperial) imperial.textContent = formatMeasurement(mm, 'imperial');
+  const format = margin ? formatMarginMeasurement : formatMeasurement;
+  if (metric) metric.textContent = format(mm, 'metric');
+  if (imperial) imperial.textContent = format(mm, 'imperial');
 }
 
 function recompute(): void {
@@ -255,7 +257,7 @@ function recompute(): void {
         stickyDetail.innerHTML = summaryCopy.isExactFit
           ? 'No measurement tolerance remains'
           : summaryCopy.marginMm !== null && summaryCopy.marginLabel
-            ? `${unitValueHtml(summaryCopy.marginMm)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
+            ? `${unitValueHtml(summaryCopy.marginMm, true)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
             : 'Check result details';
       }
     }
@@ -281,8 +283,12 @@ function recompute(): void {
     patchUnitValue(`${tableId}-${row.dimension}-required`, row.requiredMm);
     patchUnitValue(`${tableId}-${row.dimension}-recommended`, row.recommendedMm);
     patchUnitValue(`${tableId}-${row.dimension}-available`, row.availableMm);
-    patchUnitValue(`${tableId}-${row.dimension}-physical-margin`, Math.abs(row.physicalMarginMm));
-    patchUnitValue(`${tableId}-${row.dimension}-target-margin`, Math.abs(row.targetMarginMm));
+    patchUnitValue(
+      `${tableId}-${row.dimension}-physical-margin`,
+      Math.abs(row.physicalMarginMm),
+      true,
+    );
+    patchUnitValue(`${tableId}-${row.dimension}-target-margin`, Math.abs(row.targetMarginMm), true);
   }
 
   // Patch assumptions.

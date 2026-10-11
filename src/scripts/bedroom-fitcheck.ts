@@ -15,7 +15,7 @@ import {
 } from '../lib/geometry';
 import type { BedOrientation } from '../lib/geometry';
 import { renderBedroomDiagramMarkup } from '../lib/diagram';
-import { formatMeasurement, parseLength } from '../lib/units';
+import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
 import { BEDROOM_FIT_PRESETS, DEFAULT_BEDROOM_FIT_PRESET_KEY } from '../lib/fitcheck/presets';
 
 interface FormValues {
@@ -79,8 +79,9 @@ const VIEWPORT_WIDTH_PX = 640;
 const VIEWPORT_HEIGHT_PX = 480;
 const DIAGRAM_PADDING_PX = 60;
 
-function unitValueHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
+function unitValueHtml(mm: number, margin = false): string {
+  const format = margin ? formatMarginMeasurement : formatMeasurement;
+  return `<span class="unit-value"><span data-unit="metric">${format(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${format(mm, 'imperial')}</span></span>`;
 }
 
 function escapeHtml(value: string): string {
@@ -250,8 +251,10 @@ function patchUnitValue(id: string, mm: number): void {
   if (!el) return;
   const metric = el.querySelector<HTMLElement>('[data-unit="metric"]');
   const imperial = el.querySelector<HTMLElement>('[data-unit="imperial"]');
-  if (metric) metric.textContent = formatMeasurement(mm, 'metric');
-  if (imperial) imperial.textContent = formatMeasurement(mm, 'imperial');
+  const margin = id.endsWith('-physical-margin') || id.endsWith('-target-margin');
+  const format = margin ? formatMarginMeasurement : formatMeasurement;
+  if (metric) metric.textContent = format(mm, 'metric');
+  if (imperial) imperial.textContent = format(mm, 'imperial');
 }
 
 function createDimensionUnitCell(
@@ -286,11 +289,16 @@ function createDimensionUnitCell(
   unit.id = `bedroom-fitcheck-table-${row.dimension}-${key}`;
   const metric = document.createElement('span');
   metric.dataset.unit = 'metric';
-  metric.textContent = formatMeasurement(valueMm, 'metric');
+  const format = isMargin ? formatMarginMeasurement : formatMeasurement;
+  metric.textContent = format(valueMm, 'metric');
+  const separator = document.createElement('span');
+  separator.dataset.unit = 'separator';
+  separator.setAttribute('aria-hidden', 'true');
+  separator.textContent = ' / ';
   const imperial = document.createElement('span');
   imperial.dataset.unit = 'imperial';
-  imperial.textContent = formatMeasurement(valueMm, 'imperial');
-  unit.append(metric, document.createTextNode(' '), imperial);
+  imperial.textContent = format(valueMm, 'imperial');
+  unit.append(metric, separator, imperial);
   cell.append(unit);
   return cell;
 }
@@ -434,7 +442,7 @@ function recompute(): void {
         stickyDetail.innerHTML = summaryCopy.isExactFit
           ? 'No measurement tolerance remains'
           : summaryCopy.marginMm !== null && summaryCopy.marginLabel
-            ? `${unitValueHtml(summaryCopy.marginMm)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
+            ? `${unitValueHtml(summaryCopy.marginMm, true)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
             : 'Check result details';
       }
     }

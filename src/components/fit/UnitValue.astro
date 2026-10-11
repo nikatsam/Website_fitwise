@@ -1,20 +1,24 @@
 ---
-import { formatMeasurement } from '../../lib/units';
+import { formatMarginMeasurement, formatMeasurement } from '../../lib/units';
 
 interface Props {
   mm: number;
   /** Stable id so a client script can update this value in place (see T012). */
   id?: string;
+  /** Keeps nonzero fit margins visible below the normal display precision. */
+  margin?: boolean;
 }
 
-const { mm, id } = Astro.props;
+const { mm, id, margin = false } = Astro.props;
+const formatValue = (system: 'metric' | 'imperial') =>
+  margin ? formatMarginMeasurement(mm, system) : formatMeasurement(mm, system);
 ---
 
 <span class="unit-value" id={id}>
-  <span data-unit="metric">{formatMeasurement(mm, 'metric')}</span>
+  <span data-unit="metric">{formatValue('metric')}</span>
   <span data-unit="separator" aria-hidden="true">
     {' '}
     /{' '}
   </span>
-  <span data-unit="imperial">{formatMeasurement(mm, 'imperial')}</span>
+  <span data-unit="imperial">{formatValue('imperial')}</span>
 </span>

@@ -10,7 +10,10 @@ import {
   type FitState,
 } from '../lib/fit';
 import { buildObjectFitPlan, type ObjectOrientation } from '../lib/geometry';
-import { formatMeasurement, parseLength } from '../lib/units';
+import { renderUniversalDiagramMarkup } from '../lib/diagram';
+import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
+
+const DIAGRAM_ID = 'universal-fitcheck-diagram';
 
 type LengthField =
   | 'fit-item-width'
@@ -118,8 +121,9 @@ function readForm() {
   };
 }
 
-function unitHtml(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
+function unitHtml(mm: number, margin = false): string {
+  const format = margin ? formatMarginMeasurement : formatMeasurement;
+  return `<span class="unit-value"><span data-unit="metric">${format(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${format(mm, 'imperial')}</span></span>`;
 }
 
 function renderRows(rows: DimensionDisplayRow[]): void {
@@ -134,8 +138,8 @@ function renderRows(rows: DimensionDisplayRow[]): void {
         <td data-label="Required">${unitHtml(row.requiredMm)}</td>
         <td data-label="Target">${unitHtml(row.recommendedMm)}</td>
         <td data-label="Available">${unitHtml(row.availableMm)}</td>
-        <td data-label="Physical margin"><span>${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.physicalMarginMm))}</td>
-        <td data-label="Target margin"><span>${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.targetMarginMm))}</td>
+        <td data-label="Physical margin"><span>${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.physicalMarginMm), true)}</td>
+        <td data-label="Target margin"><span>${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.targetMarginMm), true)}</td>
       </tr>`,
     )
     .join('');
@@ -165,9 +169,40 @@ function renderSummary(state: FitState, rows: DimensionDisplayRow[]): void {
       stickyDetail.innerHTML = summaryCopy.isExactFit
         ? 'No measurement tolerance remains'
         : summaryCopy.marginMm !== null && summaryCopy.marginLabel
-          ? `${unitHtml(summaryCopy.marginMm)} ${summaryCopy.marginLabel.toLowerCase()}`
+          ? `${unitHtml(summaryCopy.marginMm, true)} ${summaryCopy.marginLabel.toLowerCase()}`
           : 'Check result details';
     }
+  }
+}
+
+function renderDiagram(
+  values: NonNullable<ReturnType<typeof readForm>>,
+  orientation: Exclude<ObjectOrientation, 'auto'>,
+): void {
+  const svg = document.querySelector<SVGSVGElement>(
+    `[data-diagram-id="${DIAGRAM_ID}"] .scale-diagram__svg`,
+  );
+  if (!svg) return;
+  const defs = svg.querySelector('defs');
+  const markup = renderUniversalDiagramMarkup({
+    diagramId: DIAGRAM_ID,
+    spaceWidthMm: values.spaceWidthMm,
+    spaceDepthMm: values.spaceDepthMm,
+    objectWidthMm: values.objectWidthMm,
+    objectDepthMm: values.objectDepthMm,
+    clearanceEachSideMm: values.clearanceEachSideMm,
+    orientation,
+  });
+  svg.innerHTML = '';
+  if (defs) svg.appendChild(defs);
+  const wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  wrapper.innerHTML = markup;
+  while (wrapper.firstChild) svg.appendChild(wrapper.firstChild);
+
+  const orientationText = orientation === 'width-depth' ? 'width by depth' : 'depth by width';
+  const caption = document.getElementById(`${DIAGRAM_ID}-caption`);
+  if (caption) {
+    caption.textContent = `Proportional top-down comparison: ${formatMeasurement(values.spaceWidthMm)} by ${formatMeasurement(values.spaceDepthMm)} inside space and ${formatMeasurement(values.objectWidthMm)} by ${formatMeasurement(values.objectDepthMm)} item footprint, arranged ${orientationText}. The optional planning margin is ${formatMeasurement(values.clearanceEachSideMm)} on each side. Height, doorway/corridor and multi-item checks are not drawn here.`;
   }
 }
 
@@ -177,6 +212,7 @@ function recompute(): void {
   const plan = buildObjectFitPlan(values);
   const result = evaluateFit(plan.checks);
   const rows = toDimensionDisplayRows(plan.checks, result);
+  renderDiagram(values, plan.orientation);
   renderSummary(result.state, rows);
   renderRows(rows);
   const orientation = plan.orientation === 'width-depth' ? 'width by depth' : 'depth by width';

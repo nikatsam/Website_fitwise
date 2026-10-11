@@ -32,7 +32,7 @@ import {
   validateCandidateSizeInputRow,
 } from '../lib/fit/candidate-size-editor';
 import { getFitServiceStartGuidance } from '../lib/fit/start-guidance';
-import { formatMeasurement, parseLength } from '../lib/units';
+import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
 
 function escapeHtml(value: string): string {
   return value
@@ -394,15 +394,16 @@ function formatDimensionRows(rows: DimensionDisplayRow[]): void {
         <td data-label="Required">${formatDualUnit(row.requiredMm)}</td>
         <td data-label="Target">${formatDualUnit(row.recommendedMm)}</td>
         <td data-label="Available">${formatDualUnit(row.availableMm)}</td>
-        <td data-label="Physical margin"><span>${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}</span>${formatDualUnit(Math.abs(row.physicalMarginMm))}</td>
-        <td data-label="Target margin"><span>${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}</span>${formatDualUnit(Math.abs(row.targetMarginMm))}</td>
+        <td data-label="Physical margin"><span>${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}</span>${formatDualUnit(Math.abs(row.physicalMarginMm), true)}</td>
+        <td data-label="Target margin"><span>${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}</span>${formatDualUnit(Math.abs(row.targetMarginMm), true)}</td>
       </tr>`,
     )
     .join('');
 }
 
-function formatDualUnit(mm: number): string {
-  return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
+function formatDualUnit(mm: number, margin = false): string {
+  const format = margin ? formatMarginMeasurement : formatMeasurement;
+  return `<span class="unit-value"><span data-unit="metric">${format(mm, 'metric')}</span><span data-unit="separator" aria-hidden="true"> / </span><span data-unit="imperial">${format(mm, 'imperial')}</span></span>`;
 }
 
 function refreshCompatibility(
@@ -463,7 +464,7 @@ function updateSummary(
       stickyDetail.innerHTML = summaryCopy.isExactFit
         ? 'No measurement tolerance remains'
         : summaryCopy.marginMm !== null && summaryCopy.marginLabel
-          ? `${formatDualUnit(summaryCopy.marginMm)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
+          ? `${formatDualUnit(summaryCopy.marginMm, true)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
           : summaryCopy.compatibilityStatus === 'Incompatible'
             ? 'Compatibility failed'
             : state === 'needs_information'

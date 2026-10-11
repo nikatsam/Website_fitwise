@@ -14,6 +14,7 @@ import {
   formatInches,
   formatFeetInches,
   formatMeasurement,
+  formatMarginMeasurement,
   formatSignedMeasurement,
   formatMetric,
   parseLength,
@@ -83,6 +84,14 @@ describe('display formatting — deterministic', () => {
     expect(formatSignedMeasurement(108)).toBe('+10.8 cm / +0 ft 4 in');
     expect(formatSignedMeasurement(-108)).toBe('−10.8 cm / −0 ft 4 in');
     expect(formatSignedMeasurement(0)).toBe('0.0 cm / 0 ft 0 in');
+  });
+
+  it('keeps small nonzero margins visible in every unit mode', () => {
+    expect(formatMarginMeasurement(0.1, 'metric')).toBe('0.10 mm');
+    expect(formatMarginMeasurement(0.1, 'imperial')).toBe('0.0039 in');
+    expect(formatMarginMeasurement(0.1, 'both')).toBe('0.10 mm / 0.0039 in');
+    expect(formatMarginMeasurement(0, 'both')).toBe('0.0 cm / 0 ft 0 in');
+    expect(formatMarginMeasurement(-0.1, 'both')).toBe('0.10 mm / 0.0039 in');
   });
 
   it('formats cm with one decimal by default', () => {

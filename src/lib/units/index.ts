@@ -19,6 +19,7 @@ export {
   formatInches,
   formatFeetInches,
   formatMeasurement,
+  formatMarginMeasurement,
   formatMetric,
   formatLength,
   formatSignedMeasurement,
