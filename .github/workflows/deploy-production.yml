@@ -194,9 +194,9 @@ jobs:
           fi
           {
             echo "### Fitwise production deployment"
-            echo "Bucket: \\`${{ steps.outputs.outputs.bucket }}\\`"
-            echo "CloudFront distribution: \\`${DISTRIBUTION_ID}\\`"
-            echo "CloudFront DNS target: \\`${{ steps.outputs.outputs.domain }}\\`"
+            printf 'Bucket: %s\n' "${{ steps.outputs.outputs.bucket }}"
+            printf 'CloudFront distribution: %s\n' "$DISTRIBUTION_ID"
+            printf 'CloudFront DNS target: %s\n' "${{ steps.outputs.outputs.domain }}"
             echo 'Set the Cloudflare apex CNAME to the DNS target above (DNS only initially).'
           } >> "$GITHUB_STEP_SUMMARY"
 
