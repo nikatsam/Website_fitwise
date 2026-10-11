@@ -1,0 +1,67 @@
+---
+interface Props {
+  step: number;
+  title: string;
+  description?: string;
+}
+
+const { step, title, description } = Astro.props;
+const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+---
+
+<section class="calculator-step" data-calculator-step={step} aria-labelledby={headingId}>
+  <header class="calculator-step__header">
+    <p>Step {step}</p>
+    <h2 id={headingId}>{title}</h2>
+  </header>
+  {description && <p class="calculator-step__description">{description}</p>}
+  <div class="calculator-step__content">
+    <slot />
+  </div>
+</section>
+
+<style>
+  .calculator-step {
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+    padding-block: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .calculator-step__header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .calculator-step__header p {
+    margin: 0;
+    color: var(--color-accent-1);
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .calculator-step__header h2 {
+    margin: 0;
+    font-size: var(--fs-lg);
+    letter-spacing: -0.015em;
+  }
+
+  .calculator-step__description {
+    max-width: 72ch;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+  }
+
+  .calculator-step__content {
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+</style>

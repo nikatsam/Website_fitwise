@@ -1,0 +1,22 @@
+---
+import MeasurementHelp from './MeasurementHelp.astro';
+import {
+  getCoreMeasurementGuidance,
+  type CoreCalculator,
+} from '../../lib/fit/measurement-guidance';
+
+interface Props {
+  calculator: CoreCalculator;
+  fieldId: string;
+  id: string;
+}
+
+const { calculator, fieldId, id } = Astro.props;
+const guidance = getCoreMeasurementGuidance(calculator, fieldId);
+---
+
+{guidance && (
+  <MeasurementHelp id={id} {...guidance}>
+    <slot />
+  </MeasurementHelp>
+)}

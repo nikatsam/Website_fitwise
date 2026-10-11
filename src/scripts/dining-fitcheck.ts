@@ -1,10 +1,11 @@
 import {
   evaluateFit,
   FIT_STATE_BADGE_COPY,
-  selectSummaryDimension,
+  getFitSummaryCopy,
+  getFitSummaryResultLabel,
+  renderFitSummaryContentHtml,
   toDimensionDisplayRows,
   type DimensionDisplayRow,
-  type FitState,
 } from '../lib/fit';
 import { buildDiningFitPlan, type DiningOrientation } from '../lib/geometry';
 import { renderDiningDiagramMarkup } from '../lib/diagram';
@@ -120,22 +121,6 @@ function renderRows(rows: DimensionDisplayRow[]): void {
     .join('');
 }
 
-function renderDetail(state: FitState, rows: DimensionDisplayRow[]): string {
-  const hardFailures = rows.filter((row) => !row.hardFit);
-  const targetFailures = rows.filter((row) => !row.recommendedFit);
-  const primary = selectSummaryDimension(rows);
-  if (state === 'fits' && primary) {
-    return `Tightest constraint: ${primary.label}. Physical space remaining: ${unitHtml(primary.physicalMarginMm)}. After your selected target: ${unitHtml(primary.targetMarginMm)}.`;
-  }
-  if (state === 'tight') {
-    return `The physical table/chair envelope fits, but selected circulation space is short on ${targetFailures.map((row) => `${row.label} by ${unitHtml(Math.abs(row.targetMarginMm))}`).join(', ')}.`;
-  }
-  if (state === 'needs_information') {
-    return 'Needs more information before this fit can be confirmed.';
-  }
-  return `Does not fit physically: ${hardFailures.map((row) => `${row.label} short by ${unitHtml(Math.abs(row.physicalMarginMm))}`).join(', ')}.`;
-}
-
 function renderAssumptions(
   values: NonNullable<ReturnType<typeof readForm>>,
   orientation: string,
@@ -186,31 +171,34 @@ function recompute(): void {
   );
   const result = evaluateFit(plan.checks, assumptions);
   const rows = toDimensionDisplayRows(plan.checks, result);
+  const summaryCopy = getFitSummaryCopy(result.state, rows);
   const summary = document.getElementById('dining-fitcheck-summary');
   if (summary) {
     const copy = FIT_STATE_BADGE_COPY[result.state];
+    const resultLabel = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
     summary.dataset.fitState = result.state;
+    summary.dataset.fitExact = String(summaryCopy.isExactFit);
     summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent = copy.icon;
-    summary.querySelector<HTMLElement>('[data-field="label"]')!.textContent = copy.label;
-    summary.querySelector<HTMLElement>('[data-field="detail"]')!.innerHTML = renderDetail(
-      result.state,
-      rows,
-    );
+    summary.querySelector<HTMLElement>('[data-field="label"]')!.textContent = resultLabel;
+    const content = summary.querySelector<HTMLElement>('[data-fit-summary-content]');
+    if (content) content.innerHTML = renderFitSummaryContentHtml(summaryCopy);
     const sticky = summary.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
     if (sticky) {
       sticky.dataset.fitState = result.state;
       sticky.setAttribute(
         'aria-label',
-        `Dining fit result: ${copy.label}. View dimension details.`,
+        `Dining fit result: ${resultLabel}. View calculation details.`,
       );
       sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = copy.icon;
-      sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = copy.label;
-      sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]')!.innerHTML =
-        result.state === 'fits'
-          ? `${unitHtml(Math.max(0, selectSummaryDimension(rows)?.targetMarginMm ?? 0))} after target`
-          : result.state === 'tight'
-            ? `Target short ${unitHtml(Math.abs(selectSummaryDimension(rows)?.targetMarginMm ?? 0))}`
-            : `Physical short ${unitHtml(Math.abs(selectSummaryDimension(rows)?.physicalMarginMm ?? 0))}`;
+      sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = resultLabel;
+      const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
+      if (stickyDetail) {
+        stickyDetail.innerHTML = summaryCopy.isExactFit
+          ? 'No measurement tolerance remains'
+          : summaryCopy.marginMm !== null && summaryCopy.marginLabel
+            ? `${unitHtml(summaryCopy.marginMm)} ${summaryCopy.marginLabel.toLowerCase()}`
+            : 'Check result details';
+      }
     }
   }
   renderRows(rows);
@@ -238,6 +226,8 @@ function init(): void {
     ) {
       const notice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
       if (notice) notice.hidden = true;
+      const summary = document.getElementById('dining-fitcheck-summary');
+      if (summary?.dataset.fitOrigin) summary.dataset.fitOrigin = 'user';
     }
     recompute();
   };

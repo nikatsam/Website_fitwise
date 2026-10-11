@@ -1,12 +1,22 @@
 ---
 import AssumptionList from '../fit/AssumptionList.astro';
+import BeforeYouStart from '../fit/BeforeYouStart.astro';
 import DimensionTable from '../fit/DimensionTable.astro';
 import FitSummary from '../fit/FitSummary.astro';
 import UnitToggle from '../fit/UnitToggle.astro';
-import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import { toDimensionDisplayRows } from '../../lib/fit';
+import { renderFitServiceAsciiPreview } from '../../lib/diagram/render-fit-service-ascii';
+import { renderCandidateSizeEditorMarkup } from '../../lib/fit/candidate-size-editor';
+import {
+  getFitServiceMeasurementGuidance,
+  renderMeasurementHelpMarkup,
+} from '../../lib/fit/measurement-guidance';
+import { getFitServiceStartGuidance } from '../../lib/fit/start-guidance';
 import {
   FIT_SERVICE_DEFINITIONS,
   buildFitServicePlan,
+  evaluateFitServicePlan,
+  getFitServiceMobileSteps,
   getFitServiceDefaults,
   type FitServiceCategory,
   type FitServiceMode,
@@ -30,24 +40,19 @@ const initialDefinition = serviceDefinitions.find(
 )!;
 const initialValues = getFitServiceDefaults(INITIAL_MODE);
 const initialPlan = buildFitServicePlan(INITIAL_MODE, initialValues);
-const initialResult = evaluateFit(initialPlan.checks, initialPlan.assumptions);
-const initialState = !initialResult.hardFit
-  ? 'does_not_fit'
-  : initialPlan.reviewRequired && initialPlan.reviewRequired.length > 0
-    ? 'needs_information'
-    : initialPlan.compatibility.some((check) => !check.compatible)
-      ? 'does_not_fit'
-      : initialResult.state;
+const { result: initialResult, state: initialState } = evaluateFitServicePlan(initialPlan);
 const initialRows = toDimensionDisplayRows(initialPlan.checks, {
   ...initialResult,
   state: initialState,
 });
+const initialPreview = renderFitServiceAsciiPreview(INITIAL_MODE, initialValues);
+const initialBeforeStart = getFitServiceStartGuidance(INITIAL_MODE, initialValues);
 const initialVisibleFields = initialDefinition.fields.filter(
   (field) => !field.showWhen || initialValues[field.showWhen.name] === field.showWhen.value,
 );
 const initialUnitNotes = [
   ...(initialVisibleFields.some((field) => field.type === 'length')
-    ? ['Length fields accept mm, cm, m, inches or feet.']
+    ? ['Lengths accept mm, cm, m, in, ft or ft/in. Bare numbers default to mm.']
     : []),
   ...(initialVisibleFields.some((field) => field.type === 'decimal')
     ? ['Weight fields use kg.']
@@ -58,36 +63,59 @@ function escapeAttribute(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
 }
 
-const initialFields = initialDefinition.fields
-  .map((field) => {
-    const id = `service-${field.name}`;
-    const condition = field.showWhen
-      ? ` data-show-when-name="${escapeAttribute(field.showWhen.name)}" data-show-when-value="${escapeAttribute(field.showWhen.value)}"${initialValues[field.showWhen.name] === field.showWhen.value ? '' : ' hidden'}`
-      : '';
-    const required = field.required === false || field.optional ? '' : ' required';
-    const initialValue = initialValues[field.name] ?? field.defaultValue;
-    const value =
-      field.type === 'length' && typeof initialValue === 'number'
-        ? formatMeasurement(initialValue)
-        : String(initialValue);
-    let control: string;
-    if (field.type === 'select') {
-      control = `<select id="${id}" name="${field.name}" data-service-control="${field.type}"${required}>${(field.options ?? []).map((option) => `<option value="${escapeAttribute(option.value)}"${option.value === value ? ' selected' : ''}>${escapeAttribute(option.label)}</option>`).join('')}</select>`;
-    } else {
-      const type = field.type === 'length' || field.type === 'text' ? 'text' : 'number';
-      const inputMode = field.type === 'length' ? ' inputmode="decimal"' : '';
-      const min = field.min === undefined ? '' : ` min="${field.min}"`;
-      const max = field.max === undefined ? '' : ` max="${field.max}"`;
-      const step =
-        field.type === 'count' ? ' step="1"' : field.type === 'decimal' ? ' step="any"' : '';
-      control = `<input id="${id}" name="${field.name}" type="${type}"${inputMode}${min}${max}${step} value="${escapeAttribute(value)}" data-service-control="${field.type}"${required} aria-describedby="${id}-error" />`;
-    }
-    return `<div class="field" data-service-field data-name="${field.name}"${condition}><label for="${id}">${escapeAttribute(field.label)}</label>${control}<span class="field__error" id="${id}-error" role="alert"></span></div>`;
-  })
-  .join('');
+const renderInitialField = (field: (typeof initialDefinition.fields)[number]) => {
+  const id = `service-${field.name}`;
+  const help = getFitServiceMeasurementGuidance(INITIAL_MODE, field.name, field.label, field.type);
+  const condition = field.showWhen
+    ? ` data-show-when-name="${escapeAttribute(field.showWhen.name)}" data-show-when-value="${escapeAttribute(field.showWhen.value)}"${initialValues[field.showWhen.name] === field.showWhen.value ? '' : ' hidden'}`
+    : '';
+  const required = field.required === false || field.optional ? '' : ' required';
+  const initialValue = initialValues[field.name] ?? field.defaultValue;
+  const value =
+    field.type === 'length' && typeof initialValue === 'number'
+      ? formatMeasurement(initialValue)
+      : String(initialValue);
+  const describedBy = `${id}-error${help ? ` ${id}-help` : ''}${field.type === 'length' ? ' fit-service-unit-note' : ''}`;
+  const helpMarkup = help ? renderMeasurementHelpMarkup(`${id}-help`, help) : '';
+  if (field.name === 'candidateSizes') {
+    return renderCandidateSizeEditorMarkup(
+      id,
+      value,
+      field.required !== false && !field.optional,
+      condition,
+      helpMarkup,
+    );
+  }
+  let control: string;
+  if (field.type === 'select') {
+    control = `<select id="${id}" name="${field.name}" data-service-control="${field.type}"${required} aria-describedby="${describedBy}">${(field.options ?? []).map((option) => `<option value="${escapeAttribute(option.value)}"${option.value === value ? ' selected' : ''}>${escapeAttribute(option.label)}</option>`).join('')}</select>`;
+  } else {
+    const type = field.type === 'length' || field.type === 'text' ? 'text' : 'number';
+    const inputMode = field.type === 'length' ? ' inputmode="text"' : '';
+    const min = field.min === undefined ? '' : ` min="${field.min}"`;
+    const max = field.max === undefined ? '' : ` max="${field.max}"`;
+    const step =
+      field.type === 'count' ? ' step="1"' : field.type === 'decimal' ? ' step="any"' : '';
+    control = `<input id="${id}" name="${field.name}" type="${type}"${inputMode}${min}${max}${step} value="${escapeAttribute(value)}" data-service-control="${field.type}"${required} aria-describedby="${describedBy}" />`;
+  }
+  return `<div class="field" data-service-field data-name="${field.name}"${condition}><label for="${id}">${escapeAttribute(field.label)}</label>${control}<span class="field__error" id="${id}-error" role="alert"></span>${helpMarkup}</div>`;
+};
+const initialMobileSteps = getFitServiceMobileSteps(INITIAL_MODE, initialDefinition.fields);
+const initialFieldMarkup = new Map(
+  initialDefinition.fields.map((field) => [field.name, renderInitialField(field)]),
+);
+const initialFields = initialMobileSteps
+  ? initialMobileSteps
+      .map((step, index) => {
+        const headingId = `fit-service-step-${INITIAL_MODE}-${step.id}-heading`;
+        return `<section class="fit-services__step" data-fit-service-step data-step-index="${index}" aria-labelledby="${headingId}"><h2 id="${headingId}" data-step-heading tabindex="-1">Step ${index + 1} of ${initialMobileSteps.length}: ${escapeAttribute(step.title)}</h2><div class="fit-services__step-fields field-grid">${step.fields.map((field) => initialFieldMarkup.get(field.name) ?? '').join('')}</div></section>`;
+      })
+      .join('')
+  : `<div class="field-grid">${initialDefinition.fields.map((field) => initialFieldMarkup.get(field.name) ?? '').join('')}</div>`;
 ---
 
-<div class="fit-services" data-fit-services>
+<div class="fit-services calculator-split" data-fit-services>
+  <BeforeYouStart id="fit-services-before-start" items={initialBeforeStart} spansGrid />
   <form class="fit-services__form" data-fit-services-form novalidate>
     <p class="fit-example-notice" data-fit-example-notice role="note">
       <strong>Example setup.</strong> Values are illustrative examples, not defaults for a product,
@@ -96,40 +124,66 @@ const initialFields = initialDefinition.fields
     {pinnedMode ? (
       <>
         <input id="fit-service-mode" name="mode" type="hidden" value={INITIAL_MODE} />
-        <p class="fit-services__mode-description" data-fit-service-description>
+        <p
+          class="fit-services__mode-description"
+          id="fit-service-description"
+          data-fit-service-description
+        >
           {initialDefinition.description}
         </p>
       </>
     ) : (
       <div class="field">
         <label for="fit-service-mode">Choose a fit relationship</label>
-        <select id="fit-service-mode" name="mode">
+        <select id="fit-service-mode" name="mode" aria-describedby="fit-service-description">
           {serviceDefinitions.map((definition) => (
             <option value={definition.mode} selected={definition.mode === INITIAL_MODE}>
               {definition.title}
             </option>
           ))}
         </select>
-        <p class="field__note" data-fit-service-description>
+        <p class="field__note" id="fit-service-description" data-fit-service-description>
           {initialDefinition.description}
         </p>
       </div>
     )}
-    <div class="fit-services__fields field-grid" data-fit-service-fields set:html={initialFields} />
-    <p class="field__note" data-fit-service-unit-note hidden={initialUnitNotes.length === 0}>
+    <p
+      class="field__note"
+      id="fit-service-unit-note"
+      data-fit-service-unit-note
+      hidden={initialUnitNotes.length === 0}
+    >
       {initialUnitNotes.join(' ')}
     </p>
+    <nav
+      class="fit-services__mobile-stepper"
+      data-fit-service-stepper
+      aria-label="Calculator steps"
+      hidden
+    ></nav>
+    <div class="fit-services__fields" data-fit-service-fields set:html={initialFields} />
     <UnitToggle />
   </form>
 
-  <section class="fit-services__result" aria-label="Fit services result">
+  <section class="fit-services__result calculator-split__result" aria-label="Fit services result">
     <FitSummary
       id="fit-services-summary"
       resultId="fit-services-table"
       state={initialState}
       rows={initialRows}
       needsInformation={initialPlan.reviewRequired}
+      compatibilityChecks={initialPlan.compatibility}
+      resultOrigin="example"
     />
+    <figure class="fit-service-preview">
+      <figcaption>ASCII plan preview, not to scale</figcaption>
+      <pre
+        data-fit-service-preview-ascii
+        role="img"
+        aria-label={initialPreview.description}
+      >{initialPreview.art}</pre>
+      <p data-fit-service-preview-summary>{initialPreview.summary}</p>
+    </figure>
     <p class="fit-services__extra" data-fit-service-extra>
       {initialPlan.extra ?? initialDefinition.description}
       {initialPlan.capacity !== undefined &&
@@ -186,13 +240,6 @@ const initialFields = initialDefinition.fields
     gap: var(--space-6);
   }
 
-  @media (min-width: 62rem) {
-    .fit-services {
-      grid-template-columns: minmax(20rem, 0.9fr) minmax(0, 1.1fr);
-      align-items: start;
-    }
-  }
-
   .fit-services__form,
   .fit-services__result {
     display: grid;
@@ -206,6 +253,64 @@ const initialFields = initialDefinition.fields
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface-raised);
+  }
+
+  .fit-services__fields {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+
+  .fit-services :global(.fit-services__step) {
+    display: grid;
+    grid-column: 1 / -1;
+    gap: var(--space-3);
+    min-width: 0;
+    padding-block: var(--space-3);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .fit-services :global(.fit-services__step[hidden]) {
+    display: none;
+  }
+
+  .fit-services :global(.fit-services__step h2) {
+    margin: 0;
+    font-size: var(--fs-md);
+  }
+
+  .fit-services :global(.fit-services__step-fields) {
+    min-width: 0;
+  }
+
+  .fit-services__mobile-stepper {
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .fit-services__mobile-stepper :global(p) {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .fit-services__mobile-stepper :global(button) {
+    min-width: 5.5rem;
+    padding-inline: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-weight: 700;
+  }
+
+  .fit-services__mobile-stepper :global(button:disabled) {
+    opacity: 0.5;
   }
 
   .fit-example-notice {
@@ -269,6 +374,53 @@ const initialFields = initialDefinition.fields
     background: var(--color-surface-raised);
   }
 
+  .fit-service-preview {
+    min-width: 0;
+    margin: 0;
+    padding: var(--space-3);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+
+  .fit-service-preview figcaption {
+    margin-bottom: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .fit-service-preview pre {
+    max-width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    color: var(--color-text-primary);
+    font: 500 0.72rem/1.2 var(--font-mono);
+    white-space: pre;
+  }
+
+  .fit-service-preview p {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+  }
+
+  @media (max-width: 61.999rem) {
+    .fit-services__mobile-stepper:not([hidden]) {
+      display: flex;
+      width: 100%;
+      padding-block: var(--space-2);
+    }
+
+    .fit-services__step-fields.field-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   .fit-services__compatibility {
     display: grid;
     gap: var(--space-2);
@@ -294,7 +446,7 @@ const initialFields = initialDefinition.fields
   }
 
   .fit-services__review {
-    color: var(--color-state-tight-fg);
+    color: var(--color-state-info-fg);
     font-weight: 600;
   }
 
@@ -302,14 +454,7 @@ const initialFields = initialDefinition.fields
     color: var(--color-state-no-fit-fg);
   }
 
-  @media (min-width: 62rem) {
-    .fit-services__result {
-      position: sticky;
-      top: calc(var(--header-height, 4rem) + var(--space-4));
-    }
-  }
-
-  @media (max-width: 59.999rem) {
+  @media (max-width: 61.999rem) {
     .fit-services {
       padding-bottom: 4.5rem;
     }

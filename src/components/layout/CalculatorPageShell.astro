@@ -1,0 +1,177 @@
+---
+import type { BreadcrumbItem } from '../../lib/content';
+
+interface Props {
+  h1: string;
+  breadcrumb?: BreadcrumbItem[];
+  eyebrow?: string;
+}
+
+const { h1, breadcrumb, eyebrow } = Astro.props;
+const hasPurpose = Astro.slots.has('purpose');
+const hasBeforeStart = Astro.slots.has('before-start');
+const hasExample = Astro.slots.has('example');
+const hasDirectory = Astro.slots.has('directory');
+const hasTool = Astro.slots.has('calculator');
+const hasSupport = Astro.slots.has('support');
+const hasSources = Astro.slots.has('sources');
+const hasRelated = Astro.slots.has('related');
+---
+
+<article class="page-family calculator-page-shell" data-calculator-shell>
+  {breadcrumb && (
+    <nav class="page-family__breadcrumb" aria-label="Breadcrumb">
+      <ol>
+        {breadcrumb.map((item, index) => (
+          <li>
+            {index === breadcrumb.length - 1 ? (
+              <span aria-current="page">{item.label}</span>
+            ) : (
+              <>
+                <a href={item.href}>{item.label}</a>
+                <span aria-hidden="true"> / </span>
+              </>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  )}
+  <header class="calculator-page-shell__header">
+    {eyebrow && <p class="calculator-page-shell__eyebrow">{eyebrow}</p>}
+    <h1>{h1}</h1>
+    {hasPurpose && (
+      <div class="calculator-page-shell__purpose">
+        <slot name="purpose" />
+      </div>
+    )}
+  </header>
+  {hasBeforeStart && (
+    <section class="calculator-page-shell__guidance" data-shell-section="before-start">
+      <slot name="before-start" />
+    </section>
+  )}
+  {hasExample && (
+    <section class="calculator-page-shell__example" data-shell-section="example">
+      <slot name="example" />
+    </section>
+  )}
+  {hasDirectory && (
+    <section class="calculator-page-shell__directory" data-shell-section="directory">
+      <slot name="directory" />
+    </section>
+  )}
+  <div class="page-family__body calculator-page-shell__body">
+    <slot />
+    {hasTool && (
+      <div class="calculator-page-shell__tool" data-shell-section="calculator">
+        <slot name="calculator" />
+      </div>
+    )}
+    {hasSupport && (
+      <div class="calculator-page-shell__support" data-shell-section="support">
+        <slot name="support" />
+      </div>
+    )}
+    {hasSources && (
+      <div class="calculator-page-shell__sources" data-shell-section="sources">
+        <slot name="sources" />
+      </div>
+    )}
+    {hasRelated && (
+      <div class="calculator-page-shell__related" data-shell-section="related">
+        <slot name="related" />
+      </div>
+    )}
+  </div>
+</article>
+
+<style>
+  .page-family {
+    width: 100%;
+    max-width: var(--content-max-width);
+    margin-inline: auto;
+    padding-block: var(--space-6);
+    padding-inline: var(--space-5);
+  }
+
+  .calculator-page-shell__header {
+    display: grid;
+    gap: var(--space-2);
+    max-width: 82ch;
+  }
+
+  .page-family__breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0 0 var(--space-3);
+    padding: 0;
+    font-size: var(--fs-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .page-family__breadcrumb li {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .page-family__breadcrumb a {
+    color: var(--color-text-secondary);
+  }
+
+  .calculator-page-shell__header h1 {
+    margin: 0;
+    font-size: var(--fs-3xl);
+    letter-spacing: -0.035em;
+  }
+
+  .calculator-page-shell__eyebrow {
+    margin: 0;
+    color: var(--color-accent-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .calculator-page-shell__purpose {
+    max-width: 78ch;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+  }
+
+  .calculator-page-shell__body {
+    display: grid;
+    gap: var(--space-5);
+    margin-top: var(--space-4);
+  }
+
+  .calculator-page-shell__body > *,
+  .calculator-page-shell__tool,
+  .calculator-page-shell__support,
+  .calculator-page-shell__sources,
+  .calculator-page-shell__related {
+    min-width: 0;
+  }
+
+  .calculator-page-shell__guidance,
+  .calculator-page-shell__example,
+  .calculator-page-shell__directory {
+    max-width: 82ch;
+    margin-top: var(--space-4);
+  }
+
+  .calculator-page-shell__support,
+  .calculator-page-shell__sources,
+  .calculator-page-shell__related {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  @media (max-width: 40rem) {
+    .page-family {
+      padding-inline: var(--space-4);
+    }
+  }
+</style>

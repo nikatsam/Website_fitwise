@@ -69,3 +69,10 @@ export function formatMetric(mm: Millimetres): string {
 export function formatLength(mm: Millimetres, system: UnitSystem): string {
   return formatMeasurement(mm, system);
 }
+
+export function formatSignedMeasurement(mm: Millimetres): string {
+  if (!Number.isFinite(mm)) throw new RangeError(`Measurement must be finite, got ${mm}.`);
+  const sign = mm > 0 ? '+' : mm < 0 ? '−' : '';
+  const magnitude = Math.abs(mm);
+  return `${sign}${formatMeasurement(magnitude, 'metric')} / ${sign}${formatMeasurement(magnitude, 'imperial')}`;
+}

@@ -3,18 +3,34 @@ import {
   getFitServiceDefinition,
   getFitServiceDefaults,
   getFitServiceModeForRoute,
+  evaluateFitServicePlan,
+  getFitServiceMobileSteps,
+  type FitServiceMobileStep,
   type FitServiceField,
   type FitServiceMode,
   type FitServiceValues,
 } from '../lib/geometry';
 import {
-  evaluateFit,
   FIT_STATE_BADGE_COPY,
-  selectSummaryDimension,
+  getFitSummaryCopy,
+  getFitSummaryResultLabel,
+  renderFitSummaryContentHtml,
   toDimensionDisplayRows,
   type DimensionDisplayRow,
   type FitState,
 } from '../lib/fit';
+import { renderFitServiceAsciiPreview } from '../lib/diagram/render-fit-service-ascii';
+import {
+  getFitServiceMeasurementGuidance,
+  renderMeasurementHelpMarkup,
+} from '../lib/fit/measurement-guidance';
+import {
+  renderCandidateSizeEditorMarkup,
+  renderCandidateSizeInputRow,
+  serializeCandidateSizeInput,
+  validateCandidateSizeInputRow,
+} from '../lib/fit/candidate-size-editor';
+import { getFitServiceStartGuidance } from '../lib/fit/start-guidance';
 import { formatMeasurement, parseLength } from '../lib/units';
 
 function escapeHtml(value: string): string {
@@ -26,16 +42,126 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#39;');
 }
 
-function renderField(field: FitServiceField, value: string): string {
+const mobileStepperQuery = '(max-width: 61.999rem)';
+let activeServiceStep = 0;
+let activeServiceMode: FitServiceMode | null = null;
+let activeServiceSteps: FitServiceMobileStep[] = [];
+
+function renderServiceStepMarkup(
+  mode: FitServiceMode,
+  steps: FitServiceMobileStep[],
+  fields: FitServiceField[],
+  values: FitServiceValues,
+): string {
+  const markupByName = new Map(
+    fields.map((field) => {
+      const value = values[field.name] ?? field.defaultValue;
+      return [
+        field.name,
+        renderField(
+          field,
+          mode,
+          field.type === 'length' && typeof value === 'number'
+            ? formatMeasurement(value)
+            : String(value),
+        ),
+      ];
+    }),
+  );
+  return steps
+    .map((step, index) => {
+      const headingId = `fit-service-step-${mode}-${step.id}-heading`;
+      const fieldsMarkup = step.fields.map((field) => markupByName.get(field.name) ?? '').join('');
+      return `<section class="fit-services__step" data-fit-service-step data-step-index="${index}" aria-labelledby="${headingId}"><h2 id="${headingId}" data-step-heading tabindex="-1">Step ${index + 1} of ${steps.length}: ${escapeHtml(step.title)}</h2><div class="fit-services__step-fields field-grid">${fieldsMarkup}</div></section>`;
+    })
+    .join('');
+}
+
+function applyMobileServiceStep(focusHeading = false): void {
+  const fields = document.querySelector<HTMLElement>('[data-fit-service-fields]');
+  const stepper = document.querySelector<HTMLElement>('[data-fit-service-stepper]');
+  if (!fields || !stepper) return;
+  const mobile = window.matchMedia(mobileStepperQuery).matches;
+  const sections = [...fields.querySelectorAll<HTMLElement>('[data-fit-service-step]')];
+  const hasSteps = activeServiceSteps.length > 0 && sections.length > 0;
+  stepper.hidden = !mobile || !hasSteps;
+  sections.forEach((section, index) => {
+    section.hidden = mobile && hasSteps && index !== activeServiceStep;
+    const heading = section.querySelector<HTMLElement>('[data-step-heading]');
+    if (index === activeServiceStep && hasSteps) heading?.setAttribute('aria-current', 'step');
+    else heading?.removeAttribute('aria-current');
+  });
+  if (!hasSteps) return;
+  const status = stepper.querySelector<HTMLElement>('[data-step-status]');
+  const previous = stepper.querySelector<HTMLButtonElement>('[data-step-action="previous"]');
+  const next = stepper.querySelector<HTMLButtonElement>('[data-step-action="next"]');
+  const current = activeServiceSteps[activeServiceStep];
+  if (status && current) {
+    status.textContent = `Step ${activeServiceStep + 1} of ${activeServiceSteps.length}: ${current.title}`;
+  }
+  if (previous) previous.disabled = activeServiceStep === 0;
+  if (next) next.disabled = activeServiceStep === activeServiceSteps.length - 1;
+  if (focusHeading && mobile) {
+    sections[activeServiceStep]?.querySelector<HTMLElement>('[data-step-heading]')?.focus();
+  }
+}
+
+function renderMobileServiceStepper(
+  mode: FitServiceMode,
+  steps: FitServiceMobileStep[] | undefined,
+): void {
+  const stepper = document.querySelector<HTMLElement>('[data-fit-service-stepper]');
+  if (!stepper) return;
+  if (!steps || steps.length === 0) {
+    activeServiceSteps = [];
+    activeServiceMode = mode;
+    activeServiceStep = 0;
+    stepper.innerHTML = '';
+    stepper.hidden = true;
+    document
+      .querySelectorAll<HTMLElement>('[data-fit-service-step]')
+      .forEach((section) => (section.hidden = false));
+    return;
+  }
+  if (activeServiceMode !== mode) activeServiceStep = 0;
+  activeServiceMode = mode;
+  activeServiceSteps = steps;
+  activeServiceStep = Math.min(activeServiceStep, steps.length - 1);
+  stepper.innerHTML = `<button type="button" data-step-action="previous" aria-label="Previous step">Previous</button><p role="status" aria-live="polite" data-step-status></p><button type="button" data-step-action="next" aria-label="Next step">Next</button>`;
+  applyMobileServiceStep();
+}
+
+function revealStepForField(fieldId: string): void {
+  const field = document.getElementById(fieldId)?.closest<HTMLElement>('[data-service-field]');
+  const section = field?.closest<HTMLElement>('[data-fit-service-step]');
+  const index = Number(section?.dataset.stepIndex);
+  if (!section || !Number.isInteger(index) || index < 0) return;
+  activeServiceStep = index;
+  applyMobileServiceStep(true);
+}
+
+function renderField(field: FitServiceField, mode: FitServiceMode, value: string): string {
   const id = `service-${field.name}`;
   const condition = field.showWhen;
+  const help = getFitServiceMeasurementGuidance(mode, field.name, field.label, field.type);
+  const descriptionIds = `${id}-error${help ? ` ${id}-help` : ''}${field.type === 'length' ? ' fit-service-unit-note' : ''}`;
+  const helpMarkup = help ? renderMeasurementHelpMarkup(`${id}-help`, help) : '';
   const conditionAttributes = condition
     ? ` data-show-when-name="${escapeHtml(condition.name)}" data-show-when-value="${escapeHtml(condition.value)}" hidden`
     : '';
   const required = field.required === false || field.optional ? '' : ' required';
+  if (field.name === 'candidateSizes') {
+    return renderCandidateSizeEditorMarkup(
+      id,
+      value,
+      field.required !== false && !field.optional,
+      conditionAttributes,
+      helpMarkup,
+    );
+  }
   let control: string;
   if (field.type === 'select') {
-    control = `<select id="${id}" name="${field.name}" data-service-control="select"${required}>${(
+    control = `<select id="${id}" name="${field.name}" data-service-control="select"${required} aria-describedby="${descriptionIds}">${(
       field.options ?? []
     )
       .map(
@@ -44,19 +170,20 @@ function renderField(field: FitServiceField, value: string): string {
       )
       .join('')}</select>`;
   } else if (field.type === 'length') {
-    control = `<input id="${id}" name="${field.name}" type="text" inputmode="decimal" value="${escapeHtml(value)}" data-service-control="length"${required} aria-describedby="${id}-error" />`;
+    control = `<input id="${id}" name="${field.name}" type="text" inputmode="text" value="${escapeHtml(value)}" data-service-control="length"${required} aria-describedby="${descriptionIds}" />`;
   } else if (field.type === 'text') {
-    control = `<input id="${id}" name="${field.name}" type="text" value="${escapeHtml(value)}" data-service-control="text"${required} aria-describedby="${id}-error" />`;
+    control = `<input id="${id}" name="${field.name}" type="text" value="${escapeHtml(value)}" data-service-control="text"${required} aria-describedby="${descriptionIds}" />`;
   } else {
     const step = field.type === 'count' ? '1' : 'any';
     const min = field.min === undefined ? '' : ` min="${field.min}"`;
     const max = field.max === undefined ? '' : ` max="${field.max}"`;
-    control = `<input id="${id}" name="${field.name}" type="number" step="${step}"${min}${max} value="${escapeHtml(value)}" data-service-control="${field.type}"${required} aria-describedby="${id}-error" />`;
+    control = `<input id="${id}" name="${field.name}" type="number" step="${step}"${min}${max} value="${escapeHtml(value)}" data-service-control="${field.type}"${required} aria-describedby="${descriptionIds}" />`;
   }
   return `<div class="field" data-service-field data-name="${field.name}"${conditionAttributes}>
     <label for="${id}">${escapeHtml(field.label)}</label>
     ${control}
     <span class="field__error" id="${id}-error" role="alert"></span>
+    ${helpMarkup}
   </div>`;
 }
 
@@ -64,6 +191,7 @@ function setError(id: string, message: string): void {
   document.getElementById(id)?.setAttribute('aria-invalid', 'true');
   const error = document.getElementById(`${id}-error`);
   if (error) error.textContent = message;
+  revealStepForField(id);
 }
 
 function clearError(id: string): void {
@@ -84,6 +212,94 @@ function updateConditionalFields(): void {
   updateUnitNote(form);
 }
 
+function syncCandidateSizeRows(): void {
+  const wrapper = document.querySelector<HTMLElement>(
+    '[data-service-field][data-name="candidateSizes"]',
+  );
+  if (!wrapper || wrapper.hidden) return;
+  const rows = [...wrapper.querySelectorAll<HTMLElement>('[data-candidate-size-row]')].map(
+    (row) => {
+      const width = row.querySelector<HTMLInputElement>('[data-candidate-size-width]');
+      const depth = row.querySelector<HTMLInputElement>('[data-candidate-size-depth]');
+      return {
+        element: row,
+        row: {
+          id: Number(row.dataset.rowId),
+          width: width?.value ?? '',
+          depth: depth?.value ?? '',
+        },
+        width,
+        depth,
+      };
+    },
+  );
+  let invalid = false;
+  for (const item of rows) {
+    const error = validateCandidateSizeInputRow(item.row);
+    const errorElement = item.element.querySelector<HTMLElement>('[data-candidate-size-error]');
+    if (error) {
+      invalid = true;
+      item.width?.setAttribute('aria-invalid', 'true');
+      item.depth?.setAttribute('aria-invalid', 'true');
+      if (errorElement) errorElement.textContent = error;
+    } else {
+      item.width?.removeAttribute('aria-invalid');
+      item.depth?.removeAttribute('aria-invalid');
+      if (errorElement) errorElement.textContent = '';
+    }
+  }
+  const hidden = wrapper.querySelector<HTMLInputElement>('#service-candidateSizes');
+  if (hidden) hidden.value = invalid ? '' : serializeCandidateSizeInput(rows.map(({ row }) => row));
+}
+
+function handleCandidateSizeClick(event: MouseEvent): void {
+  if (!(event.target instanceof Element)) return;
+  const add = event.target.closest<HTMLButtonElement>('[data-candidate-size-add]');
+  const remove = event.target.closest<HTMLButtonElement>('[data-candidate-size-remove]');
+  const container = document.querySelector<HTMLElement>('[data-candidate-size-rows]');
+  if (!container) return;
+  if (add) {
+    const rowIds = [...container.querySelectorAll<HTMLElement>('[data-candidate-size-row]')].map(
+      (row) => Number(row.dataset.rowId),
+    );
+    const nextId = Math.max(0, ...rowIds) + 1;
+    container.insertAdjacentHTML(
+      'beforeend',
+      renderCandidateSizeInputRow('service-candidateSizes', {
+        id: nextId,
+        width: '',
+        depth: '',
+      }),
+    );
+    syncCandidateSizeRows();
+    container
+      .querySelector<HTMLElement>(`[data-row-id="${nextId}"] [data-candidate-size-width]`)
+      ?.focus();
+  } else if (remove) {
+    const row = remove.closest<HTMLElement>('[data-candidate-size-row]');
+    const rowId = Number(row?.dataset.rowId);
+    const rowElements = [...container.querySelectorAll<HTMLElement>('[data-candidate-size-row]')];
+    if (row && rowElements.length === 1) {
+      row
+        .querySelectorAll<HTMLInputElement>(
+          'input[data-candidate-size-width], input[data-candidate-size-depth]',
+        )
+        .forEach((input) => (input.value = ''));
+    } else {
+      row?.remove();
+    }
+    syncCandidateSizeRows();
+    const nextRow =
+      container.querySelector<HTMLElement>(`[data-row-id="${rowId}"]`) ??
+      container.querySelector<HTMLElement>('[data-candidate-size-row]');
+    nextRow?.querySelector<HTMLInputElement>('[data-candidate-size-width]')?.focus();
+  } else {
+    return;
+  }
+  updateConditionalFields();
+  recompute();
+}
+
 function updateUnitNote(form: HTMLFormElement): void {
   const note = form.querySelector<HTMLElement>('[data-fit-service-unit-note]');
   if (!note) return;
@@ -93,7 +309,7 @@ function updateUnitNote(form: HTMLFormElement): void {
     .filter((control): control is HTMLElement => control !== null);
   const hints = [
     ...(controls.some((control) => control.dataset.serviceControl === 'length')
-      ? ['Length fields accept mm, cm, m, inches or feet.']
+      ? ['Lengths accept mm, cm, m, in, ft or ft/in. Bare numbers default to mm.']
       : []),
     ...(controls.some((control) => control.dataset.serviceControl === 'decimal')
       ? ['Weight fields use kg.']
@@ -132,7 +348,12 @@ function readForm(): { mode: FitServiceMode; values: FitServiceValues } | null {
       continue;
     }
     if (!raw) {
-      setError(id, 'Enter or select a value.');
+      setError(
+        id,
+        field.name === 'candidateSizes'
+          ? 'Add at least one complete candidate size row.'
+          : 'Enter or select a value.',
+      );
       invalid = true;
       continue;
     }
@@ -233,50 +454,38 @@ function updateSummary(
   const summary = document.getElementById('fit-services-summary');
   if (!summary) return;
   const copy = FIT_STATE_BADGE_COPY[state];
-  const hardFailures = rows.filter((row) => !row.hardFit);
-  const targetFailures = rows.filter((row) => !row.recommendedFit);
-  const incompatible = compatibility
-    .filter((check) => !check.compatible)
-    .map((check) => check.label);
-  let detail = 'Fits all checked dimensions.';
-  if (state === 'fits') {
-    const primary = selectSummaryDimension(rows);
-    if (primary) {
-      detail = `Tightest constraint: ${primary.label}. Physical space remaining: ${formatDualUnit(primary.physicalMarginMm)}. After your selected target: ${formatDualUnit(primary.targetMarginMm)}.`;
-    }
-  } else if (state === 'tight') {
-    detail = `Physical space remains, but selected targets are short on ${targetFailures.map((row) => `${row.label} by ${formatDualUnit(Math.abs(row.targetMarginMm))}`).join(', ')}.`;
-  } else if (state === 'needs_information') {
-    detail = `Physical fit may be checked, but required manufacturer information is missing: ${reviewRequired.map(escapeHtml).join(', ')}.`;
-  } else {
-    const reasons = hardFailures.map(
-      (row) => `${row.label} short by ${formatDualUnit(Math.abs(row.physicalMarginMm))}`,
-    );
-    detail = `Does not fit or is incompatible: ${[...reasons, ...incompatible].join(', ')}.`;
-  }
+  const summaryCopy = getFitSummaryCopy(state, rows, {
+    needsInformation: reviewRequired,
+    compatibilityChecks: compatibility,
+  });
+  const resultLabel = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
   summary.dataset.fitState = state;
+  summary.dataset.fitExact = String(summaryCopy.isExactFit);
   summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent = copy.icon;
-  summary.querySelector<HTMLElement>('[data-field="label"]')!.textContent = copy.label;
-  summary.querySelector<HTMLElement>('[data-field="detail"]')!.innerHTML = detail;
+  summary.querySelector<HTMLElement>('[data-field="label"]')!.textContent = resultLabel;
+  const content = summary.querySelector<HTMLElement>('[data-fit-summary-content]');
+  if (content) content.innerHTML = renderFitSummaryContentHtml(summaryCopy);
   const sticky = summary.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
   if (sticky) {
     sticky.dataset.fitState = state;
     sticky.setAttribute(
       'aria-label',
-      `Fit services result: ${copy.label}. View dimension details.`,
+      `Fit services result: ${resultLabel}. View calculation details.`,
     );
     sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = copy.icon;
-    sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = copy.label;
-    sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]')!.innerHTML =
-      state === 'needs_information'
-        ? 'Manual information needed'
-        : state === 'fits'
-          ? `${formatDualUnit(Math.max(0, selectSummaryDimension(rows)?.targetMarginMm ?? 0))} after target`
-          : state === 'tight'
-            ? `Target short ${formatDualUnit(Math.abs(selectSummaryDimension(targetFailures)?.targetMarginMm ?? 0))}`
-            : hardFailures.length > 0
-              ? `Physical short ${formatDualUnit(Math.abs(selectSummaryDimension(hardFailures)?.physicalMarginMm ?? 0))}`
-              : 'Compatibility check';
+    sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = resultLabel;
+    const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
+    if (stickyDetail) {
+      stickyDetail.innerHTML = summaryCopy.isExactFit
+        ? 'No measurement tolerance remains'
+        : summaryCopy.marginMm !== null && summaryCopy.marginLabel
+          ? `${formatDualUnit(summaryCopy.marginMm)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
+          : summaryCopy.compatibilityStatus === 'Incompatible'
+            ? 'Compatibility failed'
+            : state === 'needs_information'
+              ? 'Verification needed'
+              : 'Physical fit failed';
+    }
   }
 }
 
@@ -286,35 +495,55 @@ function renderFields(mode: FitServiceMode): void {
   if (!container || !description) return;
   const definition = getFitServiceDefinition(mode);
   const defaults = getFitServiceDefaults(mode);
-  container.innerHTML = definition.fields
-    .map((field) => {
-      const value = defaults[field.name] ?? field.defaultValue;
-      return renderField(
-        field,
-        field.type === 'length' && typeof value === 'number'
-          ? formatMeasurement(value)
-          : String(value),
-      );
-    })
-    .join('');
+  const steps = getFitServiceMobileSteps(mode, definition.fields);
+  if (steps && steps.length > 0) {
+    container.innerHTML = renderServiceStepMarkup(mode, steps, definition.fields, defaults);
+  } else {
+    container.innerHTML = `<div class="field-grid">${definition.fields
+      .map((field) => {
+        const value = defaults[field.name] ?? field.defaultValue;
+        return renderField(
+          field,
+          mode,
+          field.type === 'length' && typeof value === 'number'
+            ? formatMeasurement(value)
+            : String(value),
+        );
+      })
+      .join('')}</div>`;
+  }
+  renderMobileServiceStepper(mode, steps);
   description.textContent = definition.description;
+  refreshStartGuidance(mode, defaults);
   updateConditionalFields();
+}
+
+function refreshStartGuidance(mode: FitServiceMode, values: FitServiceValues): void {
+  const list = document.querySelector<HTMLUListElement>('[data-before-you-start-items]');
+  if (!list) return;
+  const items = getFitServiceStartGuidance(mode, values).map((text) => {
+    const item = document.createElement('li');
+    item.textContent = text;
+    return item;
+  });
+  list.replaceChildren(...items);
 }
 
 function recompute(): void {
   const form = readForm();
   if (!form) return;
+  refreshStartGuidance(form.mode, form.values);
   const plan = buildFitServicePlan(form.mode, form.values);
-  const result = evaluateFit(plan.checks, plan.assumptions);
-  const incompatible = plan.compatibility.some((check) => !check.compatible);
+  const preview = renderFitServiceAsciiPreview(form.mode, form.values);
+  const previewArt = document.querySelector<HTMLElement>('[data-fit-service-preview-ascii]');
+  const previewSummary = document.querySelector<HTMLElement>('[data-fit-service-preview-summary]');
+  if (previewArt) {
+    previewArt.textContent = preview.art;
+    previewArt.setAttribute('aria-label', preview.description);
+  }
+  if (previewSummary) previewSummary.textContent = preview.summary;
   const reviewRequired = plan.reviewRequired ?? [];
-  const state = !result.hardFit
-    ? 'does_not_fit'
-    : reviewRequired.length > 0
-      ? 'needs_information'
-      : incompatible
-        ? 'does_not_fit'
-        : result.state;
+  const { result, state } = evaluateFitServicePlan(plan);
   const rows = toDimensionDisplayRows(plan.checks, { ...result, state });
   updateSummary(state, rows, plan.compatibility, reviewRequired);
   formatDimensionRows(rows);
@@ -358,12 +587,23 @@ function init(): void {
   if (!initialMode) return;
   renderFields(initialMode);
   updateUnitNote(form);
+  const stepper = form.querySelector<HTMLElement>('[data-fit-service-stepper]');
+  stepper?.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest<HTMLButtonElement>('[data-step-action]');
+    if (!button || button.disabled) return;
+    activeServiceStep += button.dataset.stepAction === 'next' ? 1 : -1;
+    applyMobileServiceStep(true);
+  });
+  window.addEventListener('resize', () => applyMobileServiceStep());
 
   modeControl.addEventListener('change', () => {
     if (modeControl.tagName !== 'SELECT') return;
     const mode = getFitServiceModeForRoute(modeControl.value);
     if (!mode) return;
     renderFields(mode);
+    const summary = document.getElementById('fit-services-summary');
+    if (summary) summary.dataset.fitOrigin = 'example';
     const notice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
     if (notice) notice.hidden = false;
     recompute();
@@ -372,15 +612,23 @@ function init(): void {
   const handleChange = (event: Event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
+    if (target.matches('[data-candidate-size-width], [data-candidate-size-depth]')) {
+      syncCandidateSizeRows();
+    }
     if (target.id !== 'service-setup') {
       const notice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
-      if (notice && target.id.startsWith('service-')) notice.hidden = true;
+      if (notice && target.id.startsWith('service-')) {
+        notice.hidden = true;
+        const summary = document.getElementById('fit-services-summary');
+        if (summary?.dataset.fitOrigin) summary.dataset.fitOrigin = 'user';
+      }
     }
     updateConditionalFields();
     recompute();
   };
   form.addEventListener('input', handleChange);
   form.addEventListener('change', handleChange);
+  form.addEventListener('click', handleCandidateSizeClick);
   form.addEventListener('submit', (event) => event.preventDefault());
   recompute();
 }

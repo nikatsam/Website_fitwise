@@ -1,4 +1,4 @@
-import type { DimensionCheck } from '../fit';
+import type { DimensionCheck, FitState } from '../fit';
 import { evaluateFit } from '../fit';
 import { buildDiningFitPlan } from './dining';
 import { buildObjectFitPlan } from './object-fit';
@@ -65,6 +65,15 @@ function getLengthDefaults(definition: FitServiceDefinition): FitServiceValues {
   ) as FitServiceValues;
 }
 
+function unitNeutralLabel(label: string): string {
+  return label
+    .replace(/\s*\(mm(?:\s*[;,]\s*([^)]+))?\)/gi, (_match, qualifier?: string) =>
+      qualifier ? ` (${qualifier.trim()})` : '',
+    )
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 const length = (
   name: string,
   label: string,
@@ -73,7 +82,7 @@ const length = (
   showWhen?: FitServiceField['showWhen'],
 ): FitServiceField => ({
   name,
-  label,
+  label: unitNeutralLabel(label),
   type: 'length',
   defaultValue,
   required: !optional,
@@ -416,7 +425,7 @@ export const FIT_SERVICE_DEFINITIONS: FitServiceDefinition[] = [
       ),
       text(
         'candidateSizes',
-        'Candidate body sizes, separated by semicolons (width x depth with units)',
+        'Candidate body sizes',
         '1.8 m x 1.2 m; 2.4 m x 1.8 m; 3.0 m x 1.8 m; 3.0 m x 2.4 m; 3.6 m x 2.4 m',
         { name: 'direction', value: 'plot-to-structure' },
       ),
@@ -611,6 +620,11 @@ export interface FitServicePlan {
   extra?: string;
   candidates?: FitServiceCandidate[];
   reviewRequired?: string[];
+}
+
+export interface FitServiceEvaluation {
+  result: ReturnType<typeof evaluateFit>;
+  state: FitState;
 }
 
 function getNumber(values: FitServiceValues, key: string): number {
@@ -1583,4 +1597,16 @@ export function buildFitServicePlan(
     default:
       throw new RangeError(`Unsupported fit service mode '${mode}'.`);
   }
+}
+
+export function evaluateFitServicePlan(plan: FitServicePlan): FitServiceEvaluation {
+  const result = evaluateFit(plan.checks, plan.assumptions);
+  const state: FitState = !result.hardFit
+    ? 'does_not_fit'
+    : plan.reviewRequired && plan.reviewRequired.length > 0
+      ? 'needs_information'
+      : plan.compatibility.some((check) => !check.compatible)
+        ? 'does_not_fit'
+        : result.state;
+  return { result, state };
 }

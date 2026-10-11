@@ -15,17 +15,24 @@ interface Props {
 }
 
 const { pageIntent, publication, feature, breadcrumb, links, sources } = Astro.props;
+const relatedLinks = links.map((link) => ({
+  ...link,
+  description: feature.relatedReasons?.[link.href] ?? link.description,
+}));
 ---
 
 <PageFamilyLayout breadcrumb={breadcrumb} h1={publication.h1}>
-  <p class="feature-intro">{feature.intro}</p>
+  <p slot="purpose" class="feature-intro">
+    {feature.intro}
+  </p>
   {feature.kind === 'hub' ? (
     <section aria-labelledby="feature-areas">
       <h2 id="feature-areas">Fit services</h2>
       <ul class="feature-links">
-        {links.map((link) => (
+        {relatedLinks.map((link) => (
           <li>
             <a href={link.href}>{link.label}</a>
+            <p>{link.description}</p>
           </li>
         ))}
       </ul>
@@ -41,7 +48,9 @@ const { pageIntent, publication, feature, breadcrumb, links, sources } = Astro.p
           sample dimensions with measured values before relying on the result.
         </p>
       </section>
-      <FitServicesStudio category={feature.modeCategory} initialMode={feature.mode} pinnedMode />
+      <div data-shell-section="calculator">
+        <FitServicesStudio category={feature.modeCategory} initialMode={feature.mode} pinnedMode />
+      </div>
       <section aria-labelledby="feature-limitations">
         <h2 id="feature-limitations">Scope and limitations</h2>
         <ul>
@@ -75,15 +84,16 @@ const { pageIntent, publication, feature, breadcrumb, links, sources } = Astro.p
       <a href="/about/">About and data sources</a>
     </p>
   </section>
-  {links.length > 0 && feature.kind !== 'hub' && (
-    <nav aria-label="Related fit services">
-      <h2>Related fit services</h2>
+  {relatedLinks.length > 0 && feature.kind !== 'hub' && (
+    <nav aria-label="Related next checks">
+      <h2>What to check next</h2>
       <ul class="feature-links">
-        {links
+        {relatedLinks
           .filter((link) => link.href !== pageIntent.route)
           .map((link) => (
             <li>
               <a href={link.href}>{link.label}</a>
+              <p>{link.description}</p>
             </li>
           ))}
       </ul>
@@ -112,6 +122,19 @@ const { pageIntent, publication, feature, breadcrumb, links, sources } = Astro.p
     display: grid;
     gap: var(--space-2);
     padding-left: var(--space-5);
+  }
+
+  .feature-links li {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .feature-links li p {
+    max-width: 68ch;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    line-height: 1.45;
   }
 
   section,

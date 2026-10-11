@@ -2,9 +2,9 @@ import {
   evaluateFit,
   toDimensionDisplayRows,
   FIT_STATE_BADGE_COPY,
-  selectSummaryDimension,
-  type DimensionDisplayRow,
-  type FitState,
+  getFitSummaryCopy,
+  getFitSummaryResultLabel,
+  renderFitSummaryContentHtml,
 } from '../lib/fit';
 import {
   buildWorkspaceConfigurationCheck,
@@ -15,7 +15,7 @@ import {
   type MonitorAspectRatioKey,
 } from '../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../lib/diagram';
-import { formatMeasurement } from '../lib/units';
+import { formatMeasurement, parseLength } from '../lib/units';
 
 interface FormValues {
   deskWidthMm: number;
@@ -67,20 +67,6 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function renderDetailHtml(state: FitState, rows: DimensionDisplayRow[]): string {
-  const primary = selectSummaryDimension(rows);
-  if (!primary) return '';
-  if (state === 'fits') {
-    return `Fits. Tightest constraint: ${escapeHtml(primary.label)}. Physical space remaining: ${unitValueHtml(primary.physicalMarginMm)}. After your selected target: ${unitValueHtml(primary.targetMarginMm)}.`;
-  }
-  if (state === 'tight') {
-    const failures = rows.filter((row) => !row.recommendedFit);
-    return `Physical space remains, but selected targets are short on ${failures.map((row) => `${escapeHtml(row.label)} by ${unitValueHtml(Math.abs(row.targetMarginMm))}`).join(', ')}. See physical and target margins in the table.`;
-  }
-  const failures = rows.filter((row) => !row.hardFit);
-  return `Does not fit — physical space is short on ${failures.map((row) => `${escapeHtml(row.label)} by ${unitValueHtml(Math.abs(row.physicalMarginMm))}`).join(', ')}. See the table for target margins too.`;
-}
-
 function clearFieldError(field: FieldSpec): void {
   const input = document.getElementById(field.id);
   const errorEl = field.errorId ? document.getElementById(field.errorId) : null;
@@ -95,11 +81,11 @@ function setFieldError(field: FieldSpec, message: string): void {
   if (errorEl) errorEl.textContent = message;
 }
 
-function readNumber(id: string): number | null {
+function readLength(id: string): number | null {
   const input = document.getElementById(id) as HTMLInputElement | null;
   if (!input || input.value.trim() === '') return null;
-  const value = Number(input.value);
-  return Number.isFinite(value) ? value : NaN;
+  const parsed = parseLength(input.value);
+  return parsed.ok && Number.isFinite(parsed.valueMm) ? parsed.valueMm : Number.NaN;
 }
 
 /** Validates every field, writing inline errors, and returns parsed values or null if any field is invalid. */
@@ -109,7 +95,8 @@ function readAndValidateForm(): FormValues | null {
   const values: Partial<FormValues> = {};
 
   for (const field of FIELDS) {
-    const raw = readNumber(field.id);
+    const input = document.getElementById(field.id) as HTMLInputElement | null;
+    const raw = readLength(field.id);
     if (raw === null) {
       if (field.required) {
         setFieldError(field, 'Enter a value.');
@@ -119,8 +106,14 @@ function readAndValidateForm(): FormValues | null {
       }
       continue;
     }
-    if (Number.isNaN(raw) || raw < field.min) {
-      setFieldError(field, `Enter a number of at least ${field.min}.`);
+    if (Number.isNaN(raw)) {
+      const parsed = input ? parseLength(input.value) : null;
+      setFieldError(field, parsed && !parsed.ok ? parsed.error : 'Enter a valid length.');
+      hasError = true;
+      continue;
+    }
+    if (raw < field.min) {
+      setFieldError(field, `Enter a length of at least ${field.min} mm.`);
       hasError = true;
       continue;
     }
@@ -238,34 +231,32 @@ function recompute(): void {
   const result = evaluateFit(checks, assumptions);
   const rows = toDimensionDisplayRows(checks, result);
   if (rows.length === 0) return;
-  const summaryRow = selectSummaryDimension(rows);
-  if (!summaryRow) return;
-
-  // Patch FitSummary.
+  const summaryCopy = getFitSummaryCopy(result.state, rows);
   const summaryEl = document.getElementById('workspace-fitcheck-summary');
   if (summaryEl) {
     summaryEl.setAttribute('data-fit-state', result.state);
+    summaryEl.dataset.fitExact = String(summaryCopy.isExactFit);
     const copy = FIT_STATE_BADGE_COPY[result.state];
+    const resultLabel = getFitSummaryResultLabel(summaryCopy, summaryEl.dataset.fitOrigin);
     const iconEl = summaryEl.querySelector<HTMLElement>('[data-field="icon"]');
     const labelEl = summaryEl.querySelector<HTMLElement>('[data-field="label"]');
-    const detailEl = summaryEl.querySelector<HTMLElement>('[data-field="detail"]');
     if (iconEl) iconEl.textContent = copy.icon;
-    if (labelEl) labelEl.textContent = copy.label;
-    if (detailEl) detailEl.innerHTML = renderDetailHtml(result.state, rows);
+    if (labelEl) labelEl.textContent = resultLabel;
+    const content = summaryEl.querySelector<HTMLElement>('[data-fit-summary-content]');
+    if (content) content.innerHTML = renderFitSummaryContentHtml(summaryCopy);
     const sticky = summaryEl.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
     if (sticky) {
       sticky.dataset.fitState = result.state;
-      sticky.setAttribute('aria-label', `Fit result: ${copy.label}. View dimension details.`);
+      sticky.setAttribute('aria-label', `Fit result: ${resultLabel}. View calculation details.`);
       sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = copy.icon;
-      sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = copy.label;
+      sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = resultLabel;
       const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
       if (stickyDetail) {
-        stickyDetail.innerHTML =
-          result.state === 'fits'
-            ? `${unitValueHtml(Math.max(0, summaryRow.targetMarginMm))} after target`
-            : result.state === 'tight'
-              ? `Target short ${unitValueHtml(Math.abs(summaryRow.targetMarginMm))}`
-              : `Physical short ${unitValueHtml(Math.abs(summaryRow.physicalMarginMm))}`;
+        stickyDetail.innerHTML = summaryCopy.isExactFit
+          ? 'No measurement tolerance remains'
+          : summaryCopy.marginMm !== null && summaryCopy.marginLabel
+            ? `${unitValueHtml(summaryCopy.marginMm)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
+            : 'Check result details';
       }
     }
   }
@@ -344,6 +335,8 @@ function initWorkspaceFitCheck(): void {
     ) {
       const exampleNotice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
       if (exampleNotice) exampleNotice.hidden = true;
+      const summary = document.getElementById('workspace-fitcheck-summary');
+      if (summary?.dataset.fitOrigin) summary.dataset.fitOrigin = 'user';
     }
     recompute();
   };

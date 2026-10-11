@@ -13,6 +13,13 @@ export interface DimensionDisplayRow {
   recommendedFit: boolean;
 }
 
+function humanizeDimension(dimension: string): string {
+  const words = dimension.replace(/[_-]+/g, ' ').split(/\s+/).filter(Boolean);
+  if (words.length === 0) return 'Dimension';
+  words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
+  return words.join(' ');
+}
+
 /** Selects a representative failing row so summaries do not blame a fitting dimension. */
 export function selectSummaryDimension(
   rows: DimensionDisplayRow[],
@@ -60,7 +67,7 @@ export function toDimensionDisplayRows(
     }
     return {
       dimension: check.dimension,
-      label: check.label ?? check.dimension,
+      label: check.label?.trim() || humanizeDimension(check.dimension),
       requiredMm: check.minimumMm,
       recommendedMm: check.recommendedMm ?? check.minimumMm,
       availableMm: check.availableMm,

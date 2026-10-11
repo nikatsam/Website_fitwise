@@ -15,20 +15,39 @@ export function buildPublicationBreadcrumbs(
   publications: SeoPublication[],
 ): BreadcrumbItem[] {
   const intentById = new Map(pageIntents.map((intent) => [intent.id, intent]));
+  const intentByRoute = new Map(pageIntents.map((intent) => [intent.route, intent]));
   const publicationById = new Map(publications.map((record) => [record.pageIntentId, record]));
-  const ancestors = publication.breadcrumbIds.map((id) => {
+  const explicitAncestors = publication.breadcrumbIds.map((id) => {
     const ancestor = intentById.get(id);
     const ancestorPublication = publicationById.get(id);
     if (!ancestor || !ancestorPublication?.indexable) {
       throw new Error(`Breadcrumb ancestor '${id}' is missing or not indexable.`);
     }
-    return { label: ancestorPublication.h1, href: ancestor.route };
+    return {
+      label: ancestorPublication.breadcrumbLabel ?? ancestorPublication.h1,
+      href: ancestor.route,
+    };
   });
+  const inferredAncestors: BreadcrumbItem[] = [];
+  if (publication.breadcrumbIds.length === 0) {
+    const segments = pageIntent.route.split('/').filter(Boolean);
+    for (let depth = 1; depth < segments.length; depth += 1) {
+      const ancestorRoute = `/${segments.slice(0, depth).join('/')}/`;
+      const ancestor = intentByRoute.get(ancestorRoute);
+      const ancestorPublication = ancestor && publicationById.get(ancestor.id);
+      if (ancestor?.status === 'published' && ancestorPublication?.indexable) {
+        inferredAncestors.push({
+          label: ancestorPublication.breadcrumbLabel ?? ancestorPublication.h1,
+          href: ancestor.route,
+        });
+      }
+    }
+  }
 
   return [
     { label: 'Home', href: '/' },
-    ...ancestors,
-    { label: publication.h1, href: pageIntent.route },
+    ...(explicitAncestors.length > 0 ? explicitAncestors : inferredAncestors),
+    { label: publication.breadcrumbLabel ?? publication.h1, href: pageIntent.route },
   ];
 }
 

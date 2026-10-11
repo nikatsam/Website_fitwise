@@ -1,7 +1,9 @@
 ---
 import AssumptionList from '../fit/AssumptionList.astro';
+import CalculatorStep from '../fit/CalculatorStep.astro';
 import DimensionTable from '../fit/DimensionTable.astro';
 import FitSummary from '../fit/FitSummary.astro';
+import MeasurementFieldHelp from '../fit/MeasurementFieldHelp.astro';
 import UnitToggle from '../fit/UnitToggle.astro';
 import ScaleDiagram from '../diagram/ScaleDiagram.astro';
 import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
@@ -41,15 +43,18 @@ const diagramMarkup = renderDiningDiagramMarkup({
 const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMeasurement(DEFAULTS.roomLengthMm)} room, ${formatMeasurement(DEFAULTS.tableWidthMm)} by ${formatMeasurement(DEFAULTS.tableLengthMm)} rectangular table, ${initialPlan.seats} sample seats, and ${formatMeasurement(DEFAULTS.walkingClearanceMm)} user-selected circulation target.`;
 ---
 
-<div class="dining-fitcheck" data-dining-fitcheck data-diagram-id={DIAGRAM_ID}>
+<div class="dining-fitcheck calculator-split" data-dining-fitcheck data-diagram-id={DIAGRAM_ID}>
   <form class="dining-fitcheck__form" data-dining-fitcheck-form novalidate>
     <p class="fit-example-notice" data-fit-example-notice role="note">
       <strong>Example setup.</strong> Room, table, chair and circulation values are editable
       examples. Replace them with your own measured furniture and selected movement space.
     </p>
 
-    <section class="dining-fitcheck__group" aria-labelledby="dining-table-heading">
-      <h2 id="dining-table-heading">1. Table dimensions</h2>
+    <CalculatorStep
+      step={1}
+      title="What are you fitting?"
+      description="Enter the table's measured outside dimensions. Chair space is calculated separately."
+    >
       <div class="field-grid">
         <div class="field">
           <label for="dining-table-width">Table width</label>
@@ -57,11 +62,16 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
             id="dining-table-width"
             name="tableWidthMm"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value={formatMeasurement(DEFAULTS.tableWidthMm)}
-            aria-describedby="dining-table-width-error"
+            aria-describedby="dining-table-width-error dining-table-width-help"
           />
           <span class="field__error" id="dining-table-width-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="dining"
+            fieldId="dining-table-width"
+            id="dining-table-width-help"
+          />
         </div>
         <div class="field">
           <label for="dining-table-length">Table length</label>
@@ -69,21 +79,29 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
             id="dining-table-length"
             name="tableLengthMm"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value={formatMeasurement(DEFAULTS.tableLengthMm)}
-            aria-describedby="dining-table-length-error"
+            aria-describedby="dining-table-length-error dining-table-length-help"
           />
           <span class="field__error" id="dining-table-length-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="dining"
+            fieldId="dining-table-length"
+            id="dining-table-length-help"
+          />
         </div>
       </div>
       <p class="field__note">
         Rectangular tables only in this first version. Use the table's outer edge-to-edge
         dimensions.
       </p>
-    </section>
+    </CalculatorStep>
 
-    <section class="dining-fitcheck__group" aria-labelledby="dining-room-heading">
-      <h2 id="dining-room-heading">2. Dining space</h2>
+    <CalculatorStep
+      step={2}
+      title="Where does it need to fit?"
+      description="Measure the usable inside room dimensions."
+    >
       <div class="field-grid">
         <div class="field">
           <label for="dining-room-width">Inside room width</label>
@@ -91,11 +109,16 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
             id="dining-room-width"
             name="roomWidthMm"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value={formatMeasurement(DEFAULTS.roomWidthMm)}
-            aria-describedby="dining-room-width-error"
+            aria-describedby="dining-room-width-error dining-room-width-help"
           />
           <span class="field__error" id="dining-room-width-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="dining"
+            fieldId="dining-room-width"
+            id="dining-room-width-help"
+          />
         </div>
         <div class="field">
           <label for="dining-room-length">Inside room length</label>
@@ -103,13 +126,22 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
             id="dining-room-length"
             name="roomLengthMm"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value={formatMeasurement(DEFAULTS.roomLengthMm)}
-            aria-describedby="dining-room-length-error"
+            aria-describedby="dining-room-length-error dining-room-length-help"
           />
           <span class="field__error" id="dining-room-length-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="dining"
+            fieldId="dining-room-length"
+            id="dining-room-length-help"
+          />
         </div>
       </div>
+      <p class="field__note">
+        Enter mm, cm, m, in, ft or ft/in; bare numbers default to mm. Chair and circulation values
+        are your measurements and choices, not general standards.
+      </p>
       <div class="field">
         <label for="dining-orientation">Table orientation</label>
         <select id="dining-orientation" name="orientation">
@@ -120,11 +152,15 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
           <option value="depth-width">Rotate table 90 degrees</option>
         </select>
       </div>
-    </section>
+    </CalculatorStep>
 
     <details class="dining-fitcheck__advanced">
-      <summary>3. Seating and circulation options</summary>
-      <div class="dining-fitcheck__group">
+      <summary>Optional seating and circulation</summary>
+      <CalculatorStep
+        step={3}
+        title="Extra space and clearances"
+        description="Set the chair layout and any extra walking space you want to reserve."
+      >
         <div class="field-grid">
           <div class="field">
             <label for="dining-chairs-long">Chairs per long side</label>
@@ -162,11 +198,16 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
               id="dining-chair-width"
               name="chairWidthMm"
               type="text"
-              inputmode="decimal"
+              inputmode="text"
               value={formatMeasurement(DEFAULTS.chairWidthMm)}
-              aria-describedby="dining-chair-width-error"
+              aria-describedby="dining-chair-width-error dining-chair-width-help"
             />
             <span class="field__error" id="dining-chair-width-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="dining"
+              fieldId="dining-chair-width"
+              id="dining-chair-width-help"
+            />
           </div>
           <div class="field">
             <label for="dining-chair-depth">Pulled-out chair envelope from table edge</label>
@@ -174,11 +215,16 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
               id="dining-chair-depth"
               name="chairEnvelopeDepthMm"
               type="text"
-              inputmode="decimal"
+              inputmode="text"
               value={formatMeasurement(DEFAULTS.chairEnvelopeDepthMm)}
-              aria-describedby="dining-chair-depth-error"
+              aria-describedby="dining-chair-depth-error dining-chair-depth-help"
             />
             <span class="field__error" id="dining-chair-depth-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="dining"
+              fieldId="dining-chair-depth"
+              id="dining-chair-depth-help"
+            />
           </div>
         </div>
         <div class="field">
@@ -189,28 +235,30 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
             id="dining-walking-clearance"
             name="walkingClearanceMm"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value={formatMeasurement(DEFAULTS.walkingClearanceMm)}
-            aria-describedby="dining-walking-clearance-error"
+            aria-describedby="dining-walking-clearance-error dining-walking-clearance-help"
           />
           <span class="field__error" id="dining-walking-clearance-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="dining"
+            fieldId="dining-walking-clearance"
+            id="dining-walking-clearance-help"
+          />
         </div>
-        <p class="field__note">
-          Enter widths in mm, cm, m, inches or feet. Chair and circulation values are your
-          measurements and choices, not general standards.
-        </p>
-      </div>
+      </CalculatorStep>
     </details>
 
     <UnitToggle />
   </form>
 
-  <section class="dining-fitcheck__result" aria-label="Dining fit result">
+  <section class="dining-fitcheck__result calculator-split__result" aria-label="Dining fit result">
     <FitSummary
       id="dining-fitcheck-summary"
       resultId="dining-fitcheck-table"
       state={initialResult.state}
       rows={rows}
+      resultOrigin="example"
     />
     <p class="dining-fitcheck__orientation" data-dining-orientation>
       {initialPlan.seats} seats in the selected layout;{' '}
@@ -246,13 +294,6 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
     gap: var(--space-6);
   }
 
-  @media (min-width: 62rem) {
-    .dining-fitcheck {
-      grid-template-columns: minmax(20rem, 0.9fr) minmax(0, 1.1fr);
-      align-items: start;
-    }
-  }
-
   .dining-fitcheck__form,
   .dining-fitcheck__result {
     display: grid;
@@ -277,23 +318,9 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
     line-height: 1.5;
   }
 
-  .dining-fitcheck__group {
-    display: grid;
-    gap: var(--space-3);
-  }
-
-  .dining-fitcheck__group h2 {
-    margin: 0;
-    font-size: var(--fs-md);
-  }
-
   .dining-fitcheck__advanced > summary {
     cursor: pointer;
     font-weight: 700;
-  }
-
-  .dining-fitcheck__advanced[open] > .dining-fitcheck__group {
-    margin-top: var(--space-3);
   }
 
   .field-grid {
@@ -347,14 +374,7 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
     font-size: var(--fs-sm);
   }
 
-  @media (min-width: 62rem) {
-    .dining-fitcheck__result {
-      position: sticky;
-      top: calc(var(--header-height, 4rem) + var(--space-4));
-    }
-  }
-
-  @media (max-width: 59.999rem) {
+  @media (max-width: 61.999rem) {
     .dining-fitcheck {
       padding-bottom: 4.5rem;
     }

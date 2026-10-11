@@ -1,67 +1,49 @@
 ---
 import PublishedLayout from '../../components/layout/PublishedLayout.astro';
+import CalculatorPageShell from '../../components/layout/CalculatorPageShell.astro';
+import BeforeYouStart from '../../components/fit/BeforeYouStart.astro';
 import DiningFitCheck from '../../components/fitcheck/DiningFitCheck.astro';
+import { CORE_CALCULATOR_START_GUIDANCE } from '../../lib/fit/start-guidance';
 ---
 
 <PublishedLayout pageIntentId="pi-feature-dining">
-  <section class="page-heading wrapper">
-    <p class="eyebrow">Dining room fit</p>
-    <h1>Will the dining table and chairs fit?</h1>
-    <p>
+  <CalculatorPageShell h1="Will the dining table and chairs fit?" eyebrow="Dining room fit">
+    <p slot="purpose">
       Compare a measured rectangular table and chair layout with your room. The planner separates
       the physical table-and-chair envelope from any extra walking space you choose.
     </p>
-  </section>
-  <section class="wrapper section">
-    <DiningFitCheck />
-    <p class="fit-note">
+    <BeforeYouStart
+      slot="before-start"
+      id="dining-before-start"
+      items={CORE_CALCULATOR_START_GUIDANCE.dining}
+    />
+    <DiningFitCheck slot="calculator" />
+    <p slot="support" class="fit-note">
       This first version models rectangular tables and identical chair envelopes only. It does not
       model round/oval tables, table bases, chair rotation, people passing, doors, sideboards,
       obstacles, accessibility or serving space. The extra circulation target is user-selected, not
       a sourced minimum or building-code requirement. Replace every example value with measurements
       from your room and furniture.
     </p>
-    <p class="method-link">
+    <p slot="support" class="method-link">
       <a href="/methodology/">How fit states and assumptions work</a>
     </p>
-    <p>
+    <p slot="related">
       <a href="/garden/patio-dining-fit/">
         Check this table and chair envelope against gazebo post spans
       </a>
     </p>
-  </section>
+  </CalculatorPageShell>
 </PublishedLayout>
 
 <style>
-  .page-heading {
-    padding-block: var(--space-7) var(--space-3);
-  }
-
-  .page-heading h1 {
-    max-width: 24ch;
-    margin-block: var(--space-1) var(--space-3);
-    font-size: var(--fs-3xl);
-    letter-spacing: -0.035em;
-  }
-
-  .page-heading > p:last-child,
   .fit-note {
     max-width: 78ch;
     color: var(--color-text-secondary);
     line-height: 1.65;
   }
 
-  .eyebrow {
-    margin: 0;
-    color: var(--color-accent-1);
-    font-size: var(--fs-sm);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
   .fit-note {
-    margin-top: var(--space-6);
     font-size: var(--fs-sm);
   }
 

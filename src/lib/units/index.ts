@@ -21,6 +21,7 @@ export {
   formatMeasurement,
   formatMetric,
   formatLength,
+  formatSignedMeasurement,
   type MeasurementDisplay,
   type UnitSystem,
 } from './format';

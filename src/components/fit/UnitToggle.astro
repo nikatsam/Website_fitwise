@@ -1,15 +1,30 @@
 ---
 ---
 
-<button type="button" class="unit-toggle" data-unit-toggle aria-pressed="false">
-  Switch to imperial
-</button>
+<div class="unit-toggle__group">
+  <button
+    type="button"
+    class="unit-toggle"
+    data-unit-toggle
+    aria-label="Show imperial results. Entered measurements will not change."
+    aria-pressed="false"
+  >
+    Show imperial results
+  </button>
+  <p class="unit-toggle__note">Changes result display only; entered measurements stay unchanged.</p>
+</div>
 
 <script>
   import '../../scripts/unit-system';
 </script>
 
 <style>
+  .unit-toggle__group {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-1);
+  }
+
   .unit-toggle {
     border: 1px solid var(--color-border);
     background: var(--color-surface-raised);
@@ -27,5 +42,12 @@
   .unit-toggle:hover {
     box-shadow: var(--shadow-sm);
     transform: translateY(-1px);
+  }
+
+  .unit-toggle__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    line-height: 1.4;
   }
 </style>

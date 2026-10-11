@@ -1,33 +1,10 @@
 ---
-interface NavItem {
-  href: string;
-  label: string;
-}
-
-const fitCheckLinks: NavItem[] = [
-  { href: '/will-it-fit/', label: 'Universal fit' },
-  { href: '/workspace/', label: 'Workspace' },
-  { href: '/bedroom/', label: 'Bedroom' },
-  { href: '/dining/', label: 'Dining' },
-  { href: '/garden/', label: 'Garden' },
-  { href: '/appliances/', label: 'Appliances' },
-  { href: '/access/', label: 'Delivery routes' },
-  { href: '/tv/', label: 'TV' },
-  { href: '/home-gym/', label: 'Home gym' },
-  { href: '/storage/', label: 'Storage' },
-  { href: '/game-room/', label: 'Game room' },
-  { href: '/vehicle/', label: 'Vehicle/garage' },
-  { href: '/fit-services/', label: 'Appliance, route and equipment checks' },
-];
-
-const guideLinks: NavItem[] = [
-  { href: '/workspace/desk-size-guide/', label: 'Desk sizing' },
-  { href: '/workspace/what-fits-on-a-140cm-desk/', label: 'What fits on a 140 cm desk' },
-  { href: '/workspace/monitor-size-chart/', label: 'Monitor size chart' },
-  { href: '/bedroom/what-size-bed-fits-my-room/', label: 'Bed and room sizing' },
-  { href: '/bedroom/what-bed-fits-in-10x10-room/', label: 'Bed fit in a 10 × 10 room' },
-  { href: '/methodology/reference-conventions/', label: 'Measurement conventions' },
-];
+import {
+  ALL_FIT_CHECKS_LINK,
+  FIT_CHECK_GROUPS,
+  GUIDE_LINKS,
+  UNIVERSAL_FIT_LINK,
+} from '../../data/navigation';
 
 const currentPath = new URL(Astro.request.url).pathname;
 ---
@@ -53,25 +30,51 @@ const currentPath = new URL(Astro.request.url).pathname;
 
     <nav class="site-nav" aria-label="Primary">
       <ul class="site-nav__list">
-        <li class="site-nav__group">
-          <details data-nav-group>
-            <summary>Fit checks</summary>
-            <ul class="site-nav__submenu">
-              {fitCheckLinks.map((item) => (
-                <li>
-                  <a href={item.href} aria-current={currentPath === item.href ? 'page' : undefined}>
-                    {item.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </details>
+        <li>
+          <a
+            href={UNIVERSAL_FIT_LINK.href}
+            aria-current={currentPath === UNIVERSAL_FIT_LINK.href ? 'page' : undefined}
+          >
+            {UNIVERSAL_FIT_LINK.label}
+          </a>
         </li>
         <li class="site-nav__group">
-          <details data-nav-group>
+          <details data-nav-group="fit-checks">
+            <summary>Fit checks</summary>
+            <div class="site-nav__mega">
+              {FIT_CHECK_GROUPS.map((group) => (
+                <section class="site-nav__mega-group">
+                  <h3>{group.label}</h3>
+                  <ul>
+                    {group.links.map((item) => (
+                      <li>
+                        <a
+                          href={item.href}
+                          aria-current={currentPath === item.href ? 'page' : undefined}
+                        >
+                          {item.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          </details>
+        </li>
+        <li>
+          <a
+            href={ALL_FIT_CHECKS_LINK.href}
+            aria-current={currentPath === ALL_FIT_CHECKS_LINK.href ? 'page' : undefined}
+          >
+            {ALL_FIT_CHECKS_LINK.label}
+          </a>
+        </li>
+        <li class="site-nav__group">
+          <details data-nav-group="guides">
             <summary>Guides</summary>
             <ul class="site-nav__submenu">
-              {guideLinks.map((item) => (
+              {GUIDE_LINKS.map((item) => (
                 <li>
                   <a href={item.href} aria-current={currentPath === item.href ? 'page' : undefined}>
                     {item.label}
@@ -212,6 +215,47 @@ const currentPath = new URL(Astro.request.url).pathname;
     list-style: none;
   }
 
+  .site-nav__mega {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + var(--space-2));
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: min(58rem, calc(100vw - 2rem));
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-md);
+  }
+
+  .site-nav__mega-group h3 {
+    margin: 0 0 var(--space-2);
+    color: var(--color-text-primary);
+    font-size: var(--fs-sm);
+  }
+
+  .site-nav__mega-group ul {
+    display: grid;
+    gap: var(--space-1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .site-nav__mega-group a {
+    display: block;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+  }
+
+  .site-nav__mega-group a:hover,
+  .site-nav__mega-group a:focus-visible {
+    background: var(--color-surface);
+  }
+
   .site-nav__submenu a {
     display: block;
     padding: var(--space-2) var(--space-3);
@@ -270,8 +314,31 @@ const currentPath = new URL(Astro.request.url).pathname;
       gap: var(--space-2) var(--space-4);
     }
     .site-nav__submenu {
-      left: auto;
-      right: 0;
+      position: static;
+      max-width: 100%;
+      min-width: 0;
+      border: 0;
+      box-shadow: none;
+    }
+    .site-nav__group {
+      position: static;
+      flex-basis: 100%;
+    }
+    .site-nav__mega {
+      position: static;
+      width: 100%;
+      grid-template-columns: 1fr;
+      max-height: 65vh;
+      overflow-y: auto;
+      padding: var(--space-2) 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .site-nav__mega-group {
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--color-border);
     }
   }
 </style>

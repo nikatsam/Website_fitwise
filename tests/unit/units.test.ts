@@ -14,6 +14,7 @@ import {
   formatInches,
   formatFeetInches,
   formatMeasurement,
+  formatSignedMeasurement,
   formatMetric,
   parseLength,
 } from '../../src/lib/units';
@@ -75,6 +76,12 @@ describe('display formatting — deterministic', () => {
     expect(formatMeasurement(1400, 'metric')).toBe('140.0 cm');
     expect(formatMeasurement(1400, 'imperial')).toBe('4 ft 7 in');
     expect(() => formatMeasurement(Number.NaN)).toThrow(RangeError);
+  });
+
+  it('formats signed copy margins in both metric and imperial units', () => {
+    expect(formatSignedMeasurement(108)).toBe('+10.8 cm / +0 ft 4 in');
+    expect(formatSignedMeasurement(-108)).toBe('−10.8 cm / −0 ft 4 in');
+    expect(formatSignedMeasurement(0)).toBe('0.0 cm / 0 ft 0 in');
   });
 
   it('formats cm with one decimal by default', () => {

@@ -18,8 +18,13 @@ function initUnitToggle(): void {
 
   const sync = (): void => {
     const system = currentUnitSystem();
+    const nextSystem = system === 'imperial' ? 'metric' : 'imperial';
     button.setAttribute('aria-pressed', String(system === 'imperial'));
-    button.textContent = system === 'imperial' ? 'Switch to metric' : 'Switch to imperial';
+    button.textContent = `Show ${nextSystem} results`;
+    button.setAttribute(
+      'aria-label',
+      `Show ${nextSystem} results. Entered measurements will not change.`,
+    );
   };
 
   sync();

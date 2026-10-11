@@ -13,6 +13,7 @@ export const seoPublications: SeoPublication[] = [
     description:
       'Compare monitor footprints against reference desk widths, then check the exact monitor model, stand depth, cable space and working zone.',
     h1: 'Desk size and monitor fit guide',
+    breadcrumbLabel: 'Desk sizing',
     canonicalPath: '/workspace/desk-size-guide/',
     publishedOn: '2026-10-06',
     significantlyModifiedOn: '2026-10-10',
@@ -80,7 +81,8 @@ export const seoPublications: SeoPublication[] = [
     canonicalPath: '/workspace/what-fits-on-a-140cm-desk/',
     publishedOn: '2026-10-06',
     significantlyModifiedOn: '2026-10-10',
-    breadcrumbIds: ['pi-feature-workspace-hub'],
+    breadcrumbIds: ['pi-feature-workspace-hub', 'pi-p001-desk-size-guide'],
+    breadcrumbLabel: '140 cm desk',
     relatedPageIds: [
       'pi-p001-desk-size-guide',
       'pi-p004-desk-size-two-27in',

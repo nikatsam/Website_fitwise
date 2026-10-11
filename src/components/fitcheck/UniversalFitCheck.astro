@@ -1,7 +1,9 @@
 ---
 import AssumptionList from '../fit/AssumptionList.astro';
+import CalculatorStep from '../fit/CalculatorStep.astro';
 import DimensionTable from '../fit/DimensionTable.astro';
 import FitSummary from '../fit/FitSummary.astro';
+import MeasurementFieldHelp from '../fit/MeasurementFieldHelp.astro';
 import UnitToggle from '../fit/UnitToggle.astro';
 import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
 import { buildObjectFitPlan } from '../../lib/geometry';
@@ -45,15 +47,17 @@ const initialOrientation =
 const initialReport = `Best floor orientation: ${initialOrientation}. Maximum single-layer grid estimate: ${sample.quantityCapacity} item(s).`;
 ---
 
-<div class="universal-fitcheck" data-universal-fitcheck>
+<div class="universal-fitcheck calculator-split" data-universal-fitcheck>
   <form class="universal-fitcheck__form" data-universal-fitcheck-form novalidate>
     <p class="fit-example-notice" data-fit-example-notice role="note">
       <strong>Example setup.</strong> These starter dimensions are illustrative. Enter the item's
       measured outer size and your actual space before relying on the fit review.
     </p>
-    <div class="universal-fitcheck__group">
-      <h2>1. Item dimensions</h2>
-      <p>Enter a name and measured outer dimensions, including packaging if checking delivery.</p>
+    <CalculatorStep
+      step={1}
+      title="What are you fitting?"
+      description="Enter a name and measured outer dimensions, including packaging if checking delivery."
+    >
       <div class="field">
         <label for="fit-item-name">Item name (optional)</label>
         <input
@@ -71,11 +75,16 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
             id="fit-item-width"
             name="itemWidth"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value="80 cm"
-            aria-describedby="fit-item-width-error"
+            aria-describedby="fit-item-width-error fit-item-width-help"
           />
           <span class="field__error" id="fit-item-width-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="universal"
+            fieldId="fit-item-width"
+            id="fit-item-width-help"
+          />
         </div>
         <div class="field">
           <label for="fit-item-depth">Depth</label>
@@ -83,11 +92,16 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
             id="fit-item-depth"
             name="itemDepth"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value="60 cm"
-            aria-describedby="fit-item-depth-error"
+            aria-describedby="fit-item-depth-error fit-item-depth-help"
           />
           <span class="field__error" id="fit-item-depth-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="universal"
+            fieldId="fit-item-depth"
+            id="fit-item-depth-help"
+          />
         </div>
         <div class="field">
           <label for="fit-item-height">Height</label>
@@ -95,17 +109,25 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
             id="fit-item-height"
             name="itemHeight"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value="90 cm"
-            aria-describedby="fit-item-height-error"
+            aria-describedby="fit-item-height-error fit-item-height-help"
           />
           <span class="field__error" id="fit-item-height-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="universal"
+            fieldId="fit-item-height"
+            id="fit-item-height-help"
+          />
         </div>
       </div>
-    </div>
+    </CalculatorStep>
 
-    <div class="universal-fitcheck__group">
-      <h2>2. Destination space</h2>
+    <CalculatorStep
+      step={2}
+      title="Where does it need to fit?"
+      description="Measure the usable inside dimensions of the destination space."
+    >
       <div class="field-grid">
         <div class="field">
           <label for="fit-space-width">Inside width</label>
@@ -113,11 +135,16 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
             id="fit-space-width"
             name="spaceWidth"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value="3 m"
-            aria-describedby="fit-space-width-error"
+            aria-describedby="fit-space-width-error fit-space-width-help"
           />
           <span class="field__error" id="fit-space-width-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="universal"
+            fieldId="fit-space-width"
+            id="fit-space-width-help"
+          />
         </div>
         <div class="field">
           <label for="fit-space-depth">Inside depth</label>
@@ -125,11 +152,16 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
             id="fit-space-depth"
             name="spaceDepth"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value="3.5 m"
-            aria-describedby="fit-space-depth-error"
+            aria-describedby="fit-space-depth-error fit-space-depth-help"
           />
           <span class="field__error" id="fit-space-depth-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="universal"
+            fieldId="fit-space-depth"
+            id="fit-space-depth-help"
+          />
         </div>
         <div class="field">
           <label for="fit-space-height">Inside height</label>
@@ -137,16 +169,21 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
             id="fit-space-height"
             name="spaceHeight"
             type="text"
-            inputmode="decimal"
+            inputmode="text"
             value="2.5 m"
-            aria-describedby="fit-space-height-error"
+            aria-describedby="fit-space-height-error fit-space-height-help"
           />
           <span class="field__error" id="fit-space-height-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="universal"
+            fieldId="fit-space-height"
+            id="fit-space-height-help"
+          />
         </div>
       </div>
       <p class="field__note">
-        Accepted units: mm, cm, m, inches, feet, or feet plus inches. Separate the number and unit
-        with an optional space.
+        Accepted units: mm, cm, m, in, ft, or ft/in. You can separate the number and unit with a
+        space; a bare number defaults to mm.
       </p>
       <div class="field">
         <label for="fit-clearance">Extra planning space on each side (optional)</label>
@@ -154,28 +191,41 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
           id="fit-clearance"
           name="clearance"
           type="text"
-          inputmode="decimal"
+          inputmode="text"
           value="0 mm"
-          aria-describedby="fit-clearance-error"
+          aria-describedby="fit-clearance-error fit-clearance-help"
         />
         <span class="field__error" id="fit-clearance-error" role="alert"></span>
+        <MeasurementFieldHelp
+          calculator="universal"
+          fieldId="fit-clearance"
+          id="fit-clearance-help"
+        />
       </div>
       <div class="field">
         <label for="fit-orientation">Floor orientation</label>
-        <select id="fit-orientation" name="orientation">
+        <select id="fit-orientation" name="orientation" aria-describedby="fit-orientation-help">
           <option value="auto" selected>
             Try both rectangular orientations
           </option>
           <option value="width-depth">Keep width along space width</option>
           <option value="depth-width">Rotate 90 degrees</option>
         </select>
+        <MeasurementFieldHelp
+          calculator="universal"
+          fieldId="fit-orientation"
+          id="fit-orientation-help"
+        />
       </div>
-    </div>
+    </CalculatorStep>
 
     <details class="universal-fitcheck__optional">
-      <summary>3. Optional access route and quantity</summary>
-      <div class="universal-fitcheck__group">
-        <h2>Access and quantity</h2>
+      <summary>Optional route and quantity checks</summary>
+      <CalculatorStep
+        step={3}
+        title="Extra space and access"
+        description="Add side allowances, a delivery route, or a single-layer quantity estimate."
+      >
         <label class="check-option">
           <input type="checkbox" id="fit-check-route" name="checkRoute" />
           Check a doorway and corridor for upright passage
@@ -187,11 +237,16 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
               id="fit-door-width"
               name="doorwayWidth"
               type="text"
-              inputmode="decimal"
+              inputmode="text"
               value="90 cm"
-              aria-describedby="fit-door-width-error"
+              aria-describedby="fit-door-width-error fit-door-width-help"
             />
             <span class="field__error" id="fit-door-width-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="universal"
+              fieldId="fit-door-width"
+              id="fit-door-width-help"
+            />
           </div>
           <div class="field">
             <label for="fit-door-height">Clear doorway height</label>
@@ -199,11 +254,16 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
               id="fit-door-height"
               name="doorwayHeight"
               type="text"
-              inputmode="decimal"
+              inputmode="text"
               value="2 m"
-              aria-describedby="fit-door-height-error"
+              aria-describedby="fit-door-height-error fit-door-height-help"
             />
             <span class="field__error" id="fit-door-height-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="universal"
+              fieldId="fit-door-height"
+              id="fit-door-height-help"
+            />
           </div>
           <div class="field">
             <label for="fit-corridor-width">Narrowest corridor width</label>
@@ -211,11 +271,16 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
               id="fit-corridor-width"
               name="corridorWidth"
               type="text"
-              inputmode="decimal"
+              inputmode="text"
               value="1 m"
-              aria-describedby="fit-corridor-width-error"
+              aria-describedby="fit-corridor-width-error fit-corridor-width-help"
             />
             <span class="field__error" id="fit-corridor-width-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="universal"
+              fieldId="fit-corridor-width"
+              id="fit-corridor-width-help"
+            />
           </div>
         </div>
         <div class="field-grid">
@@ -238,25 +303,31 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
               id="fit-item-gap"
               name="itemGap"
               type="text"
-              inputmode="decimal"
+              inputmode="text"
               value="0 mm"
-              aria-describedby="fit-item-gap-error"
+              aria-describedby="fit-item-gap-error fit-item-gap-help"
             />
             <span class="field__error" id="fit-item-gap-error" role="alert"></span>
+            <MeasurementFieldHelp
+              calculator="universal"
+              fieldId="fit-item-gap"
+              id="fit-item-gap-help"
+            />
           </div>
         </div>
-      </div>
+      </CalculatorStep>
     </details>
 
     <UnitToggle />
   </form>
 
-  <section class="universal-fitcheck__results" aria-label="Fit review">
+  <section class="universal-fitcheck__results calculator-split__result" aria-label="Fit review">
     <FitSummary
       id="universal-fit-summary"
       resultId="universal-fit-table"
       state={initialResult.state}
       rows={initialRows}
+      resultOrigin="example"
     />
     <p class="universal-fitcheck__orientation" data-fit-orientation>
       {initialReport}
@@ -282,13 +353,6 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
   .universal-fitcheck {
     display: grid;
     gap: var(--space-6);
-  }
-
-  @media (min-width: 62rem) {
-    .universal-fitcheck {
-      grid-template-columns: minmax(18rem, 0.85fr) minmax(0, 1.15fr);
-      align-items: start;
-    }
   }
 
   .universal-fitcheck__form,
@@ -318,22 +382,6 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
   .universal-fitcheck__optional > summary {
     cursor: pointer;
     font-weight: 700;
-  }
-
-  .universal-fitcheck__group {
-    display: grid;
-    gap: var(--space-3);
-  }
-
-  .universal-fitcheck__group h2 {
-    margin: 0;
-    font-size: var(--fs-md);
-  }
-
-  .universal-fitcheck__group p {
-    margin: 0;
-    color: var(--color-text-secondary);
-    font-size: var(--fs-sm);
   }
 
   .field-grid {
@@ -382,8 +430,9 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
 
   .check-option {
     display: flex;
-    align-items: start;
+    align-items: center;
     gap: var(--space-2);
+    min-height: 2.75rem;
     font-size: var(--fs-sm);
     font-weight: 600;
   }
@@ -396,14 +445,7 @@ const initialReport = `Best floor orientation: ${initialOrientation}. Maximum si
     font-size: var(--fs-sm);
   }
 
-  @media (min-width: 62rem) {
-    .universal-fitcheck__results {
-      position: sticky;
-      top: calc(var(--header-height, 4rem) + var(--space-4));
-    }
-  }
-
-  @media (max-width: 59.999rem) {
+  @media (max-width: 61.999rem) {
     .universal-fitcheck {
       padding-bottom: 4.5rem;
     }

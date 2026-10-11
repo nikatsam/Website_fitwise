@@ -1,12 +1,12 @@
 ---
-import type { FitState, DimensionDisplayRow } from '../../lib/fit';
+import type { FitState, DimensionDisplayRow, CompatibilitySummaryCheck } from '../../lib/fit';
 import {
   FIT_STATE_BADGE_COPY,
-  getFailedDimensionRows,
-  selectSummaryDimension,
+  getFitSummaryCopy,
+  getFitSummaryResultLabel,
+  renderFitSummaryContentHtml,
 } from '../../lib/fit';
 import UnitValue from './UnitValue.astro';
-import { formatMeasurement } from '../../lib/units';
 
 interface Props {
   state: FitState;
@@ -17,16 +17,33 @@ interface Props {
   resultId?: string;
   /** Required manufacturer/manual data that is not yet verified. */
   needsInformation?: string[];
+  /** Product/manual compatibility results that are separate from physical dimensions. */
+  compatibilityChecks?: CompatibilitySummaryCheck[];
+  /** Marks server-rendered starter values as examples until the user edits the setup. */
+  resultOrigin?: 'example' | 'user';
 }
 
-const { state, rows, id, resultId, needsInformation = [] } = Astro.props;
-const { icon, label } = FIT_STATE_BADGE_COPY[state];
-const primary = selectSummaryDimension(rows);
-const { hardFailures, recommendationFailures } = getFailedDimensionRows(rows);
-const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
+const {
+  state,
+  rows,
+  id,
+  resultId,
+  needsInformation = [],
+  compatibilityChecks = [],
+  resultOrigin,
+} = Astro.props;
+const summaryCopy = getFitSummaryCopy(state, rows, { needsInformation, compatibilityChecks });
+const { icon } = FIT_STATE_BADGE_COPY[state];
+const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
 ---
 
-<div class="fit-summary" data-fit-state={state} id={id}>
+<div
+  class="fit-summary"
+  data-fit-state={state}
+  data-fit-exact={summaryCopy.isExactFit ? 'true' : undefined}
+  data-fit-origin={resultOrigin}
+  id={id}
+>
   <p class="fit-summary__badge">
     <span class="fit-summary__icon" aria-hidden="true" data-field="icon">
       {icon}
@@ -36,46 +53,31 @@ const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
     </span>
   </p>
 
-  <p class="fit-summary__detail" data-field="detail" aria-live="polite" aria-atomic="true">
-    {state === 'fits' && primary && (
-      <>
-        Fits. Tightest constraint: {primary.label}. Physical space remaining:{' '}
-        <UnitValue mm={primary.physicalMarginMm} />. After your selected target:{' '}
-        <UnitValue mm={primary.targetMarginMm} />.
-      </>
-    )}
-    {state === 'tight' && (
-      <>
-        Physical space remains, but selected targets are short on{' '}
-        {recommendationFailures
-          .map((row) => `${row.label} by ${formatUnit(Math.abs(row.targetMarginMm))}`)
-          .join(', ')}
-        . See physical and target margins below.
-      </>
-    )}
-    {state === 'does_not_fit' && (
-      <>
-        Does not fit — the available space is short for{' '}
-        {hardFailures
-          .map((row) => `${row.label} by ${formatUnit(Math.abs(row.physicalMarginMm))}`)
-          .join(', ')}
-        . See the table for each dimension's physical and target margins.
-      </>
-    )}
-    {state === 'needs_information' && (
-      <>
-        Physical footprint can be shown, but fit is not confirmed. Needed before a complete result:{' '}
-        {needsInformation.join('; ')}.
-      </>
-    )}
-  </p>
+  <div
+    class="fit-summary__content"
+    data-fit-summary-content
+    set:html={renderFitSummaryContentHtml(summaryCopy)}
+  />
+  <details class="fit-summary__legend" data-fit-state-legend>
+    <summary>What these results mean</summary>
+    <ul>
+      {Object.values(FIT_STATE_BADGE_COPY).map((fitState) => (
+        <li>
+          <strong>
+            <span aria-hidden="true">{fitState.icon}</span> {fitState.label}:
+          </strong>{' '}
+          {fitState.meaning}
+        </li>
+      ))}
+    </ul>
+  </details>
   {resultId && (
     <a
       class="fit-summary__mobile-link"
       data-fit-sticky
       data-fit-state={state}
-      href={`#${resultId}`}
-      aria-label={`Fit result: ${label}. View dimension details.`}
+      href={`#${resultId}-details`}
+      aria-label={`Fit result: ${label}. View calculation details.`}
     >
       <span class="fit-summary__mobile-status">
         <span aria-hidden="true" data-field="sticky-icon">
@@ -84,13 +86,17 @@ const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
         <strong data-field="sticky-label">{label}</strong>
       </span>
       <span class="fit-summary__mobile-detail" data-field="sticky-detail">
-        {state === 'fits' && primary && (
+        {summaryCopy.isExactFit ? (
+          'No tolerance remains'
+        ) : summaryCopy.marginMm !== null && summaryCopy.marginLabel ? (
           <>
-            <UnitValue mm={Math.max(0, primary.targetMarginMm)} /> after target
+            <UnitValue mm={summaryCopy.marginMm} /> {summaryCopy.marginLabel.toLowerCase()}
           </>
-        )}
-        {state === 'tight' && 'Target short'}
-        {state === 'does_not_fit' && 'Physical short'}
+        ) : null}
+        {state === 'does_not_fit' && summaryCopy.physicalStatus === 'No' && 'Physical fit failed'}
+        {state === 'does_not_fit' &&
+          summaryCopy.compatibilityStatus === 'Incompatible' &&
+          'Compatibility check failed'}
         {state === 'needs_information' && 'Manual data needed'}
       </span>
       <span>View details ↑</span>
@@ -112,6 +118,10 @@ const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
     border-color: transparent;
   }
 
+  .fit-summary[data-fit-exact='true'] {
+    border: 2px solid var(--color-state-tight-fg);
+  }
+
   .fit-summary[data-fit-state='tight'] {
     background: var(--color-state-tight-bg);
     color: var(--color-state-tight-fg);
@@ -125,8 +135,8 @@ const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
   }
 
   .fit-summary[data-fit-state='needs_information'] {
-    background: var(--color-state-tight-bg);
-    color: var(--color-state-tight-fg);
+    background: var(--color-state-info-bg);
+    color: var(--color-state-info-fg);
     border-color: transparent;
   }
 
@@ -155,17 +165,88 @@ const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
     color: var(--color-surface-raised);
   }
 
-  .fit-summary__detail {
+  .fit-summary__content {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .fit-summary__content :global(.fit-summary__facts) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: var(--space-2);
+    margin: 0;
+  }
+
+  .fit-summary__content :global(.fit-summary__facts > div) {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid currentColor;
+    border-radius: var(--radius-sm);
+  }
+
+  .fit-summary__content :global(.fit-summary__facts dt) {
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .fit-summary__content :global(.fit-summary__facts dd) {
+    margin: var(--space-1) 0 0;
+    font-weight: 700;
+  }
+
+  .fit-summary__content :global(.fit-summary__binding),
+  .fit-summary__content :global(.fit-summary__margin),
+  .fit-summary__content :global(.fit-summary__detail),
+  .fit-summary__content :global(.fit-summary__next) {
     margin: 0;
     color: inherit;
-    opacity: 0.92;
+    line-height: 1.5;
+  }
+
+  .fit-summary__content :global(.fit-summary__tolerance-warning) {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border-left: 0.25rem solid var(--color-state-tight-fg);
+    color: inherit;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  .fit-summary__content :global(h3) {
+    margin: 0 0 calc(-1 * var(--space-2));
+    font-size: var(--fs-md);
+  }
+
+  .fit-summary__legend {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid currentColor;
+    font-size: var(--fs-sm);
+  }
+
+  .fit-summary__legend summary {
+    width: fit-content;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .fit-summary__legend ul {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
+    padding-left: 1.25rem;
+  }
+
+  .fit-summary__legend li {
+    line-height: 1.45;
   }
 
   .fit-summary__mobile-link {
     display: none;
   }
 
-  @media (max-width: 59.999rem) {
+  @media (max-width: 61.999rem) {
     .fit-summary__mobile-link {
       position: fixed;
       z-index: 100;
@@ -204,8 +285,8 @@ const formatUnit = (mm: number) => formatMeasurement(mm, 'metric');
     }
 
     .fit-summary__mobile-link[data-fit-state='needs_information'] {
-      background: var(--color-state-tight-bg);
-      color: var(--color-state-tight-fg);
+      background: var(--color-state-info-bg);
+      color: var(--color-state-info-fg);
     }
 
     .fit-summary__mobile-status {

@@ -1,41 +1,72 @@
 ---
+import {
+  ALL_FIT_CHECKS_LINK,
+  FIT_CHECK_GROUPS,
+  GUIDE_LINKS,
+  UNIVERSAL_FIT_LINK,
+} from '../../data/navigation';
+
 const year = new Date().getFullYear();
 ---
 
-<footer class="site-footer">
+<footer class="site-footer" data-site-footer>
   <div class="wrapper site-footer__inner">
-    <p class="site-footer__tagline">Know what fits before you buy, arrange or move it.</p>
-    <nav aria-label="Footer">
-      <ul>
-        <li>
-          <a href="/will-it-fit/">Universal fit check</a>
-        </li>
-        <li>
-          <a href="/dining/">Dining room fit</a>
-        </li>
-        <li>
-          <a href="/garden/">Garden fit</a>
-        </li>
-        <li>
-          <a href="/fit-services/">More fit services</a>
-        </li>
-        <li>
-          <a href="/about/">About &amp; data sources</a>
-        </li>
-        <li>
-          <a href="/methodology/">How Fitwise calculates fit</a>
-        </li>
-        <li>
-          <a href="/about/#corrections">Corrections policy</a>
-        </li>
-        <li>
-          <a href="/workspace/">Workspace</a>
-        </li>
-        <li>
-          <a href="/bedroom/">Bedroom</a>
-        </li>
-      </ul>
-    </nav>
+    <div class="site-footer__brand">
+      <p class="site-footer__tagline">Know what fits before you buy, arrange or move it.</p>
+      <p class="site-footer__summary">
+        Measure the item and space, compare clearances, and check model-specific requirements.
+      </p>
+    </div>
+    <div class="site-footer__navigation">
+      <nav class="site-footer__fit-checks" aria-label="Footer fit checks">
+        <ul class="site-footer__primary">
+          <li>
+            <a href={UNIVERSAL_FIT_LINK.href}>{UNIVERSAL_FIT_LINK.label}</a>
+          </li>
+          <li>
+            <a href={ALL_FIT_CHECKS_LINK.href}>{ALL_FIT_CHECKS_LINK.label}</a>
+          </li>
+        </ul>
+        <div class="site-footer__groups">
+          {FIT_CHECK_GROUPS.map((group) => (
+            <section class="site-footer__group" aria-label={group.label}>
+              <h2>{group.label}</h2>
+              <ul>
+                {group.links.map((link) => (
+                  <li>
+                    <a href={link.href}>{link.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </nav>
+      <nav class="site-footer__guides" aria-label="Footer guides">
+        <h2>Guides</h2>
+        <ul>
+          {GUIDE_LINKS.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <nav class="site-footer__site-info" aria-label="Site information">
+        <h2>FitWise</h2>
+        <ul>
+          <li>
+            <a href="/methodology/">Methodology</a>
+          </li>
+          <li>
+            <a href="/about/">About and data sources</a>
+          </li>
+          <li>
+            <a href="/about/#corrections">Corrections policy</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
     <p class="site-footer__copy">&copy; {year} Fitwise.stream</p>
   </div>
 </footer>
@@ -49,40 +80,91 @@ const year = new Date().getFullYear();
   }
 
   .site-footer__inner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .site-footer__brand {
+    max-width: 72ch;
   }
 
   .site-footer__tagline {
     margin: 0;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--color-text-primary);
   }
 
-  .site-footer nav ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-4);
+  .site-footer__summary {
+    margin: var(--space-2) 0 0;
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+  }
+
+  .site-footer__navigation {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(10rem, 0.6fr));
+    gap: var(--space-5);
+  }
+
+  .site-footer__primary,
+  .site-footer__group ul,
+  .site-footer__guides ul,
+  .site-footer__site-info ul {
+    display: grid;
+    gap: var(--space-1);
     list-style: none;
     margin: 0;
     padding: 0;
   }
 
-  .site-footer nav a {
-    color: var(--color-text-secondary);
-    text-decoration: none;
+  .site-footer__primary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .site-footer__groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    gap: var(--space-4);
+  }
+
+  .site-footer__group h2,
+  .site-footer__guides h2,
+  .site-footer__site-info h2 {
+    margin: 0 0 var(--space-2);
+    color: var(--color-text-primary);
     font-size: var(--fs-sm);
   }
 
-  .site-footer nav a:hover {
+  .site-footer__navigation nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    text-decoration: none;
+  }
+
+  .site-footer__navigation nav a:hover {
     color: var(--color-accent-1);
+    text-decoration: underline;
+  }
+
+  .site-footer__primary a {
+    font-weight: 700;
   }
 
   .site-footer__copy {
     margin: 0;
     font-size: var(--fs-sm);
+  }
+
+  @media (max-width: 48rem) {
+    .site-footer__navigation {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-4);
+    }
   }
 </style>

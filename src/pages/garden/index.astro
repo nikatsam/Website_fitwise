@@ -1,21 +1,18 @@
 ---
 import PublishedLayout from '../../components/layout/PublishedLayout.astro';
+import CalculatorPageShell from '../../components/layout/CalculatorPageShell.astro';
 import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro';
 ---
 
 <PublishedLayout pageIntentId="pi-feature-garden-hub">
-  <section class="page-heading wrapper">
-    <p class="eyebrow">Garden Fit</p>
-    <h1>What can fit in your garden space?</h1>
-    <p>
+  <CalculatorPageShell h1="What can fit in your garden space?" eyebrow="Garden Fit">
+    <p slot="purpose">
       Check structure body and roof footprints, maintenance/access space, gazebo interior spans,
       shed storage and greenhouse staging. Enter the usable dimensions you measured, not just an
       advertised structure size.
     </p>
-  </section>
-  <section class="wrapper section">
-    <FitServicesStudio category="garden" initialMode="garden-structure" />
-    <section class="garden-services" aria-labelledby="garden-services-heading">
+    <FitServicesStudio slot="calculator" category="garden" initialMode="garden-structure" />
+    <section slot="related" class="garden-services" aria-labelledby="garden-services-heading">
       <h2 id="garden-services-heading">Garden fit services</h2>
       <ul>
         <li>
@@ -45,46 +42,24 @@ import FitServicesStudio from '../../components/fitcheck/FitServicesStudio.astro
         </li>
       </ul>
     </section>
-    <p class="garden-note">
+    <p slot="support" class="garden-note">
       These tools use your measurements and assumptions. They do not check planning permission,
       drainage, foundations, wind loading, utilities, ventilation, fall surfaces or manufacturer
       safety zones unless you enter the exact manual dimensions. Play-equipment and hot-tub results
       are not safety assessments.
     </p>
-  </section>
+  </CalculatorPageShell>
 </PublishedLayout>
 
 <style>
-  .page-heading {
-    padding-block: var(--space-7) var(--space-3);
-  }
-
-  .page-heading h1 {
-    max-width: 26ch;
-    margin-block: var(--space-1) var(--space-3);
-    font-size: var(--fs-3xl);
-    letter-spacing: -0.035em;
-  }
-
-  .page-heading > p:last-child,
   .garden-note {
     max-width: 80ch;
     color: var(--color-text-secondary);
     line-height: 1.65;
   }
 
-  .eyebrow {
-    margin: 0;
-    color: var(--color-accent-1);
-    font-size: var(--fs-sm);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
   .garden-services {
-    max-width: 80ch;
-    margin-top: var(--space-6);
+    max-width: 82ch;
   }
 
   .garden-services ul {

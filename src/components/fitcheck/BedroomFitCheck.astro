@@ -1,5 +1,7 @@
 ---
 import FitSummary from '../fit/FitSummary.astro';
+import CalculatorStep from '../fit/CalculatorStep.astro';
+import MeasurementFieldHelp from '../fit/MeasurementFieldHelp.astro';
 import DimensionTable from '../fit/DimensionTable.astro';
 import AssumptionList from '../fit/AssumptionList.astro';
 import UnitToggle from '../fit/UnitToggle.astro';
@@ -116,276 +118,351 @@ const diagramMarkup = renderBedroomDiagramMarkup({
 const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMeasurement(DEFAULTS.roomLengthMm)} room with ${preset.label}, ${DEFAULTS.orientation} orientation, ${formatMeasurement(DEFAULTS.sideClearanceMm)} selected side target, and ${DEFAULTS.nightstandCount} bedside tables.`;
 ---
 
-<div class="bedroom-fitcheck" data-bedroom-fitcheck data-diagram-id={DIAGRAM_ID}>
+<div class="bedroom-fitcheck calculator-split" data-bedroom-fitcheck data-diagram-id={DIAGRAM_ID}>
   <form class="bedroom-fitcheck__form" data-bedroom-fitcheck-form novalidate>
     <p class="fit-example-notice" data-fit-example-notice role="note">
       <strong>Example setup.</strong> The custom mattress and room dimensions start with editable
       sample values. Replace them with measurements from your room and bed.
     </p>
-    <div class="field">
-      <label for="room-width">Room inside width</label>
-      <input
-        type="text"
-        inputmode="decimal"
-        id="room-width"
-        name="roomWidthMm"
-        min="1"
-        step="1"
-        value={formatMeasurement(DEFAULTS.roomWidthMm)}
-        aria-describedby="room-width-error"
-      />
-      <span class="field__error" id="room-width-error" role="alert"></span>
-    </div>
+    <CalculatorStep
+      step={1}
+      title="What are you fitting?"
+      description="Choose a bed reference or enter your mattress dimensions and orientation."
+    >
+      <div class="field">
+        <label for="bed-preset">Bed and frame model</label>
+        <select id="bed-preset" name="bedPreset" aria-describedby="bed-preset-note">
+          {BEDROOM_FIT_PRESETS.map((bedPreset) => (
+            <option value={bedPreset.key} selected={bedPreset.key === DEFAULTS.bedPreset}>
+              {bedPreset.label}
+            </option>
+          ))}
+        </select>
+        <p class="field__note" id="bed-preset-note">
+          Enter your actual mattress size or choose a market-specific reference. Named frame
+          examples use measured models; no generic frame overhang is silently applied.
+        </p>
+      </div>
 
-    <div class="field">
-      <label for="room-length">Room inside length</label>
-      <input
-        type="text"
-        inputmode="decimal"
-        id="room-length"
-        name="roomLengthMm"
-        min="1"
-        step="1"
-        value={formatMeasurement(DEFAULTS.roomLengthMm)}
-        aria-describedby="room-length-error"
-      />
-      <span class="field__error" id="room-length-error" role="alert"></span>
-    </div>
+      <div class="field-grid" data-custom-bed-fields>
+        <div class="field">
+          <label for="custom-bed-width">Custom mattress width (editable example)</label>
+          <input
+            type="text"
+            inputmode="text"
+            id="custom-bed-width"
+            name="customBedWidthMm"
+            value={formatMeasurement(DEFAULTS.customMattressWidthMm)}
+            aria-describedby="custom-bed-width-error custom-bed-width-help"
+          />
+          <span class="field__error" id="custom-bed-width-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="bedroom"
+            fieldId="custom-bed-width"
+            id="custom-bed-width-help"
+          />
+        </div>
+        <div class="field">
+          <label for="custom-bed-length">Custom mattress length (editable example)</label>
+          <input
+            type="text"
+            inputmode="text"
+            id="custom-bed-length"
+            name="customBedLengthMm"
+            value={formatMeasurement(DEFAULTS.customMattressLengthMm)}
+            aria-describedby="custom-bed-length-error custom-bed-length-help"
+          />
+          <span class="field__error" id="custom-bed-length-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="bedroom"
+            fieldId="custom-bed-length"
+            id="custom-bed-length-help"
+          />
+        </div>
+      </div>
 
-    <div class="field">
-      <label for="bed-preset">Bed and frame model</label>
-      <select id="bed-preset" name="bedPreset">
-        {BEDROOM_FIT_PRESETS.map((bedPreset) => (
-          <option value={bedPreset.key} selected={bedPreset.key === DEFAULTS.bedPreset}>
-            {bedPreset.label}
+      <div class="field">
+        <label for="orientation">Bed orientation</label>
+        <select id="orientation" name="orientation">
+          <option value="portrait" selected>
+            Headboard against a short wall
           </option>
-        ))}
-      </select>
-      <p class="field__note">
-        Enter your actual mattress size or choose a market-specific reference. Named frame examples
-        use measured models; no generic frame overhang is silently applied.
-      </p>
-    </div>
-
-    <div class="field-grid" data-custom-bed-fields>
-      <div class="field">
-        <label for="custom-bed-width">Custom mattress width (editable example)</label>
-        <input
-          type="text"
-          inputmode="decimal"
-          id="custom-bed-width"
-          name="customBedWidthMm"
-          value={formatMeasurement(DEFAULTS.customMattressWidthMm)}
-          aria-describedby="custom-bed-width-error"
-        />
-        <span class="field__error" id="custom-bed-width-error" role="alert"></span>
-      </div>
-      <div class="field">
-        <label for="custom-bed-length">Custom mattress length (editable example)</label>
-        <input
-          type="text"
-          inputmode="decimal"
-          id="custom-bed-length"
-          name="customBedLengthMm"
-          value={formatMeasurement(DEFAULTS.customMattressLengthMm)}
-          aria-describedby="custom-bed-length-error"
-        />
-        <span class="field__error" id="custom-bed-length-error" role="alert"></span>
-      </div>
-    </div>
-
-    <div class="field">
-      <label for="orientation">Bed orientation</label>
-      <select id="orientation" name="orientation">
-        <option value="portrait" selected>
-          Headboard against a short wall
-        </option>
-        <option value="landscape">Headboard against a long wall</option>
-      </select>
-    </div>
-
-    <details class="bedroom-fitcheck__advanced">
-      <summary>More assumptions</summary>
-
-      <div class="field">
-        <label for="side-clearance">Selected side-clearance target</label>
-        <input
-          type="text"
-          inputmode="decimal"
-          id="side-clearance"
-          name="sideClearanceMm"
-          min="0"
-          step="1"
-          value={DEFAULTS.sideClearanceMm}
-          aria-describedby="side-clearance-error"
-        />
-        <span class="field__error" id="side-clearance-error" role="alert"></span>
-      </div>
-
-      <div class="field">
-        <label for="foot-clearance">Selected foot-clearance target (assumption)</label>
-        <input
-          type="text"
-          inputmode="decimal"
-          id="foot-clearance"
-          name="footClearanceMm"
-          min="0"
-          step="1"
-          value={DEFAULTS.footClearanceMm}
-          aria-describedby="foot-clearance-error"
-        />
-        <span class="field__error" id="foot-clearance-error" role="alert"></span>
-      </div>
-
-      <div class="field">
-        <label for="nightstand-count">Nightstands</label>
-        <select id="nightstand-count" name="nightstandCount">
-          <option value="0" selected>
-            None
-          </option>
-          <option value="1">1</option>
-          <option value="2">2</option>
+          <option value="landscape">Headboard against a long wall</option>
         </select>
       </div>
+    </CalculatorStep>
 
+    <CalculatorStep
+      step={2}
+      title="Where does it need to fit?"
+      description="Measure the usable inside room width and length."
+    >
       <div class="field">
-        <label for="nightstand-width">Measured nightstand width each</label>
+        <label for="room-width">Room inside width</label>
         <input
           type="text"
-          inputmode="decimal"
-          id="nightstand-width"
-          name="nightstandWidthMm"
+          inputmode="text"
+          id="room-width"
+          name="roomWidthMm"
           min="1"
           step="1"
-          value={DEFAULTS.nightstandWidthMm}
-          aria-describedby="nightstand-width-error"
+          value={formatMeasurement(DEFAULTS.roomWidthMm)}
+          aria-describedby="room-width-error room-width-help"
         />
-        <span class="field__error" id="nightstand-width-error" role="alert"></span>
+        <span class="field__error" id="room-width-error" role="alert"></span>
+        <MeasurementFieldHelp calculator="bedroom" fieldId="room-width" id="room-width-help" />
       </div>
 
       <div class="field">
-        <label for="nightstand-depth">Measured nightstand depth each</label>
+        <label for="room-length">Room inside length</label>
         <input
           type="text"
-          inputmode="decimal"
-          id="nightstand-depth"
-          name="nightstandDepthMm"
+          inputmode="text"
+          id="room-length"
+          name="roomLengthMm"
           min="1"
           step="1"
-          value={DEFAULTS.nightstandDepthMm}
-          aria-describedby="nightstand-depth-error"
+          value={formatMeasurement(DEFAULTS.roomLengthMm)}
+          aria-describedby="room-length-error room-length-help"
         />
-        <span class="field__error" id="nightstand-depth-error" role="alert"></span>
+        <span class="field__error" id="room-length-error" role="alert"></span>
+        <MeasurementFieldHelp calculator="bedroom" fieldId="room-length" id="room-length-help" />
       </div>
-
-      <fieldset class="interaction-checks">
-        <legend>Optional furniture collision checks</legend>
-        <label class="interaction-checks__toggle">
-          <input type="checkbox" id="check-wardrobe-door" name="checkWardrobeDoor" />
-          Check a hinged wardrobe-door swing
-        </label>
-        <div data-wardrobe-fields hidden>
-          <div class="field">
-            <label for="wardrobe-door-width">Measured hinged door leaf width</label>
-            <input
-              type="text"
-              inputmode="decimal"
-              id="wardrobe-door-width"
-              name="wardrobeDoorWidthMm"
-              min="1"
-              step="1"
-              value={DEFAULTS.wardrobeDoorLeafWidthMm}
-              aria-describedby="wardrobe-door-width-error"
-            />
-            <span class="field__error" id="wardrobe-door-width-error" role="alert"></span>
-          </div>
-          <div class="field">
-            <label for="wardrobe-door-angle">Door opening angle (degrees, 0–90)</label>
-            <input
-              type="text"
-              inputmode="decimal"
-              id="wardrobe-door-angle"
-              name="wardrobeDoorAngleDegrees"
-              min="0"
-              max="90"
-              step="1"
-              value={DEFAULTS.wardrobeDoorAngleDegrees}
-              aria-describedby="wardrobe-door-angle-error"
-            />
-            <span class="field__error" id="wardrobe-door-angle-error" role="alert"></span>
-          </div>
-          <div class="field">
-            <label for="wardrobe-obstacle-gap">
-              Measured gap from wardrobe face to bed/obstacle
-            </label>
-            <input
-              type="text"
-              inputmode="decimal"
-              id="wardrobe-obstacle-gap"
-              name="wardrobeObstacleGapMm"
-              min="0"
-              step="1"
-              aria-describedby="wardrobe-obstacle-gap-error"
-            />
-            <span class="field__error" id="wardrobe-obstacle-gap-error" role="alert"></span>
-          </div>
-        </div>
-
-        <label class="interaction-checks__toggle">
-          <input type="checkbox" id="check-dresser-drawer" name="checkDresserDrawer" />
-          Check a dresser drawer extension
-        </label>
-        <div data-dresser-fields hidden>
-          <div class="field">
-            <label for="dresser-drawer-pullout">Measured drawer extension</label>
-            <input
-              type="text"
-              inputmode="decimal"
-              id="dresser-drawer-pullout"
-              name="dresserDrawerPullOutMm"
-              min="1"
-              step="1"
-              value={DEFAULTS.dresserDrawerPullOutMm}
-              aria-describedby="dresser-drawer-pullout-error"
-            />
-            <span class="field__error" id="dresser-drawer-pullout-error" role="alert"></span>
-          </div>
-          <div class="field">
-            <label for="dresser-obstacle-gap">
-              Measured gap from dresser front to bed/obstacle
-            </label>
-            <input
-              type="text"
-              inputmode="decimal"
-              id="dresser-obstacle-gap"
-              name="dresserObstacleGapMm"
-              min="0"
-              step="1"
-              aria-describedby="dresser-obstacle-gap-error"
-            />
-            <span class="field__error" id="dresser-obstacle-gap-error" role="alert"></span>
-          </div>
-        </div>
-        <p class="field__note">
-          These checks test door/drawer collision envelopes only. They do not add a standing or
-          walking allowance and are not drawn on the room diagram.
-        </p>
-      </fieldset>
       <p class="field__note">
-        Enter dimensions as mm, cm, m, inches or feet (for example, 60 cm or 24 in). Product presets
-        are market-specific examples; custom dimensions work globally.
+        Enter mm, cm, m, in, ft or ft/in (for example, 60 cm or 2 ft 3 in). Bare numbers default to
+        mm. Product presets are market-specific examples; custom dimensions work globally.
       </p>
+    </CalculatorStep>
+
+    <details class="bedroom-fitcheck__advanced">
+      <summary>Optional clearances and furniture collision checks</summary>
+      <CalculatorStep
+        step={3}
+        title="Extra space and clearances"
+        description="Choose side and foot targets, nearby furniture, or door and drawer collision checks."
+      >
+        <div class="field">
+          <label for="side-clearance">Selected side-clearance target</label>
+          <input
+            type="text"
+            inputmode="text"
+            id="side-clearance"
+            name="sideClearanceMm"
+            min="0"
+            step="1"
+            value={DEFAULTS.sideClearanceMm}
+            aria-describedby="side-clearance-error side-clearance-help"
+          />
+          <span class="field__error" id="side-clearance-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="bedroom"
+            fieldId="side-clearance"
+            id="side-clearance-help"
+          />
+        </div>
+
+        <div class="field">
+          <label for="foot-clearance">Selected foot-clearance target (assumption)</label>
+          <input
+            type="text"
+            inputmode="text"
+            id="foot-clearance"
+            name="footClearanceMm"
+            min="0"
+            step="1"
+            value={DEFAULTS.footClearanceMm}
+            aria-describedby="foot-clearance-error foot-clearance-help"
+          />
+          <span class="field__error" id="foot-clearance-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="bedroom"
+            fieldId="foot-clearance"
+            id="foot-clearance-help"
+          />
+        </div>
+
+        <div class="field">
+          <label for="nightstand-count">Nightstands</label>
+          <select id="nightstand-count" name="nightstandCount">
+            <option value="0" selected>
+              None
+            </option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="nightstand-width">Measured nightstand width each</label>
+          <input
+            type="text"
+            inputmode="text"
+            id="nightstand-width"
+            name="nightstandWidthMm"
+            min="1"
+            step="1"
+            value={DEFAULTS.nightstandWidthMm}
+            aria-describedby="nightstand-width-error nightstand-width-help"
+          />
+          <span class="field__error" id="nightstand-width-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="bedroom"
+            fieldId="nightstand-width"
+            id="nightstand-width-help"
+          />
+        </div>
+
+        <div class="field">
+          <label for="nightstand-depth">Measured nightstand depth each</label>
+          <input
+            type="text"
+            inputmode="text"
+            id="nightstand-depth"
+            name="nightstandDepthMm"
+            min="1"
+            step="1"
+            value={DEFAULTS.nightstandDepthMm}
+            aria-describedby="nightstand-depth-error nightstand-depth-help"
+          />
+          <span class="field__error" id="nightstand-depth-error" role="alert"></span>
+          <MeasurementFieldHelp
+            calculator="bedroom"
+            fieldId="nightstand-depth"
+            id="nightstand-depth-help"
+          />
+        </div>
+
+        <fieldset class="interaction-checks">
+          <legend>Optional furniture collision checks</legend>
+          <label class="interaction-checks__toggle">
+            <input type="checkbox" id="check-wardrobe-door" name="checkWardrobeDoor" />
+            Check a hinged wardrobe-door swing
+          </label>
+          <div data-wardrobe-fields hidden>
+            <div class="field">
+              <label for="wardrobe-door-width">Measured hinged door leaf width</label>
+              <input
+                type="text"
+                inputmode="text"
+                id="wardrobe-door-width"
+                name="wardrobeDoorWidthMm"
+                min="1"
+                step="1"
+                value={DEFAULTS.wardrobeDoorLeafWidthMm}
+                aria-describedby="wardrobe-door-width-error wardrobe-door-width-help"
+              />
+              <span class="field__error" id="wardrobe-door-width-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="bedroom"
+                fieldId="wardrobe-door-width"
+                id="wardrobe-door-width-help"
+              />
+            </div>
+            <div class="field">
+              <label for="wardrobe-door-angle">Door opening angle (degrees, 0–90)</label>
+              <input
+                type="text"
+                inputmode="decimal"
+                id="wardrobe-door-angle"
+                name="wardrobeDoorAngleDegrees"
+                min="0"
+                max="90"
+                step="1"
+                value={DEFAULTS.wardrobeDoorAngleDegrees}
+                aria-describedby="wardrobe-door-angle-error wardrobe-door-angle-help"
+              />
+              <span class="field__error" id="wardrobe-door-angle-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="bedroom"
+                fieldId="wardrobe-door-angle"
+                id="wardrobe-door-angle-help"
+              />
+            </div>
+            <div class="field">
+              <label for="wardrobe-obstacle-gap">
+                Measured gap from wardrobe face to bed/obstacle
+              </label>
+              <input
+                type="text"
+                inputmode="text"
+                id="wardrobe-obstacle-gap"
+                name="wardrobeObstacleGapMm"
+                min="0"
+                step="1"
+                aria-describedby="wardrobe-obstacle-gap-error wardrobe-obstacle-gap-help"
+              />
+              <span class="field__error" id="wardrobe-obstacle-gap-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="bedroom"
+                fieldId="wardrobe-obstacle-gap"
+                id="wardrobe-obstacle-gap-help"
+              />
+            </div>
+          </div>
+
+          <label class="interaction-checks__toggle">
+            <input type="checkbox" id="check-dresser-drawer" name="checkDresserDrawer" />
+            Check a dresser drawer extension
+          </label>
+          <div data-dresser-fields hidden>
+            <div class="field">
+              <label for="dresser-drawer-pullout">Measured drawer extension</label>
+              <input
+                type="text"
+                inputmode="text"
+                id="dresser-drawer-pullout"
+                name="dresserDrawerPullOutMm"
+                min="1"
+                step="1"
+                value={DEFAULTS.dresserDrawerPullOutMm}
+                aria-describedby="dresser-drawer-pullout-error dresser-drawer-pullout-help"
+              />
+              <span class="field__error" id="dresser-drawer-pullout-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="bedroom"
+                fieldId="dresser-drawer-pullout"
+                id="dresser-drawer-pullout-help"
+              />
+            </div>
+            <div class="field">
+              <label for="dresser-obstacle-gap">
+                Measured gap from dresser front to bed/obstacle
+              </label>
+              <input
+                type="text"
+                inputmode="text"
+                id="dresser-obstacle-gap"
+                name="dresserObstacleGapMm"
+                min="0"
+                step="1"
+                aria-describedby="dresser-obstacle-gap-error dresser-obstacle-gap-help"
+              />
+              <span class="field__error" id="dresser-obstacle-gap-error" role="alert"></span>
+              <MeasurementFieldHelp
+                calculator="bedroom"
+                fieldId="dresser-obstacle-gap"
+                id="dresser-obstacle-gap-help"
+              />
+            </div>
+          </div>
+          <p class="field__note">
+            These checks test door/drawer collision envelopes only. They do not add a standing or
+            walking allowance and are not drawn on the room diagram.
+          </p>
+        </fieldset>
+      </CalculatorStep>
     </details>
 
     <UnitToggle />
   </form>
 
-  <div class="bedroom-fitcheck__result">
+  <div class="bedroom-fitcheck__result calculator-split__result">
     <FitSummary
       id="bedroom-fitcheck-summary"
       resultId="bedroom-fitcheck-table"
       state={result.state}
       rows={rows}
+      resultOrigin="example"
     />
 
     <ScaleDiagram
@@ -415,13 +492,6 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
   .bedroom-fitcheck {
     display: grid;
     gap: var(--space-6);
-  }
-
-  @media (min-width: 60rem) {
-    .bedroom-fitcheck {
-      grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1.2fr);
-      align-items: start;
-    }
   }
 
   .bedroom-fitcheck__form {
@@ -511,8 +581,9 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
 
   .interaction-checks__toggle {
     display: flex;
-    align-items: start;
+    align-items: center;
     gap: var(--space-2);
+    min-height: 2.75rem;
     color: var(--color-text-primary);
     font-size: var(--fs-sm);
     font-weight: 600;
@@ -534,14 +605,7 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMe
     min-width: 0;
   }
 
-  @media (min-width: 60rem) {
-    .bedroom-fitcheck__result {
-      position: sticky;
-      top: calc(var(--header-height, 4rem) + var(--space-4));
-    }
-  }
-
-  @media (max-width: 59.999rem) {
+  @media (max-width: 61.999rem) {
     .bedroom-fitcheck {
       padding-bottom: 4.5rem;
     }

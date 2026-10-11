@@ -2,7 +2,10 @@ import {
   evaluateFit,
   toDimensionDisplayRows,
   FIT_STATE_BADGE_COPY,
-  selectSummaryDimension,
+  getFitSummaryCopy,
+  getFitSummaryResultLabel,
+  renderFitSummaryContentHtml,
+  buildFitReviewReport,
   type DimensionDisplayRow,
   type FitState,
 } from '../lib/fit';
@@ -119,10 +122,6 @@ function unitHtml(mm: number): string {
   return `<span class="unit-value"><span data-unit="metric">${formatMeasurement(mm, 'metric')}</span> <span data-unit="imperial">${formatMeasurement(mm, 'imperial')}</span></span>`;
 }
 
-function signedMeasurement(mm: number): string {
-  return `${mm > 0 ? '+' : mm < 0 ? '−' : ''}${formatMeasurement(Math.abs(mm), 'metric')}`;
-}
-
 function renderRows(rows: DimensionDisplayRow[]): void {
   const tbody = document.querySelector<HTMLTableSectionElement>('#universal-fit-table tbody');
   if (!tbody) return;
@@ -145,44 +144,29 @@ function renderRows(rows: DimensionDisplayRow[]): void {
 function renderSummary(state: FitState, rows: DimensionDisplayRow[]): void {
   const summary = document.getElementById('universal-fit-summary');
   if (!summary) return;
-  const primary = selectSummaryDimension(rows);
-  const hardFailures = rows.filter((row) => !row.hardFit);
-  const targetFailures = rows.filter((row) => !row.recommendedFit);
-  let detail = 'Fits all checked dimensions.';
-  if (state === 'fits' && primary) {
-    detail = `Tightest constraint: ${primary.label}. Physical space remaining: ${unitHtml(primary.physicalMarginMm)}. After your selected target: ${unitHtml(primary.targetMarginMm)}.`;
-  } else if (state === 'tight') {
-    detail = `Physical space remains, but selected targets are short on ${targetFailures.map((row) => `${row.label} by ${unitHtml(Math.abs(row.targetMarginMm))}`).join(', ')}.`;
-  } else if (state === 'needs_information') {
-    detail = 'Needs more information before this fit can be confirmed.';
-  } else if (state === 'does_not_fit') {
-    detail = `Does not fit physically: ${hardFailures.map((row) => `${row.label} short by ${unitHtml(Math.abs(row.physicalMarginMm))}`).join(', ')}.`;
-  }
+  const summaryCopy = getFitSummaryCopy(state, rows);
+  const resultLabel = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
   summary.setAttribute('data-fit-state', state);
+  summary.dataset.fitExact = String(summaryCopy.isExactFit);
   summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent =
     FIT_STATE_BADGE_COPY[state].icon;
-  summary.querySelector<HTMLElement>('[data-field="label"]')!.textContent =
-    FIT_STATE_BADGE_COPY[state].label;
-  summary.querySelector<HTMLElement>('[data-field="detail"]')!.innerHTML = detail;
+  summary.querySelector<HTMLElement>('[data-field="label"]')!.textContent = resultLabel;
+  const content = summary.querySelector<HTMLElement>('[data-fit-summary-content]');
+  if (content) content.innerHTML = renderFitSummaryContentHtml(summaryCopy);
   const sticky = summary.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
   if (sticky) {
     sticky.dataset.fitState = state;
-    sticky.setAttribute(
-      'aria-label',
-      `Fit result: ${FIT_STATE_BADGE_COPY[state].label}. View dimension details.`,
-    );
+    sticky.setAttribute('aria-label', `Fit result: ${resultLabel}. View calculation details.`);
     sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent =
       FIT_STATE_BADGE_COPY[state].icon;
-    sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent =
-      FIT_STATE_BADGE_COPY[state].label;
+    sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = resultLabel;
     const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
     if (stickyDetail) {
-      stickyDetail.innerHTML =
-        state === 'fits' && primary
-          ? `${unitHtml(Math.max(0, primary.targetMarginMm))} after target`
-          : state === 'tight'
-            ? `Target short ${unitHtml(Math.abs(selectSummaryDimension(targetFailures)?.targetMarginMm ?? 0))}`
-            : `Physical short ${unitHtml(Math.abs(selectSummaryDimension(hardFailures)?.physicalMarginMm ?? 0))}`;
+      stickyDetail.innerHTML = summaryCopy.isExactFit
+        ? 'No measurement tolerance remains'
+        : summaryCopy.marginMm !== null && summaryCopy.marginLabel
+          ? `${unitHtml(summaryCopy.marginMm)} ${summaryCopy.marginLabel.toLowerCase()}`
+          : 'Check result details';
     }
   }
 }
@@ -225,18 +209,24 @@ function createReport(): string {
   const plan = buildObjectFitPlan(values);
   const result = evaluateFit(plan.checks);
   const rows = toDimensionDisplayRows(plan.checks, result);
-  return [
-    `Fitwise review: ${values.itemName}`,
-    `Result: ${FIT_STATE_BADGE_COPY[result.state].label}`,
-    `Item: ${formatMeasurement(values.objectWidthMm, 'metric')} / ${formatMeasurement(values.objectWidthMm, 'imperial')} W × ${formatMeasurement(values.objectDepthMm, 'metric')} / ${formatMeasurement(values.objectDepthMm, 'imperial')} D × ${formatMeasurement(values.objectHeightMm, 'metric')} / ${formatMeasurement(values.objectHeightMm, 'imperial')} H`,
-    `Space: ${formatMeasurement(values.spaceWidthMm, 'metric')} / ${formatMeasurement(values.spaceWidthMm, 'imperial')} W × ${formatMeasurement(values.spaceDepthMm, 'metric')} / ${formatMeasurement(values.spaceDepthMm, 'imperial')} D × ${formatMeasurement(values.spaceHeightMm, 'metric')} / ${formatMeasurement(values.spaceHeightMm, 'imperial')} H`,
-    `Best floor orientation: ${plan.orientation}; estimated single-layer capacity: ${plan.quantityCapacity}`,
-    ...rows.map(
-      (row) =>
-        `${row.label}: physical margin ${signedMeasurement(row.physicalMarginMm)}; target margin ${signedMeasurement(row.targetMarginMm)}`,
+  const summary = getFitSummaryCopy(result.state, rows);
+  return buildFitReviewReport({
+    itemName: values.itemName,
+    stateLabel: getFitSummaryResultLabel(
+      summary,
+      document.getElementById('universal-fit-summary')?.dataset.fitOrigin,
     ),
-    'Screening estimate only; verify measurements and access route on site.',
-  ].join('\n');
+    objectWidthMm: values.objectWidthMm,
+    objectDepthMm: values.objectDepthMm,
+    objectHeightMm: values.objectHeightMm,
+    spaceWidthMm: values.spaceWidthMm,
+    spaceDepthMm: values.spaceDepthMm,
+    spaceHeightMm: values.spaceHeightMm,
+    orientation: plan.orientation,
+    quantityCapacity: plan.quantityCapacity,
+    summary,
+    rows,
+  });
 }
 
 function init(): void {
@@ -260,6 +250,8 @@ function init(): void {
     ) {
       const exampleNotice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
       if (exampleNotice) exampleNotice.hidden = true;
+      const summary = document.getElementById('universal-fit-summary');
+      if (summary?.dataset.fitOrigin) summary.dataset.fitOrigin = 'user';
     }
     recompute();
   };

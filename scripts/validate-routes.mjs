@@ -52,6 +52,27 @@ function checkPage(route, source, { heading, includes = [] }) {
   }
 }
 
+function breadcrumbLabels(source) {
+  const nav = source.match(/<nav\b[^>]*aria-label="Breadcrumb"[^>]*>([\s\S]*?)<\/nav>/i)?.[1];
+  if (!nav) return [];
+  return [...nav.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].map((match) =>
+    match[1]
+      .replace(/<[^>]*>/g, '')
+      .replace(/\s+\/\s+/g, ' ')
+      .replaceAll('&amp;', '&')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  );
+}
+
+function checkBreadcrumbs(route, source, expected) {
+  const labels = breadcrumbLabels(source);
+  assert(
+    JSON.stringify(labels) === JSON.stringify(expected),
+    `${route}: expected visible breadcrumb '${expected.join(' > ')}', received '${labels.join(' > ')}'.`,
+  );
+}
+
 const home = await html('/');
 checkPage('/', home, {
   heading: 'Will it fit?',
@@ -59,17 +80,21 @@ checkPage('/', home, {
     '/will-it-fit/',
     '/dining/',
     '/garden/',
-    '/garden/',
     '/fit-services/',
     '/workspace/',
     '/bedroom/',
+    '/appliances/',
+    '/access/furniture-route-fit/',
+    '/tv/tv-stand-fit/',
+    '/home-gym/power-rack-room-size/',
+    '/storage/what-fits-in-storage/',
+    '/game-room/pool-table-fit/',
+    '/vehicle/garage-fit/',
     '/about/',
     '/methodology/',
-    'Object → Room',
-    'Objects → Room',
-    'Objects → Surface',
-    'Object → Opening',
-    'Operating clearance',
+    'Fit checks by task',
+    'fit-directory__group',
+    'Browse all fit checks and specialist modes',
     'G-J10W58E2ZL',
     'googletagmanager.com/gtag/js',
   ],
@@ -88,7 +113,8 @@ checkPage('/will-it-fit/', universalFit, {
     'rel="canonical"',
     'BreadcrumbList',
     'Accepted units:',
-    'feet plus inches',
+    'ft/in',
+    'bare number defaults to mm',
   ],
 });
 
@@ -119,16 +145,61 @@ checkPage('/garden/', garden, {
     'garden-hot-tub',
     'garden-outdoor-kitchen',
     'garden-play-equipment',
+    'Candidate body sizes',
+    'data-candidate-size-row',
+    'Add another size',
+    'aria-label="Remove candidate 1"',
     'planning permission',
     'rel="canonical"',
     'BreadcrumbList',
   ],
 });
 
+checkBreadcrumbs('/garden/shed-interior-storage/', await html('/garden/shed-interior-storage/'), [
+  'Home',
+  'Garden',
+  'Shed storage',
+]);
+checkBreadcrumbs('/appliances/fridge-fit/', await html('/appliances/fridge-fit/'), [
+  'Home',
+  'Appliances',
+  'Fridge fit',
+]);
+checkBreadcrumbs(
+  '/workspace/what-fits-on-a-140cm-desk/',
+  await html('/workspace/what-fits-on-a-140cm-desk/'),
+  ['Home', 'Workspace', 'Desk sizing', '140 cm desk'],
+);
+
+const fridgeFit = await html('/appliances/fridge-fit/');
+checkPage('/appliances/fridge-fit/', fridgeFit, {
+  heading: 'Will this fridge fit the opening?',
+  includes: [
+    'What to check next',
+    'installation manual or specification open',
+    'If the fridge must be carried into the room',
+  ],
+});
+const vehicleFit = await html('/vehicle/garage-fit/');
+assert(
+  !/<nav\b[^>]*aria-label="Related next checks"/.test(vehicleFit),
+  '/vehicle/garage-fit/: unrelated related-check navigation should be omitted when no live next check applies.',
+);
+assert(
+  !garden.includes('<textarea id="service-candidateSizes"'),
+  '/garden/: semicolon candidate-size text entry must be replaced with structured width/depth rows.',
+);
+
 const fitServices = await html('/fit-services/');
 checkPage('/fit-services/', fitServices, {
-  heading: 'Specialized fit checks',
+  heading: 'All fit checks',
   includes: [
+    'id="all-fit-checks"',
+    'Rooms &amp; spaces',
+    'Appliance installation clearance',
+    'Vehicle in a garage',
+    '/garden/play-equipment-use-zone/',
+    'id="fit-services-tool"',
     'data-fit-services-form',
     'Example setup.',
     'data-fit-sticky',
@@ -186,7 +257,10 @@ checkPage('/workspace/', workspace, {
     'data-fit-sticky',
     'Physical margin',
     'Target margin',
-    'Tightest constraint',
+    'Tightest point',
+    'Physical fit',
+    'Selected clearance',
+    'Show calculation details',
     'workspace-fitcheck-table',
     'data-fit-state',
     '/workspace/monitor-size-chart/',
@@ -202,15 +276,18 @@ checkPage('/bedroom/', bedroom, {
     'data-fit-sticky',
     'Physical margin',
     'Target margin',
-    'Tightest constraint',
+    'Tightest point',
+    'Physical fit',
+    'Selected clearance',
+    'Show calculation details',
     'bedroom-fitcheck-table',
     '/bedroom/us-bed-size-dimensions/',
     '/bedroom/uk-bed-size-dimensions/',
   ],
 });
 assert(
-  ['140.0 cm', '20.0 cm', 'Physical space remaining', 'After your selected target'].every((value) =>
-    bedroom.includes(value),
+  ['140.0 cm', '20.0 cm', 'Physical margin', 'Extra space beyond target', 'Tightest point'].every(
+    (value) => bedroom.includes(value),
   ),
   '/bedroom/: example result must distinguish 140 cm physical margin from 20 cm after the selected clearance target.',
 );
@@ -373,8 +450,8 @@ assert(
   [
     '121.6 cm',
     '129.2 cm',
-    'Physical space remaining',
-    'After your selected target',
+    'Physical margin',
+    'Extra space beyond target',
     '18.4 cm',
     '10.8 cm',
   ].every((value) => workspace.includes(value)),

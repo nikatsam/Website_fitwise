@@ -2,9 +2,10 @@ import {
   evaluateFit,
   toDimensionDisplayRows,
   FIT_STATE_BADGE_COPY,
-  selectSummaryDimension,
+  getFitSummaryCopy,
+  getFitSummaryResultLabel,
+  renderFitSummaryContentHtml,
   type DimensionDisplayRow,
-  type FitState,
 } from '../lib/fit';
 import {
   buildBedRoomChecks,
@@ -84,20 +85,6 @@ function unitValueHtml(mm: number): string {
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function renderDetailHtml(state: FitState, rows: DimensionDisplayRow[]): string {
-  const primary = selectSummaryDimension(rows);
-  if (!primary) return '';
-  if (state === 'fits') {
-    return `Fits. Tightest constraint: ${escapeHtml(primary.label)}. Physical space remaining: ${unitValueHtml(primary.physicalMarginMm)}. After your selected target: ${unitValueHtml(primary.targetMarginMm)}.`;
-  }
-  if (state === 'tight') {
-    const failures = rows.filter((row) => !row.recommendedFit);
-    return `Physical space remains, but selected targets are short on ${failures.map((row) => `${escapeHtml(row.label)} by ${unitValueHtml(Math.abs(row.targetMarginMm))}`).join(', ')}. See physical and target margins in the table.`;
-  }
-  const failures = rows.filter((row) => !row.hardFit);
-  return `Does not fit — physical space is short on ${failures.map((row) => `${escapeHtml(row.label)} by ${unitValueHtml(Math.abs(row.physicalMarginMm))}`).join(', ')}. See the table for target margins too.`;
 }
 
 function clearFieldError(field: FieldSpec): void {
@@ -421,35 +408,34 @@ function recompute(): void {
   const result = evaluateFit(checks, assumptions);
   const rows = toDimensionDisplayRows(checks, result);
   if (rows.length === 0) return;
-  const summaryRow = selectSummaryDimension(rows);
+  const summaryCopy = getFitSummaryCopy(result.state, rows);
 
   // Patch FitSummary.
   const summaryEl = document.getElementById('bedroom-fitcheck-summary');
   if (summaryEl) {
     summaryEl.setAttribute('data-fit-state', result.state);
+    summaryEl.dataset.fitExact = String(summaryCopy.isExactFit);
     const copy = FIT_STATE_BADGE_COPY[result.state];
+    const resultLabel = getFitSummaryResultLabel(summaryCopy, summaryEl.dataset.fitOrigin);
     const iconEl = summaryEl.querySelector<HTMLElement>('[data-field="icon"]');
     const labelEl = summaryEl.querySelector<HTMLElement>('[data-field="label"]');
-    const detailEl = summaryEl.querySelector<HTMLElement>('[data-field="detail"]');
     if (iconEl) iconEl.textContent = copy.icon;
-    if (labelEl) labelEl.textContent = copy.label;
-    if (detailEl) {
-      detailEl.innerHTML = renderDetailHtml(result.state, rows);
-    }
+    if (labelEl) labelEl.textContent = resultLabel;
+    const content = summaryEl.querySelector<HTMLElement>('[data-fit-summary-content]');
+    if (content) content.innerHTML = renderFitSummaryContentHtml(summaryCopy);
     const sticky = summaryEl.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
     if (sticky) {
       sticky.dataset.fitState = result.state;
-      sticky.setAttribute('aria-label', `Fit result: ${copy.label}. View dimension details.`);
+      sticky.setAttribute('aria-label', `Fit result: ${resultLabel}. View calculation details.`);
       sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = copy.icon;
-      sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = copy.label;
+      sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = resultLabel;
       const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
       if (stickyDetail) {
-        stickyDetail.innerHTML =
-          result.state === 'fits' && summaryRow
-            ? `${unitValueHtml(Math.max(0, summaryRow.targetMarginMm))} after target`
-            : result.state === 'tight'
-              ? `Target short ${unitValueHtml(Math.abs(summaryRow?.targetMarginMm ?? 0))}`
-              : `Physical short ${unitValueHtml(Math.abs(summaryRow?.physicalMarginMm ?? 0))}`;
+        stickyDetail.innerHTML = summaryCopy.isExactFit
+          ? 'No measurement tolerance remains'
+          : summaryCopy.marginMm !== null && summaryCopy.marginLabel
+            ? `${unitValueHtml(summaryCopy.marginMm)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
+            : 'Check result details';
       }
     }
   }
@@ -544,6 +530,8 @@ function initBedroomFitCheck(): void {
     ) {
       const exampleNotice = form.querySelector<HTMLElement>('[data-fit-example-notice]');
       if (exampleNotice) exampleNotice.hidden = true;
+      const summary = document.getElementById('bedroom-fitcheck-summary');
+      if (summary?.dataset.fitOrigin) summary.dataset.fitOrigin = 'user';
     }
     updateFurnitureFieldVisibility();
     recompute();

@@ -1,0 +1,51 @@
+---
+import {
+  MEASUREMENT_DIAGRAM_COPY,
+  renderMeasurementSketchContents,
+  type MeasurementDiagram,
+} from '../../lib/fit/measurement-guidance';
+
+interface Props {
+  id: string;
+  label: string;
+  summary: string;
+  detail?: string;
+  example?: string;
+  diagram?: MeasurementDiagram;
+}
+
+const { id, label, summary, detail, example, diagram } = Astro.props;
+const diagramCopy = diagram ? MEASUREMENT_DIAGRAM_COPY[diagram] : null;
+---
+
+<div class="measurement-help" data-measurement-help={id}>
+  <p class="measurement-help__summary" id={id}>
+    {summary}
+  </p>
+  <details class="measurement-help__details">
+    <summary>{label}</summary>
+    <div class="measurement-help__content">
+      {detail && <p>{detail}</p>}
+      {example && (
+        <p class="measurement-help__example">
+          <strong>Example:</strong> {example}
+        </p>
+      )}
+      <slot />
+    </div>
+    {diagram && (
+      <figure class="measurement-help__diagram">
+        <svg
+          viewBox="0 0 280 112"
+          role="img"
+          aria-labelledby={`${id}-diagram-title ${id}-diagram-desc`}
+        >
+          <title id={`${id}-diagram-title`}>{diagramCopy?.title}</title>
+          <desc id={`${id}-diagram-desc`}>{diagramCopy?.description} Diagram is not to scale.</desc>
+          <g set:html={renderMeasurementSketchContents(diagram)} />
+        </svg>
+        <figcaption>Illustrative plan sketch; not to scale.</figcaption>
+      </figure>
+    )}
+  </details>
+</div>

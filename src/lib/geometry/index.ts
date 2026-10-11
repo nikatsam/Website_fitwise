@@ -49,6 +49,7 @@ export {
 export {
   FIT_SERVICE_DEFINITIONS,
   buildFitServicePlan,
+  evaluateFitServicePlan,
   getFitServiceDefinition,
   getFitServiceDefinitions,
   getFitServiceDefaults,
@@ -61,5 +62,7 @@ export {
   type FitServiceFieldType,
   type FitServiceMode,
   type FitServicePlan,
+  type FitServiceEvaluation,
   type FitServiceValues,
 } from './fit-services';
+export { getFitServiceMobileSteps, type FitServiceMobileStep } from './fit-service-mobile-steps';

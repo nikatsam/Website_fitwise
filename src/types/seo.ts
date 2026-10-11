@@ -16,6 +16,8 @@ export interface SeoPublication {
   title: string;
   description: string;
   h1: string;
+  /** Concise breadcrumb label when the page heading is too long for navigation. */
+  breadcrumbLabel?: string;
   /** Must equal the joined PageIntent.route. */
   canonicalPath: string;
   /** YYYY-MM-DD, editorially accurate. */

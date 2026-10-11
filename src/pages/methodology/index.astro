@@ -1,5 +1,6 @@
 ---
 import PublishedLayout from '../../components/layout/PublishedLayout.astro';
+import { FIT_STATE_BADGE_COPY } from '../../lib/fit';
 ---
 
 <PublishedLayout pageIntentId="pi-feature-methodology">
@@ -17,17 +18,15 @@ import PublishedLayout from '../../components/layout/PublishedLayout.astro';
       <strong>Target margin</strong> is available space minus the selected or sourced target. A
       positive physical margin does not mean a clearance target is met.
     </p>
-    <ul>
-      <li>
-        <strong>Fits:</strong> every hard dimension and every selected clearance target is met.
-      </li>
-      <li>
-        <strong>Tight:</strong> physical footprints fit, but at least one selected target is short.
-      </li>
-      <li>
-        <strong>Does not fit:</strong> at least one physical or enabled access dimension exceeds the
-        available space.
-      </li>
+    <ul class="fit-state-list">
+      {Object.values(FIT_STATE_BADGE_COPY).map((state) => (
+        <li>
+          <strong>
+            <span aria-hidden="true">{state.icon}</span> {state.label}:
+          </strong>{' '}
+          {state.meaning}
+        </li>
+      ))}
     </ul>
     <h2>Generic item and access review</h2>
     <p>

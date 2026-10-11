@@ -1,20 +1,27 @@
 ---
 import PublishedLayout from '../../components/layout/PublishedLayout.astro';
+import CalculatorPageShell from '../../components/layout/CalculatorPageShell.astro';
+import BeforeYouStart from '../../components/fit/BeforeYouStart.astro';
 import WorkspaceFitCheck from '../../components/fitcheck/WorkspaceFitCheck.astro';
+import { CORE_CALCULATOR_START_GUIDANCE } from '../../lib/fit/start-guidance';
 ---
 
 <PublishedLayout pageIntentId="pi-feature-workspace-hub">
-  <section class="wrapper section">
-    <h1>Will your monitors fit your desk?</h1>
-    <p>
+  <CalculatorPageShell h1="Will your monitors fit your desk?">
+    <p slot="purpose">
       Enter your desk width and monitor setup to see whether it fits comfortably, is tight, or
       doesn't fit — with a scale diagram and the assumptions behind the answer.
     </p>
-    <WorkspaceFitCheck />
-    <p>
+    <BeforeYouStart
+      slot="before-start"
+      id="workspace-before-start"
+      items={CORE_CALCULATOR_START_GUIDANCE.workspace}
+    />
+    <WorkspaceFitCheck slot="calculator" />
+    <p slot="support">
       <a href="/workspace/monitor-arm-compatibility/">Check monitor, arm and desk compatibility</a>
     </p>
-    <nav class="reference-links" aria-label="Workspace measurement references">
+    <nav slot="related" class="reference-links" aria-label="Workspace measurement references">
       <h2>Measurement references</h2>
       <ul>
         <li>
@@ -22,15 +29,11 @@ import WorkspaceFitCheck from '../../components/fitcheck/WorkspaceFitCheck.astro
         </li>
       </ul>
     </nav>
-  </section>
+  </CalculatorPageShell>
 </PublishedLayout>
 
 <style>
-  .section {
-    padding-block: var(--space-7);
-  }
-
   .reference-links {
-    margin-top: var(--space-6);
+    max-width: 82ch;
   }
 </style>

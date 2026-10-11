@@ -63,6 +63,17 @@ describe('toDimensionDisplayRows', () => {
     expect(row!.targetMarginMm).toBe(100);
   });
 
+  it('humanizes a blank constraint label rather than rendering an empty name', () => {
+    const check: DimensionCheck = {
+      dimension: 'door_width',
+      label: '  ',
+      minimumMm: 850,
+      availableMm: 800,
+    };
+    const [row] = toDimensionDisplayRows([check], evaluateFit([check]));
+    expect(row!.label).toBe('Door width');
+  });
+
   it('throws on a checks/result mismatch rather than silently misaligning rows', () => {
     const otherChecks: DimensionCheck[] = [
       { dimension: 'height', minimumMm: 100, availableMm: 200 },
@@ -103,6 +114,20 @@ describe('toDimensionDisplayRows', () => {
     expect(FIT_STATE_BADGE_COPY.needs_information).toEqual({
       icon: '?',
       label: 'Needs information',
+      meaning:
+        'A required measurement, model/manual reference or verification detail is missing, so fit cannot be confirmed.',
     });
+  });
+
+  it('exposes one canonical label and meaning for every result state', () => {
+    expect(Object.values(FIT_STATE_BADGE_COPY).map((state) => state.label)).toEqual([
+      'Fits',
+      'Tight',
+      'Does not fit',
+      'Needs information',
+    ]);
+    expect(Object.values(FIT_STATE_BADGE_COPY).every((state) => state.meaning.length > 20)).toBe(
+      true,
+    );
   });
 });

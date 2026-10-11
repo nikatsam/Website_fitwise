@@ -12,61 +12,77 @@ interface Props {
 const { rows, caption, id } = Astro.props;
 ---
 
-<table class="dimension-table" id={id}>
-  <caption class="visually-hidden">{caption}</caption>
-  <thead>
-    <tr>
-      <th scope="col">Dimension</th>
-      <th scope="col">Required</th>
-      <th scope="col">Target</th>
-      <th scope="col">Available</th>
-      <th scope="col">Physical margin</th>
-      <th scope="col">Target margin</th>
-    </tr>
-  </thead>
-  <tbody>
-    {rows.map((row) => (
-      <tr
-        data-hard-fit={row.hardFit}
-        data-recommended-fit={row.recommendedFit}
-        data-dimension={row.dimension}
-      >
-        <th scope="row" data-label="Dimension">
-          {row.label}
-        </th>
-        <td data-label="Required">
-          <UnitValue mm={row.requiredMm} id={id && `${id}-${row.dimension}-required`} />
-        </td>
-        <td data-label="Target">
-          <UnitValue mm={row.recommendedMm} id={id && `${id}-${row.dimension}-recommended`} />
-        </td>
-        <td data-label="Available">
-          <UnitValue mm={row.availableMm} id={id && `${id}-${row.dimension}-available`} />
-        </td>
-        <td data-label="Physical margin">
-          <span data-field="physical-margin-sign">
-            {row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}
-          </span>
-          <UnitValue
-            mm={Math.abs(row.physicalMarginMm)}
-            id={id && `${id}-${row.dimension}-physical-margin`}
-          />
-        </td>
-        <td data-label="Target margin">
-          <span data-field="target-margin-sign">
-            {row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}
-          </span>
-          <UnitValue
-            mm={Math.abs(row.targetMarginMm)}
-            id={id && `${id}-${row.dimension}-target-margin`}
-          />
-        </td>
+<details class="dimension-table__details" id={id && `${id}-details`}>
+  <summary>Show calculation details</summary>
+  <table class="dimension-table" id={id}>
+    <caption class="visually-hidden">{caption}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Dimension</th>
+        <th scope="col">Required</th>
+        <th scope="col">Target</th>
+        <th scope="col">Available</th>
+        <th scope="col">Physical margin</th>
+        <th scope="col">Target margin</th>
       </tr>
-    ))}
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        <tr
+          data-hard-fit={row.hardFit}
+          data-recommended-fit={row.recommendedFit}
+          data-dimension={row.dimension}
+        >
+          <th scope="row" data-label="Dimension">
+            {row.label}
+          </th>
+          <td data-label="Required">
+            <UnitValue mm={row.requiredMm} id={id && `${id}-${row.dimension}-required`} />
+          </td>
+          <td data-label="Target">
+            <UnitValue mm={row.recommendedMm} id={id && `${id}-${row.dimension}-recommended`} />
+          </td>
+          <td data-label="Available">
+            <UnitValue mm={row.availableMm} id={id && `${id}-${row.dimension}-available`} />
+          </td>
+          <td data-label="Physical margin">
+            <span data-field="physical-margin-sign">
+              {row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}
+            </span>
+            <UnitValue
+              mm={Math.abs(row.physicalMarginMm)}
+              id={id && `${id}-${row.dimension}-physical-margin`}
+            />
+          </td>
+          <td data-label="Target margin">
+            <span data-field="target-margin-sign">
+              {row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}
+            </span>
+            <UnitValue
+              mm={Math.abs(row.targetMarginMm)}
+              id={id && `${id}-${row.dimension}-target-margin`}
+            />
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</details>
 
 <style>
+  .dimension-table__details > summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    width: fit-content;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .dimension-table__details[open] > summary {
+    margin-bottom: var(--space-3);
+  }
+
   .dimension-table {
     width: 100%;
     border-collapse: collapse;

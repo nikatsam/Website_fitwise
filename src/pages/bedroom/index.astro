@@ -1,18 +1,25 @@
 ---
 import PublishedLayout from '../../components/layout/PublishedLayout.astro';
+import CalculatorPageShell from '../../components/layout/CalculatorPageShell.astro';
+import BeforeYouStart from '../../components/fit/BeforeYouStart.astro';
 import BedroomFitCheck from '../../components/fitcheck/BedroomFitCheck.astro';
+import { CORE_CALCULATOR_START_GUIDANCE } from '../../lib/fit/start-guidance';
 ---
 
 <PublishedLayout pageIntentId="pi-feature-bedroom">
-  <section class="wrapper section">
-    <h1>Will your bed fit your room?</h1>
-    <p>
+  <CalculatorPageShell h1="Will your bed fit your room?">
+    <p slot="purpose">
       Enter your measured room and mattress dimensions to see whether the layout fits, is tight, or
       does not fit. Custom dimensions are the default; sourced market-specific sizes and named frame
       examples are optional references.
     </p>
-    <BedroomFitCheck />
-    <nav class="reference-links" aria-label="Bedroom measurement references">
+    <BeforeYouStart
+      slot="before-start"
+      id="bedroom-before-start"
+      items={CORE_CALCULATOR_START_GUIDANCE.bedroom}
+    />
+    <BedroomFitCheck slot="calculator" />
+    <nav slot="related" class="reference-links" aria-label="Bedroom measurement references">
       <h2>Market-specific references</h2>
       <ul>
         <li>
@@ -23,15 +30,11 @@ import BedroomFitCheck from '../../components/fitcheck/BedroomFitCheck.astro';
         </li>
       </ul>
     </nav>
-  </section>
+  </CalculatorPageShell>
 </PublishedLayout>
 
 <style>
-  .section {
-    padding-block: var(--space-7);
-  }
-
   .reference-links {
-    margin-top: var(--space-6);
+    max-width: 82ch;
   }
 </style>

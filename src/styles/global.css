@@ -61,6 +61,122 @@ a {
   text-decoration-thickness: 1.5px;
 }
 
+input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
+select,
+textarea,
+button {
+  min-height: 2.75rem;
+}
+
+.calculator-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.calculator-split > * {
+  min-width: 0;
+}
+
+@media (min-width: 62rem) {
+  .calculator-split {
+    grid-template-columns: minmax(20rem, 0.9fr) minmax(0, 1.1fr);
+  }
+
+  .calculator-split__result {
+    position: sticky;
+    top: calc(var(--header-height, 4rem) + var(--space-4));
+    align-self: start;
+    max-height: calc(100vh - var(--header-height, 4rem) - var(--space-6));
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+}
+
+.measurement-help {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+.measurement-help__summary,
+.measurement-help__content > :first-child {
+  margin: 0;
+}
+
+.measurement-help__details summary {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.measurement-help__content {
+  max-width: 70ch;
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid var(--color-border);
+}
+
+.measurement-help__content > p {
+  margin: 0;
+}
+
+.measurement-help__example {
+  margin-top: var(--space-2) !important;
+}
+
+.measurement-help__diagram {
+  display: grid;
+  gap: var(--space-1);
+  max-width: 20rem;
+  margin: var(--space-2) 0 0;
+}
+
+.measurement-help__diagram svg {
+  width: 100%;
+  height: auto;
+  color: var(--color-text-secondary);
+}
+
+.measurement-help__diagram text {
+  fill: currentColor;
+  font: 500 10px/1.2 var(--font-mono);
+}
+
+.measurement-help__wall,
+.measurement-help__object {
+  fill: none;
+  stroke: var(--color-text-primary);
+  stroke-width: 3;
+}
+
+.measurement-help__zone {
+  fill: color-mix(in srgb, var(--color-accent-1) 7%, transparent);
+  stroke: var(--color-accent-1);
+  stroke-dasharray: 5 4;
+  stroke-width: 2;
+}
+
+.measurement-help__measure {
+  stroke: var(--color-accent-2);
+  stroke-width: 2;
+}
+
+.measurement-help__arrow {
+  fill: var(--color-accent-2);
+}
+
+.measurement-help__diagram figcaption {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
 :root[data-theme='dark'] a {
   color: #c4b5fd;
 }

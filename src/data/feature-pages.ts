@@ -10,6 +10,7 @@ export interface FeaturePageRecord {
   kind: FeaturePageKind;
   mode?: FitServiceMode;
   modeCategory?: FitServiceCategory;
+  relatedReasons?: Record<string, string>;
   intro: string;
   calculation: string;
   limitations: string[];
@@ -24,6 +25,7 @@ interface FeaturePageInput {
   title: string;
   description: string;
   h1: string;
+  breadcrumbLabel?: string;
   kind: FeaturePageKind;
   intro: string;
   calculation: string;
@@ -32,6 +34,7 @@ interface FeaturePageInput {
   modeCategory?: FitServiceCategory;
   breadcrumbIds?: string[];
   relatedPageIds?: string[];
+  relatedReasons?: Record<string, string>;
   sourceIds?: string[];
   modifiedOn?: string;
 }
@@ -56,6 +59,7 @@ function definePage(input: FeaturePageInput): FeaturePageRecord {
     title: input.title,
     description: input.description,
     h1: input.h1,
+    ...(input.breadcrumbLabel ? { breadcrumbLabel: input.breadcrumbLabel } : {}),
     canonicalPath: input.route,
     publishedOn: RELEASE_DATE,
     ...(input.modifiedOn ? { significantlyModifiedOn: input.modifiedOn } : {}),
@@ -73,6 +77,7 @@ function definePage(input: FeaturePageInput): FeaturePageRecord {
     kind: input.kind,
     ...(input.mode ? { mode: input.mode } : {}),
     ...(input.modeCategory ? { modeCategory: input.modeCategory } : {}),
+    ...(input.relatedReasons ? { relatedReasons: input.relatedReasons } : {}),
     intro: input.intro,
     calculation: input.calculation,
     limitations: input.limitations,
@@ -96,11 +101,12 @@ export const featurePages: FeaturePageRecord[] = [
     route: '/fit-services/',
     family: 'hub',
     cluster: 'other',
-    query: 'fit calculators for appliances routes and equipment',
-    title: 'Fit Services: Appliance, Route and Equipment Calculators — Fitwise.stream',
+    query: 'all fit checks and calculators',
+    title: 'All Fit Checks: Room, Garden and Specialist Calculators — Fitwise.stream',
     description:
-      'Choose a dimension-based fit service for appliances, delivery routes, workspace compatibility, TVs, gym equipment, storage, pools or vehicles.',
-    h1: 'Specialized fit checks',
+      'Browse room, outdoor, appliance, delivery, storage, recreation and vehicle fit calculators, including focused specialist checks.',
+    h1: 'All fit checks',
+    breadcrumbLabel: 'All fit checks',
     kind: 'direct',
     intro:
       'Start with a measured relationship between an object, an opening, a surface or a room. Every result separates hard dimensions from user-selected or manual-sourced targets.',
@@ -137,6 +143,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check sheds, gazebos, patio dining, greenhouses, hot tubs and outdoor layouts against usable garden dimensions.',
     h1: 'What can fit in your garden space?',
+    breadcrumbLabel: 'Garden',
     kind: 'direct',
     intro:
       'Use actual plot and clear interior measurements. Garden Fit distinguishes a structure footprint from roof overhang, maintenance space, access paths and user-entered activity zones.',
@@ -177,7 +184,7 @@ export const featurePages: FeaturePageRecord[] = [
       'The route model does not simulate turning, tilt, stairs, handles, thresholds or packaging bulges.',
       'A result is a screening calculation, not a delivery guarantee or accessibility determination.',
     ],
-    relatedPageIds: [fitServicesId, 'pi-feature-dining'],
+    relatedPageIds: [fitServicesId],
   }),
   definePage({
     id: 'pi-feature-dining',
@@ -189,6 +196,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Compare a rectangular dining table and measured chair envelopes with a room and user-selected circulation target.',
     h1: 'Will the dining table and chairs fit?',
+    breadcrumbLabel: 'Dining',
     kind: 'direct',
     intro:
       'Enter the table and chair outside dimensions. The calculation separates the table/chair footprint from extra walking space you choose.',
@@ -198,7 +206,7 @@ export const featurePages: FeaturePageRecord[] = [
       'This version models rectangular tables and equal rectangular chair envelopes.',
       'It does not evaluate comfortable seating per person, place settings, round/oval geometry, accessibility or building-code aisle widths.',
     ],
-    relatedPageIds: ['pi-feature-garden-patio-dining', 'pi-feature-fit-services-hub'],
+    relatedPageIds: ['pi-feature-garden-patio-dining'],
   }),
   definePage({
     id: workspaceId,
@@ -210,6 +218,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check monitor configurations against desk width and depth with sourced dimensions and explicit user-selected cable and working zones.',
     h1: 'Will your monitors fit your desk?',
+    breadcrumbLabel: 'Workspace',
     kind: 'direct',
     intro:
       'Compare screen or exact device widths with a measured desk, then check stand depth and the cable/keyboard zones you enter.',
@@ -242,6 +251,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check custom mattress or sourced bed dimensions against a measured room with explicit bedside, door and drawer envelopes.',
     h1: 'Will your bed fit your room?',
+    breadcrumbLabel: 'Bedroom',
     kind: 'direct',
     intro:
       'Start with a measured bed and room. Custom dimensions are available globally; market/model presets are identified as examples.',
@@ -335,6 +345,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check a measured appliance against an opening and enter installation clearances from the exact model manual.',
     h1: 'Appliance Fit',
+    breadcrumbLabel: 'Appliances',
     kind: 'hub',
     intro:
       'Appliance dimensions alone do not determine installation fit. Use outside dimensions, clear opening dimensions and the current manual for ventilation, hose, plug and service allowances.',
@@ -361,6 +372,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check measured item dimensions against door, corridor, stair and landing bottlenecks.',
     h1: 'Access and delivery-route fit',
+    breadcrumbLabel: 'Access routes',
     kind: 'hub',
     intro:
       'Measure clear openings and the narrowest route segments. The tool reports bottleneck dimensions rather than guessing whether an item can be tilted or maneuvered.',
@@ -382,6 +394,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Use actual TV dimensions, stand/console dimensions, VESA pattern and mount rating to screen fit.',
     h1: 'TV stand and wall fit',
+    breadcrumbLabel: 'TV',
     kind: 'hub',
     intro:
       'Advertised screen diagonal is not the same as the TV outside width and height. Enter exact model/manual values for the setup you will use.',
@@ -404,6 +417,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check measured gym equipment against room and ceiling dimensions with user-selected or manual-based operating zones.',
     h1: 'Home gym equipment fit',
+    breadcrumbLabel: 'Home gym',
     kind: 'hub',
     intro:
       'Separate equipment footprint from the movement space needed for the specific exercise and model.',
@@ -426,6 +440,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Estimate single-layer storage capacity from measured object and usable storage dimensions.',
     h1: 'Storage fit and capacity',
+    breadcrumbLabel: 'Storage',
     kind: 'hub',
     intro:
       'Measure the usable inside dimensions and the objects you plan to store, not nominal outside unit size.',
@@ -447,6 +462,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Compare a measured table and cue length with a room and additional space you select.',
     h1: 'Game-room fit',
+    breadcrumbLabel: 'Game room',
     kind: 'hub',
     intro:
       'Start with the outside table dimensions and cue used for play. Do not rely on table labels alone.',
@@ -467,6 +483,7 @@ export const featurePages: FeaturePageRecord[] = [
     title: 'Vehicle and Garage Fit — Fitwise.stream',
     description: 'Compare user-measured vehicle, garage, door opening and door-access dimensions.',
     h1: 'Vehicle and garage fit',
+    breadcrumbLabel: 'Vehicle/garage',
     kind: 'hub',
     intro:
       'Measure the vehicle with mirrors and accessories in the parking configuration you plan to use.',
@@ -490,6 +507,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Compare measured appliance dimensions with an opening and installation allowances from the exact model manual.',
     h1: 'Will the appliance fit its opening and installation space?',
+    breadcrumbLabel: 'Appliance installation',
     kind: 'tool',
     mode: 'appliance-install',
     modeCategory: 'core',
@@ -502,7 +520,19 @@ export const featurePages: FeaturePageRecord[] = [
       'No generic ventilation or service allowance is asserted.',
     ],
     breadcrumbIds: [appliancesId],
-    relatedPageIds: ['pi-feature-fridge-fit', 'pi-feature-washer-fit'],
+    relatedPageIds: [
+      'pi-feature-fridge-fit',
+      'pi-feature-washer-fit',
+      'pi-feature-furniture-route',
+    ],
+    relatedReasons: {
+      '/appliances/fridge-fit/':
+        'If you are checking a fridge model, compare its opening and ventilation values here.',
+      '/appliances/washer-fit/':
+        'If you are checking a washer, use its model-specific hookup and service clearances.',
+      '/access/furniture-route-fit/':
+        'After checking the installation opening, verify doors, halls, turns and stairs on the delivery route.',
+    },
   }),
   definePage({
     id: 'pi-feature-fridge-fit',
@@ -514,6 +544,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check a measured fridge against a cabinet opening, then apply clearances from its installation manual.',
     h1: 'Will this fridge fit the opening?',
+    breadcrumbLabel: 'Fridge fit',
     kind: 'tool',
     mode: 'appliance-install',
     modeCategory: 'core',
@@ -525,7 +556,11 @@ export const featurePages: FeaturePageRecord[] = [
       'Door swing, hinge reversals, water line, ventilation and delivery access need separate checks against the appliance manual and route.',
     ],
     breadcrumbIds: [appliancesId],
-    relatedPageIds: ['pi-feature-appliance-install', 'pi-feature-washer-fit'],
+    relatedPageIds: ['pi-feature-furniture-route'],
+    relatedReasons: {
+      '/access/furniture-route-fit/':
+        'If the fridge must be carried into the room, check each delivery doorway, turn and stair separately.',
+    },
   }),
   definePage({
     id: 'pi-feature-washer-fit',
@@ -537,6 +572,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Compare measured washer outside dimensions with a laundry opening and manual-specified service clearances.',
     h1: 'Will the washer fit the laundry opening?',
+    breadcrumbLabel: 'Washer fit',
     kind: 'tool',
     mode: 'appliance-install',
     modeCategory: 'core',
@@ -549,7 +585,11 @@ export const featurePages: FeaturePageRecord[] = [
       'Door swing, hookup projection and delivery route are not simulated.',
     ],
     breadcrumbIds: [appliancesId],
-    relatedPageIds: ['pi-feature-appliance-install', 'pi-feature-fridge-fit'],
+    relatedPageIds: ['pi-feature-furniture-route'],
+    relatedReasons: {
+      '/access/furniture-route-fit/':
+        'Check delivery openings and turns if the washer must travel through the home.',
+    },
   }),
   definePage({
     id: 'pi-feature-furniture-route',
@@ -561,6 +601,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check measured furniture against door, corridor, turn, stair and destination bottlenecks.',
     h1: 'Will the furniture fit through the route?',
+    breadcrumbLabel: 'Furniture delivery route',
     kind: 'tool',
     mode: 'delivery-route',
     modeCategory: 'core',
@@ -571,8 +612,12 @@ export const featurePages: FeaturePageRecord[] = [
       'No translation/rotation motion solver is used; the turn bound can reject paths movers can negotiate.',
       'Tilt, lift, handles, thresholds and packaging flex are excluded.',
     ],
-    breadcrumbIds: [accessId],
-    relatedPageIds: [fitServicesId],
+    breadcrumbIds: [fitServicesId, accessId],
+    relatedPageIds: ['pi-feature-will-it-fit'],
+    relatedReasons: {
+      '/will-it-fit/':
+        'After checking the route, compare the item with its destination space using the general fit screen.',
+    },
   }),
 
   // Workspace, TV, gym, storage, game room and vehicle service intents.
@@ -586,6 +631,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check monitor footprint, VESA pattern, arm load rating, clamp thickness and desk depth from exact manuals.',
     h1: 'Will the monitor, arm and desk work together?',
+    breadcrumbLabel: 'Monitor-arm compatibility',
     kind: 'tool',
     mode: 'workspace-compatibility',
     modeCategory: 'core',
@@ -598,7 +644,11 @@ export const featurePages: FeaturePageRecord[] = [
       'Arm reach, wall collisions, cable clearance and mounting-surface strength are not modeled.',
     ],
     breadcrumbIds: [workspaceId],
-    relatedPageIds: ['pi-p019-monitor-size-chart', 'pi-feature-tv-stand-fit'],
+    relatedPageIds: ['pi-p019-monitor-size-chart'],
+    relatedReasons: {
+      '/workspace/monitor-size-chart/':
+        'Compare screen dimensions, then use exact overall product size for the arm/desk check.',
+    },
     sourceIds: ['src-fitwise-internal-convention'],
   }),
   definePage({
@@ -611,6 +661,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check actual TV outside width/height, stand footprint, console surface or wall region and exact VESA/load limits.',
     h1: 'Will the TV fit the stand or wall space?',
+    breadcrumbLabel: 'TV stand and wall fit',
     kind: 'tool',
     mode: 'tv-fit',
     modeCategory: 'core',
@@ -622,8 +673,8 @@ export const featurePages: FeaturePageRecord[] = [
       'Stand/soundbar co-placement is checked separately, not packed or overlap-simulated.',
       'Wall construction, fasteners, stud placement and viewing distance are not assessed.',
     ],
-    breadcrumbIds: [tvId],
-    relatedPageIds: ['pi-feature-workspace-compatibility'],
+    breadcrumbIds: [fitServicesId, 'pi-feature-tv-hub'],
+    relatedPageIds: [],
   }),
   definePage({
     id: 'pi-feature-power-rack-fit',
@@ -635,6 +686,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Compare a measured rack with room width/depth/height and operating zones from the exact equipment manual.',
     h1: 'Will the power rack and operating space fit?',
+    breadcrumbLabel: 'Power rack room fit',
     kind: 'tool',
     mode: 'home-gym',
     modeCategory: 'core',
@@ -646,8 +698,14 @@ export const featurePages: FeaturePageRecord[] = [
       'No default safety clearance is supplied.',
       'Anchoring, floor loading, bar path, plates, lifting technique and equipment movement are not modeled.',
     ],
-    breadcrumbIds: [gymId],
-    relatedPageIds: ['pi-feature-vehicle-garage'],
+    breadcrumbIds: [fitServicesId, gymId],
+    relatedPageIds: ['pi-feature-furniture-route', 'pi-feature-storage-capacity'],
+    relatedReasons: {
+      '/access/furniture-route-fit/':
+        'Check the rack delivery route separately from its room footprint and operating zone.',
+      '/storage/what-fits-in-storage/':
+        'Estimate storage space for separate gym accessories; this does not combine multiple equipment footprints.',
+    },
   }),
   definePage({
     id: 'pi-feature-storage-capacity',
@@ -659,6 +717,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Estimate how many equal objects fit in a measured storage interior, with a single-layer grid and user-selected aisle.',
     h1: 'What fits in the storage space?',
+    breadcrumbLabel: 'Storage capacity',
     kind: 'tool',
     mode: 'storage',
     modeCategory: 'core',
@@ -670,8 +729,12 @@ export const featurePages: FeaturePageRecord[] = [
       'Mixed-size objects, stacking, load ratings, shelving supports and aisle route optimization are excluded.',
       'The aisle target is user-entered, not an accessibility standard.',
     ],
-    breadcrumbIds: [storageId],
+    breadcrumbIds: [fitServicesId, storageId],
     relatedPageIds: ['pi-feature-garden-shed-storage'],
+    relatedReasons: {
+      '/garden/shed-interior-storage/':
+        'For a shed, compare the actual interior and aisle with the objects you plan to store.',
+    },
   }),
   definePage({
     id: 'pi-feature-pool-table-fit',
@@ -682,6 +745,7 @@ export const featurePages: FeaturePageRecord[] = [
     title: 'Pool Table Room Fit: Table and Cue-Length Envelope — Fitwise.stream',
     description: 'Compare measured table and cue dimensions with a room and optional extra space.',
     h1: 'Will the pool table and cue fit?',
+    breadcrumbLabel: 'Pool table fit',
     kind: 'tool',
     mode: 'pool-room',
     modeCategory: 'core',
@@ -692,8 +756,12 @@ export const featurePages: FeaturePageRecord[] = [
       'Angled shots, player stance, cue elevation, pockets and furniture are not simulated.',
       'This is not a cue-trajectory or safety assessment.',
     ],
-    breadcrumbIds: [gameRoomId],
-    relatedPageIds: ['pi-feature-dining', 'pi-feature-garden-patio-dining'],
+    breadcrumbIds: [fitServicesId, gameRoomId],
+    relatedPageIds: ['pi-feature-furniture-route'],
+    relatedReasons: {
+      '/access/furniture-route-fit/':
+        'A pool-table room fit does not check delivery; measure doors, turns and stairs separately.',
+    },
   }),
   definePage({
     id: 'pi-feature-vehicle-garage',
@@ -705,6 +773,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Compare measured vehicle, garage door, parking dimensions and open-door access space.',
     h1: 'Will the vehicle and door access fit the garage?',
+    breadcrumbLabel: 'Vehicle/garage fit',
     kind: 'tool',
     mode: 'vehicle-garage',
     modeCategory: 'core',
@@ -716,8 +785,8 @@ export const featurePages: FeaturePageRecord[] = [
       'There is no vehicle dimension database.',
       'Driveway approach, steering, turning, ramps, garage tracks and door operation paths are not simulated.',
     ],
-    breadcrumbIds: [vehicleId],
-    relatedPageIds: ['pi-feature-furniture-route'],
+    breadcrumbIds: [fitServicesId, vehicleId],
+    relatedPageIds: [],
   }),
 
   // Garden sub-services.
@@ -731,6 +800,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check structure body, roof overhang, maintenance space, door projection and access path against a garden plot.',
     h1: 'Will the structure fit the garden plot?',
+    breadcrumbLabel: 'Garden structure fit',
     kind: 'tool',
     mode: 'garden-structure',
     modeCategory: 'garden',
@@ -755,6 +825,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check measured dining table/chair envelopes against usable patio or gazebo post-to-post dimensions.',
     h1: 'Will the dining layout fit under the gazebo?',
+    breadcrumbLabel: 'Patio dining fit',
     kind: 'tool',
     mode: 'garden-patio-dining',
     modeCategory: 'garden',
@@ -779,6 +850,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Estimate a single-layer grid for equal objects inside the measured usable shed interior.',
     h1: 'What fits inside the shed?',
+    breadcrumbLabel: 'Shed storage',
     kind: 'tool',
     mode: 'garden-shed-storage',
     modeCategory: 'garden',
@@ -803,6 +875,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Check a greenhouse roof footprint, garden maintenance space, staging depth, central aisle and door access.',
     h1: 'Will the greenhouse and usable aisle fit?',
+    breadcrumbLabel: 'Greenhouse layout',
     kind: 'tool',
     mode: 'garden-greenhouse',
     modeCategory: 'garden',
@@ -827,6 +900,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Compare a measured tub footprint with patio dimensions and service/cover clearances from the exact manual.',
     h1: 'Will the hot tub and its service space fit?',
+    breadcrumbLabel: 'Hot-tub fit',
     kind: 'tool',
     mode: 'garden-hot-tub',
     modeCategory: 'garden',
@@ -851,6 +925,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Compare a measured outdoor kitchen run with patio dimensions and manual-selected work/service zones.',
     h1: 'Will the outdoor kitchen and work zone fit?',
+    breadcrumbLabel: 'Outdoor kitchen fit',
     kind: 'tool',
     mode: 'garden-outdoor-kitchen',
     modeCategory: 'garden',
@@ -875,6 +950,7 @@ export const featurePages: FeaturePageRecord[] = [
     description:
       'Compare play-equipment dimensions with a plot and a use zone copied from the exact manufacturer manual.',
     h1: 'Does the play equipment fit with its manufacturer use zone?',
+    breadcrumbLabel: 'Play-equipment use zone',
     kind: 'tool',
     mode: 'garden-play-equipment',
     modeCategory: 'garden',

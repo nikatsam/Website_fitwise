@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { ALL_FIT_CHECKS_LINK, FEATURED_FIT_CHECKS, FIT_CHECK_GROUPS } from '../data/navigation';
 ---
 
 <BaseLayout
@@ -36,47 +37,37 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         What are you trying to fit? Start with the relationship: item, space, surface or opening.
       </p>
 
-      <div class="hero__cards">
-        <a class="hero__card" href="/will-it-fit/">
-          <span class="hero__card-kicker">Object → Room</span>
-          <span class="hero__card-title">Furniture, appliances or equipment</span>
-        </a>
-        <a class="hero__card" href="/bedroom/">
-          <span class="hero__card-kicker">Objects → Room</span>
-          <span class="hero__card-title">Bed, bedside tables and clearance</span>
-        </a>
-        <a class="hero__card" href="/dining/">
-          <span class="hero__card-kicker">Objects → Room</span>
-          <span class="hero__card-title">Dining table, chairs and circulation</span>
-        </a>
-        <a class="hero__card" href="/garden/">
-          <span class="hero__card-kicker">Structure → Garden</span>
-          <span class="hero__card-title">Sheds, greenhouses, gazebos and garden layouts</span>
-        </a>
-        <a class="hero__card" href="/garden/">
-          <span class="hero__card-kicker">Structure → Garden</span>
-          <span class="hero__card-title">Sheds, greenhouses, gazebos and garden layouts</span>
-        </a>
-        <a class="hero__card" href="/fit-services/">
-          <span class="hero__card-kicker">Other fit relationships</span>
-          <span class="hero__card-title">
-            Appliance, route, compatibility, TV, gym, storage, pool and garage checks
-          </span>
-        </a>
-        <a class="hero__card" href="/workspace/">
-          <span class="hero__card-kicker">Objects → Surface</span>
-          <span class="hero__card-title">Monitors and workspace layouts</span>
-        </a>
-        <a class="hero__card" href="/will-it-fit/">
-          <span class="hero__card-kicker">Object → Opening</span>
-          <span class="hero__card-title">Screen an upright doorway and corridor fit</span>
-        </a>
-        <a class="hero__card" href="/bedroom/">
-          <span class="hero__card-kicker">Operating clearance</span>
-          <span class="hero__card-title">Check a wardrobe door or dresser drawer</span>
-        </a>
+      <div class="hero__cards" aria-label="Featured fit checks">
+        {FEATURED_FIT_CHECKS.map((item) => (
+          <a class="hero__card" href={item.href}>
+            <span class="hero__card-kicker">{item.kicker}</span>
+            <span class="hero__card-title">{item.title}</span>
+          </a>
+        ))}
       </div>
     </div>
+  </section>
+
+  <section class="wrapper section fit-directory" aria-labelledby="fit-directory-heading">
+    <h2 id="fit-directory-heading">Fit checks by task</h2>
+    <p>Choose a category to see its calculators, specialist checks and supporting guides.</p>
+    <div class="fit-directory__groups">
+      {FIT_CHECK_GROUPS.map((group) => (
+        <nav class="fit-directory__group" aria-label={group.label}>
+          <h3>{group.label}</h3>
+          <ul>
+            {group.links.map((item) => (
+              <li>
+                <a href={item.href}>{item.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))}
+    </div>
+    <a class="fit-directory__all" href={ALL_FIT_CHECKS_LINK.href}>
+      Browse all fit checks and specialist modes
+    </a>
   </section>
 
   <section class="wrapper section">
@@ -264,6 +255,40 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   .section h2 {
     margin-bottom: var(--space-2);
+  }
+
+  .fit-directory__groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-4);
+    margin-block: var(--space-4);
+  }
+
+  .fit-directory__group {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+
+  .fit-directory__group h3 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-md);
+  }
+
+  .fit-directory__group ul {
+    display: grid;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fit-directory__all {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-weight: 700;
   }
 
   .reference-links {

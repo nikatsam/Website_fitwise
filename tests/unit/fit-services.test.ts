@@ -1,13 +1,24 @@
 import { describe, expect, it } from 'vitest';
+import { featurePages } from '../../src/data/feature-pages';
 import { evaluateFit } from '../../src/lib/fit';
 import {
   FIT_SERVICE_DEFINITIONS,
   buildFitServicePlan,
+  evaluateFitServicePlan,
   getFitServiceDefaults,
   type FitServiceMode,
 } from '../../src/lib/geometry';
 
 describe('Fit Services studio calculations', () => {
+  it('uses concept-only labels for multi-unit length fields', () => {
+    const fixedUnitLabels = FIT_SERVICE_DEFINITIONS.flatMap((definition) =>
+      definition.fields
+        .filter((field) => field.type === 'length' && /\(mm\b/i.test(field.label))
+        .map((field) => `${definition.mode}:${field.name}=${field.label}`),
+    );
+    expect(fixedUnitLabels).toEqual([]);
+  });
+
   it('exposes all seven requested fit relationships', () => {
     expect(
       FIT_SERVICE_DEFINITIONS.filter(
@@ -52,10 +63,63 @@ describe('Fit Services studio calculations', () => {
     expect(width?.availableMm).toBe(630);
     expect(evaluateFit(plan.checks).state).toBe('tight');
     expect(plan.reviewRequired).toHaveLength(1);
+    expect(evaluateFitServicePlan(plan).state).toBe('needs_information');
 
     values.clearanceSource = 'exact-manual';
     values.clearanceManualReference = 'Example appliance manual, clearance section';
-    expect(buildFitServicePlan('appliance-install', values).reviewRequired).toEqual([]);
+    const verifiedPlan = buildFitServicePlan('appliance-install', values);
+    expect(verifiedPlan.reviewRequired).toEqual([]);
+    expect(evaluateFitServicePlan(verifiedPlan).state).toBe('tight');
+  });
+
+  it('keeps zero installation allowance distinct from unknown clearance data', () => {
+    const values = getFitServiceDefaults('appliance-install');
+    expect(evaluateFitServicePlan(buildFitServicePlan('appliance-install', values)).state).toBe(
+      'needs_information',
+    );
+
+    values.clearanceSource = 'my-selected-allowance';
+    const selectedZeroPlan = buildFitServicePlan('appliance-install', values);
+    expect(evaluateFitServicePlan(selectedZeroPlan).state).toBe('fits');
+    expect(selectedZeroPlan.assumptions).toContain(
+      'The clearance is your own selected allowance, not a manufacturer-verified installation requirement.',
+    );
+
+    values.clearanceSource = 'exact-manual';
+    values.clearanceManualReference = 'Exact model manual, installation section';
+    expect(evaluateFitServicePlan(buildFitServicePlan('appliance-install', values)).state).toBe(
+      'fits',
+    );
+  });
+
+  it('uses identical appliance verification and dimension results on dedicated and shared routes', () => {
+    const appliancePages = featurePages.filter(
+      (page) => page.kind === 'tool' && page.mode === 'appliance-install',
+    );
+    expect(appliancePages.map((page) => page.pageIntent.route)).toEqual([
+      '/appliances/appliance-install-fit/',
+      '/appliances/fridge-fit/',
+      '/appliances/washer-fit/',
+    ]);
+
+    const values = getFitServiceDefaults('appliance-install');
+    const sharedModeEvaluation = evaluateFitServicePlan(
+      buildFitServicePlan('appliance-install', values),
+    );
+    expect(sharedModeEvaluation.state).toBe('needs_information');
+
+    for (const page of appliancePages) {
+      if (page.mode !== 'appliance-install') {
+        throw new Error(`Expected appliance mode for ${page.pageIntent.route}.`);
+      }
+      const dedicatedModeEvaluation = evaluateFitServicePlan(
+        buildFitServicePlan(page.mode, getFitServiceDefaults(page.mode)),
+      );
+      expect(dedicatedModeEvaluation.state).toBe(sharedModeEvaluation.state);
+      expect(dedicatedModeEvaluation.result.dimensions).toEqual(
+        sharedModeEvaluation.result.dimensions,
+      );
+    }
   });
 
   it('reports route bottlenecks at doors and conservative turn envelopes', () => {
