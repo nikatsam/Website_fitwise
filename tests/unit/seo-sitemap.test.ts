@@ -52,10 +52,11 @@ describe('SEO static outputs', () => {
     );
     const urls = entries.map((entry) => entry.url);
 
-    expect(urls).toHaveLength(42);
+    expect(urls).toHaveLength(43);
     for (const route of [
       '/',
       '/will-it-fit/',
+      '/rug-fit/',
       '/dining/',
       '/garden/',
       '/fit-checks/',

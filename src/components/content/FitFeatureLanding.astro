@@ -1,6 +1,8 @@
 ---
 import PageFamilyLayout from './PageFamilyLayout.astro';
 import FitServicesStudio from '../fitcheck/FitServicesStudio.astro';
+import RugFitCheck from '../fitcheck/RugFitCheck.astro';
+import { CORE_CALCULATOR_START_GUIDANCE } from '../../lib/fit/start-guidance';
 import type { BreadcrumbItem, ContentNavigationLink } from '../../lib/content';
 import type { FeaturePageRecord } from '../../data/feature-pages';
 import type { PageIntent, SeoPublication, SourceRecord } from '../../types';
@@ -21,7 +23,11 @@ const relatedLinks = links.map((link) => ({
 }));
 ---
 
-<PageFamilyLayout breadcrumb={breadcrumb} h1={publication.h1}>
+<PageFamilyLayout
+  breadcrumb={breadcrumb}
+  h1={publication.h1}
+  beforeStart={feature.toolRenderer === 'rug-fit' ? CORE_CALCULATOR_START_GUIDANCE.rug : undefined}
+>
   <p slot="purpose" class="feature-intro">
     {feature.intro}
   </p>
@@ -38,14 +44,22 @@ const relatedLinks = links.map((link) => ({
       </ul>
       <p>{feature.calculation}</p>
     </section>
-  ) : feature.mode && feature.modeCategory ? (
+  ) : feature.toolRenderer === 'rug-fit' || (feature.mode && feature.modeCategory) ? (
     <>
       <section aria-labelledby="feature-how-it-works">
         <h2 id="feature-how-it-works">How this check works</h2>
         <p>{feature.calculation}</p>
       </section>
       <div data-shell-section="calculator">
-        <FitServicesStudio category={feature.modeCategory} initialMode={feature.mode} pinnedMode />
+        {feature.toolRenderer === 'rug-fit' ? (
+          <RugFitCheck />
+        ) : feature.mode && feature.modeCategory ? (
+          <FitServicesStudio
+            category={feature.modeCategory}
+            initialMode={feature.mode}
+            pinnedMode
+          />
+        ) : null}
       </div>
       <section aria-labelledby="feature-limitations">
         <h2 id="feature-limitations">Scope and limitations</h2>

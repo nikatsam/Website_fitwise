@@ -1,7 +1,7 @@
 import type { FitServiceMode } from '../geometry/fit-services';
 
 export type MeasurementDiagram = 'fixed-span' | 'clearance-envelope' | 'route' | 'operating-zone';
-export type CoreCalculator = 'universal' | 'workspace' | 'bedroom' | 'dining';
+export type CoreCalculator = 'universal' | 'workspace' | 'bedroom' | 'dining' | 'rug';
 
 export interface MeasurementGuidance {
   label: string;
@@ -316,6 +316,53 @@ export const CORE_MEASUREMENT_GUIDANCE: Record<
       'How to choose extra walking space',
       'Measure additional space beyond the pulled-out chair envelope.',
       'This is an optional, user-selected target—not a universal aisle or accessibility standard.',
+      'clearance-envelope',
+    ),
+  },
+  rug: {
+    'rug-room-width': USABLE_INSIDE_SPAN,
+    'rug-room-depth': USABLE_INSIDE_SPAN,
+    'rug-width': makeGuidance(
+      'How to measure rug width',
+      'Measure between the rug’s left and right outer edges.',
+      'Use the actual laid-flat rug dimensions. Include fringe only if it is part of the footprint you need to fit.',
+      'fixed-span',
+    ),
+    'rug-depth': makeGuidance(
+      'How to measure rug depth',
+      'Measure between the rug’s front and rear outer edges.',
+      'Use the actual laid-flat rug dimensions rather than a room-size suggestion or nominal label.',
+      'fixed-span',
+    ),
+    'rug-wall-gap': makeGuidance(
+      'How to choose a rug-to-wall border',
+      'Enter the additional distance you personally want between every rug edge and the room walls.',
+      'This is a user-selected target, not a recommended or universal interior-design standard.',
+      'clearance-envelope',
+    ),
+    'rug-orientation': makeGuidance(
+      'How rug orientation is compared',
+      'The rug may be checked with its width along either room axis.',
+      'This tests only a 90-degree rotation of a rectangular footprint; it does not model diagonal placement, irregular shapes or furniture arrangement.',
+    ),
+    'rug-furniture-width': outsideDimensionFor('furniture or use zone', 'width'),
+    'rug-furniture-depth': outsideDimensionFor('furniture or use zone', 'depth'),
+    'rug-furniture-margin': makeGuidance(
+      'How to choose a rug border around furniture',
+      'Enter any extra rug border you personally want beyond the full measured furniture/use footprint.',
+      'This is a user-selected target, not a universal rug-sizing rule. For dining, include chair movement in the footprint only if you want that area covered.',
+      'clearance-envelope',
+    ),
+    'rug-front-overlap': makeGuidance(
+      'How to choose front-edge overlap',
+      'Measure the amount of rug you want to extend beneath the furniture from its front edge.',
+      'This tool checks the overlap value you enter; it does not locate actual legs or prescribe a styling rule.',
+      'clearance-envelope',
+    ),
+    'rug-front-extension': makeGuidance(
+      'How to measure rug extension in front',
+      'Measure how far you want the rug to extend from the furniture front edge into open floor.',
+      'This is a user-selected layout value and is not a standard minimum.',
       'clearance-envelope',
     ),
   },

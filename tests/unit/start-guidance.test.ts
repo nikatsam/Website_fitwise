@@ -7,7 +7,7 @@ import {
 
 describe('Before you start guidance', () => {
   it('provides tailored guidance for each core calculator', () => {
-    expect(Object.values(CORE_CALCULATOR_START_GUIDANCE)).toHaveLength(4);
+    expect(Object.values(CORE_CALCULATOR_START_GUIDANCE)).toHaveLength(5);
     for (const items of Object.values(CORE_CALCULATOR_START_GUIDANCE)) {
       expect(items).toHaveLength(3);
       expect(items.every((item) => item.text.trim().length > 20)).toBe(true);
@@ -24,6 +24,9 @@ describe('Before you start guidance', () => {
     );
     expect(CORE_CALCULATOR_START_GUIDANCE.dining.map((item) => item.text).join(' ')).toMatch(
       /table.*chair|chair.*table/i,
+    );
+    expect(CORE_CALCULATOR_START_GUIDANCE.rug.map((item) => item.text).join(' ')).toMatch(
+      /rug.*room|room.*rug/i,
     );
   });
 

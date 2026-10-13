@@ -517,5 +517,49 @@
     "intentStatus": "published",
     "disposition": "generated",
     "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-rug-fit",
+    "route": "/rug-fit/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-blog-index",
+    "route": "/blog/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-blog-rug-fit-room",
+    "route": "/blog/rug-fit-in-a-room/",
+    "intentStatus": "draft",
+    "disposition": "draft"
+  },
+  {
+    "pageIntentId": "pi-blog-sofa-through-doorway",
+    "route": "/blog/sofa-through-a-doorway/",
+    "intentStatus": "draft",
+    "disposition": "draft"
+  },
+  {
+    "pageIntentId": "pi-blog-dual-monitors-one-desk",
+    "route": "/blog/two-monitors-one-desk/",
+    "intentStatus": "draft",
+    "disposition": "draft"
+  },
+  {
+    "pageIntentId": "pi-blog-bed-wardrobe-clearance",
+    "route": "/blog/bed-and-wardrobe-clearance/",
+    "intentStatus": "draft",
+    "disposition": "draft"
+  },
+  {
+    "pageIntentId": "pi-blog-fridge-opening-vs-route",
+    "route": "/blog/fridge-opening-vs-delivery-route/",
+    "intentStatus": "draft",
+    "disposition": "draft"
   }
 ]

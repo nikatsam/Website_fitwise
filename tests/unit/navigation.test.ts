@@ -76,6 +76,26 @@ describe('shared site navigation taxonomy', () => {
     expect(vehicleGroup?.links.some((link) => link.href === '/vehicle/garage-fit/')).toBe(true);
   });
 
+  it('places one cross-room rug tool in Rooms & spaces and relates existing room tools to it', () => {
+    const roomsGroup = FIT_CHECK_GROUPS.find((group) => group.label === 'Rooms & spaces');
+    const rugLinks = allFitCheckLinks.filter((link) => link.href === '/rug-fit/');
+    const rugFeature = featurePages.find((page) => page.pageIntent.route === '/rug-fit/');
+    const bedroom = featurePages.find((page) => page.pageIntent.route === '/bedroom/');
+    const dining = featurePages.find((page) => page.pageIntent.route === '/dining/');
+
+    expect(rugLinks).toHaveLength(1);
+    expect(roomsGroup?.links.some((link) => link.href === '/rug-fit/')).toBe(true);
+    expect(rugFeature?.kind).toBe('tool');
+    expect(rugFeature?.toolRenderer).toBe('rug-fit');
+    expect(rugFeature?.publication.indexable).toBe(true);
+    expect(rugFeature?.publication.canonicalPath).toBe('/rug-fit/');
+    expect(rugFeature?.publication.relatedPageIds).toEqual(
+      expect.arrayContaining(['pi-feature-bedroom', 'pi-feature-dining']),
+    );
+    expect(bedroom?.publication.relatedPageIds).toContain('pi-feature-rug-fit');
+    expect(dining?.publication.relatedPageIds).toContain('pi-feature-rug-fit');
+  });
+
   it('keeps one-tool hubs out of primary journeys while preserving hub routes and mature chooser pages', () => {
     const thinHubs = [
       { route: '/access/', calculator: '/access/furniture-route-fit/' },

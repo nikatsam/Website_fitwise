@@ -5,6 +5,7 @@ export type PageFamily =
   | 'comparison'
   | 'clearance'
   | 'configuration'
+  | 'editorial'
   | 'hub';
 
 export type ContentCluster =

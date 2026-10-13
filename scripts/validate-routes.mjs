@@ -235,7 +235,7 @@ function breadcrumbLabels(source) {
   );
 }
 
-function checkVisibleBreadcrumb(route, source) {
+function checkVisibleBreadcrumb(route, source, { requireStructured = true } = {}) {
   const breadcrumbNavs = [
     ...source.matchAll(/<nav\b[^>]*aria-label="Breadcrumb"[^>]*>([\s\S]*?)<\/nav>/gi),
   ];
@@ -249,6 +249,7 @@ function checkVisibleBreadcrumb(route, source) {
     labels.length >= 2 && labels[0] === 'Home' && /aria-current="page"/.test(nav),
     `${route}: breadcrumb must show Home and the current page in order (${labels.join(' > ')}).`,
   );
+  if (!requireStructured) return;
 
   const structured = [
     ...source.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi),
@@ -300,6 +301,7 @@ checkPage('/', home, {
   heading: 'Will it fit?',
   includes: [
     '/will-it-fit/',
+    '/rug-fit/',
     '/dining/',
     '/garden/',
     '/fit-checks/',
@@ -346,6 +348,24 @@ checkPage('/will-it-fit/', universalFit, {
   ],
 });
 checkCoreCalculatorShell('/will-it-fit/', universalFit);
+
+const rugFit = await html('/rug-fit/');
+checkPage('/rug-fit/', rugFit, {
+  heading: 'Will the rug fit your room and furniture?',
+  includes: [
+    'data-rug-fitcheck-form',
+    'data-rug-diagram="rug-fitcheck-diagram"',
+    'ROOM PLAN | centered dimensional comparison',
+    'FURNITURE RELATIONSHIP | full footprint on rug',
+    'Check a user-selected front-edge overlap',
+    'Extra rug-to-wall border',
+    'rectangular comparison',
+    'data-fit-sticky',
+    'rel="canonical"',
+    'BreadcrumbList',
+  ],
+});
+checkCoreCalculatorShell('/rug-fit/', rugFit);
 
 const dining = await html('/dining/');
 checkPage('/dining/', dining, {
@@ -561,6 +581,25 @@ assert(
   ),
   '/bedroom/: example result must distinguish 140 cm physical margin from 20 cm after the selected clearance target.',
 );
+
+const blogIndex = await html('/blog/');
+checkPage('/blog/', blogIndex, {
+  heading: 'Blog articles are not released',
+  includes: ['noindex', 'not included in this production build'],
+});
+
+for (const route of [
+  '/blog/rug-fit-in-a-room/',
+  '/blog/sofa-through-a-doorway/',
+  '/blog/two-monitors-one-desk/',
+  '/blog/bed-and-wardrobe-clearance/',
+  '/blog/fridge-opening-vs-delivery-route/',
+]) {
+  assert(
+    !(await routeExists(route)),
+    `${route}: local-only article draft was emitted in the production build.`,
+  );
+}
 
 const dedicatedPages = [
   {
@@ -805,12 +844,14 @@ for (const record of routeDispositions) {
     );
     if (exists) {
       const source = await readFile(fileForRoute(record.route), 'utf8');
-      checkGlobalNavigation(record.route, source);
-      if (record.route !== '/') checkVisibleBreadcrumb(record.route, source);
+      const noindex = /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(source);
+      checkGlobalNavigation(record.route, source, { requireCurrent: !noindex });
+      if (record.route !== '/') {
+        checkVisibleBreadcrumb(record.route, source, { requireStructured: !noindex });
+      }
       if (source.includes('data-fit-services')) {
         checkSpecialistCalculatorShell(record.route, source);
       }
-      const noindex = /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(source);
       const canonical = /<link\b[^>]*rel="canonical"[^>]*href="[^"]+"[^>]*>/i.test(source);
       assert(
         noindex || canonical,

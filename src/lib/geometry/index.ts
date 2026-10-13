@@ -47,6 +47,14 @@ export {
   type DiningPlacedOrientation,
 } from './dining';
 export {
+  buildRugFitPlan,
+  type RugFitInput,
+  type RugFitPlan,
+  type RugCoverageMode,
+  type RugOrientation,
+  type RugPlacedOrientation,
+} from './rug';
+export {
   FIT_SERVICE_DEFINITIONS,
   buildFitServicePlan,
   evaluateFitServicePlan,

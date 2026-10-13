@@ -1,17 +1,19 @@
 ---
 import CalculatorPageShell from '../layout/CalculatorPageShell.astro';
 import type { BreadcrumbItem } from '../../lib/content';
+import type { BeforeYouStartItem } from '../../lib/fit/start-guidance';
 
 interface Props {
   breadcrumb: BreadcrumbItem[];
   h1: string;
+  beforeStart?: readonly BeforeYouStartItem[];
 }
 
-const { breadcrumb, h1 } = Astro.props;
+const { breadcrumb, h1, beforeStart } = Astro.props;
 const hasPurpose = Astro.slots.has('purpose');
 ---
 
-<CalculatorPageShell breadcrumb={breadcrumb} h1={h1}>
+<CalculatorPageShell breadcrumb={breadcrumb} h1={h1} beforeStart={beforeStart}>
   {hasPurpose && <slot name="purpose" slot="purpose" />}
   <slot />
 </CalculatorPageShell>

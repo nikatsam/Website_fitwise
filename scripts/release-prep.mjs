@@ -207,14 +207,35 @@ export function validateInfrastructureTemplate(template) {
   }
 
   const security = headers.ResponseHeadersPolicyConfig?.SecurityHeadersConfig ?? {};
+  const csp = security.ContentSecurityPolicy?.ContentSecurityPolicy ?? '';
   if (
     security.ContentTypeOptions?.Override !== true ||
     security.FrameOptions?.FrameOption !== 'DENY' ||
     security.StrictTransportSecurity?.AccessControlMaxAgeSec < 31536000 ||
-    !security.ContentSecurityPolicy?.ContentSecurityPolicy?.includes("default-src 'self'")
+    !csp.includes("default-src 'self'")
   ) {
     errors.push(
       'Security headers must include nosniff, DENY framing, HSTS, and a restrictive CSP.',
+    );
+  }
+  const cspDirectives = Object.fromEntries(
+    csp
+      .split(';')
+      .map((directive) => directive.trim().split(/\s+/))
+      .filter(([name]) => Boolean(name))
+      .map(([name, ...sources]) => [name, sources]),
+  );
+  const pexelsImageHost = 'https://images.pexels.com';
+  if (!cspDirectives['img-src']?.includes(pexelsImageHost)) {
+    errors.push('CSP must allow the exact Pexels image host used by the local editorial preview.');
+  }
+  if (
+    Object.entries(cspDirectives).some(
+      ([directive, sources]) => directive !== 'img-src' && sources.includes(pexelsImageHost),
+    )
+  ) {
+    errors.push(
+      'The Pexels host may only be allowed for images, not scripts, connections or framing.',
     );
   }
   if (!directoryFunction.FunctionCode?.includes("request.uri = uri + 'index.html'")) {

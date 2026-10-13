@@ -3,3 +3,4 @@ export { renderWorkspaceDiagramMarkup, type WorkspaceDiagramInput } from './rend
 export { renderBedroomDiagramMarkup, type BedroomDiagramInput } from './render-bedroom';
 export { renderDiningDiagramMarkup, type DiningDiagramInput } from './render-dining';
 export { renderUniversalDiagramMarkup, type UniversalDiagramInput } from './render-universal';
+export { renderRugDiagramMarkup, type RugDiagramInput } from './render-rug';

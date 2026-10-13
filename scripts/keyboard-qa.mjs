@@ -118,7 +118,7 @@ async function captureScreenshot(name) {
   console.log(`Browser screenshot saved: ${filePath}`);
 }
 
-async function captureRouteScreenshot(route, name, width, height, mobile) {
+async function captureRouteScreenshot(route, name, width, height, mobile, waitForImages = false) {
   if (!screenshotDirectory) return;
   await cdp('Emulation.setDeviceMetricsOverride', {
     width,
@@ -134,6 +134,13 @@ async function captureRouteScreenshot(route, name, width, height, mobile) {
   await evaluate(
     'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))',
   );
+  if (waitForImages) {
+    await evaluate(`Promise.all([...document.images].map(async (image) => {
+      image.loading = 'eager';
+      try { await image.decode(); } catch {}
+    }))`);
+  }
+  await evaluate('window.scrollTo(0, 0)');
   await delay(100);
   await captureScreenshot(name);
 }
@@ -727,6 +734,7 @@ async function smokePage(pathname, scope) {
     '/workspace/',
     '/bedroom/',
     '/will-it-fit/',
+    '/rug-fit/',
     '/dining/',
     '/fit-services/',
     '/garden/',
@@ -794,6 +802,15 @@ async function smokePage(pathname, scope) {
           shell.measurementHelpCount >= minimumHelpCount &&
           JSON.stringify(shell.steps) === JSON.stringify(['1', '2', '3']),
         `${pathname}: shared measurement help or three-step form pattern is incomplete: ${JSON.stringify(shell)}.`,
+      );
+    }
+    if (pathname === '/rug-fit/') {
+      assert(
+        shell.hasMeasurementHelp &&
+          shell.measurementHelpLinked &&
+          shell.measurementHelpCount >= 11 &&
+          JSON.stringify(shell.steps) === JSON.stringify(['1', '2']),
+        `${pathname}: rug-specific measurement help or two-step form pattern is incomplete: ${JSON.stringify(shell)}.`,
       );
     }
     await cdp('Emulation.setDeviceMetricsOverride', {
@@ -900,6 +917,7 @@ async function smokePage(pathname, scope) {
       '/workspace/',
       '/bedroom/',
       '/will-it-fit/',
+      '/rug-fit/',
       '/dining/',
       '/fit-services/',
       '/garden/',
@@ -1604,6 +1622,7 @@ async function smokePage(pathname, scope) {
   if (
     ![
       '/will-it-fit/',
+      '/rug-fit/',
       '/fit-services/',
       '/garden/',
       '/appliances/appliance-install-fit/',
@@ -1772,6 +1791,67 @@ async function smokePage(pathname, scope) {
     );
   }
 
+  if (pathname === '/rug-fit/') {
+    const collapsed = await evaluate('document.querySelector(".rug-fitcheck__advanced").open');
+    assert(!collapsed, `${pathname}: optional rug settings should start collapsed.`);
+    await tabUntil('.rug-fitcheck__advanced > summary');
+    await press(' ', 'Space', 32);
+    assert(
+      await evaluate('document.querySelector(".rug-fitcheck__advanced").open'),
+      `${pathname}: optional rug settings did not open with Space.`,
+    );
+    await press(' ', 'Space', 32);
+    assert(
+      !(await evaluate('document.querySelector(".rug-fitcheck__advanced").open')),
+      `${pathname}: optional rug settings did not close with Space.`,
+    );
+
+    await tabUntil('#rug-coverage-mode');
+    await press('ArrowDown', 'ArrowDown', 40);
+    assert(
+      !(await evaluate('document.querySelector("[data-rug-front-fields]").hidden')),
+      `${pathname}: selecting front-edge coverage did not reveal overlap inputs.`,
+    );
+    await assertAccessibleForm(`${pathname} (front-edge fields)`);
+    assert(
+      await evaluate(
+        'document.querySelector("[data-rug-diagram]")?.textContent.includes("front-edge overlap")',
+      ),
+      `${pathname}: front-edge mode did not update the relationship diagram.`,
+    );
+
+    await tabUntil('#rug-width');
+    await evaluate(`(() => {
+      const input = document.querySelector('#rug-width');
+      input.value = '6 m';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    })()`);
+    assert(
+      await evaluate(
+        'document.querySelector("#rug-fitcheck-summary").dataset.fitState === "does_not_fit"',
+      ),
+      `${pathname}: an oversized rug was not rejected against room dimensions.`,
+    );
+    assert(
+      await evaluate(
+        'document.querySelector("#rug-fitcheck-summary [data-field=label]").textContent.trim().startsWith("Your result — ")',
+      ),
+      `${pathname}: the example result did not switch to the user's result after editing.`,
+    );
+
+    await evaluate(`(() => {
+      const check = document.querySelector('#rug-check-furniture');
+      check.checked = false;
+      check.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
+    assert(
+      await evaluate(
+        'document.querySelector("[data-rug-furniture-controls]").hidden && document.querySelectorAll("#rug-fitcheck-table tbody tr").length === 2',
+      ),
+      `${pathname}: disabling furniture coverage did not switch to the two room/rug checks.`,
+    );
+  }
+
   if (
     [
       '/workspace/',
@@ -1788,7 +1868,7 @@ async function smokePage(pathname, scope) {
     ].includes(pathname)
   ) {
     const stickyState = await evaluate(`(() => {
-      const summary = document.querySelector('#workspace-fitcheck-summary, #bedroom-fitcheck-summary, #universal-fit-summary, #dining-fitcheck-summary, #fit-services-summary');
+      const summary = document.querySelector('#workspace-fitcheck-summary, #bedroom-fitcheck-summary, #universal-fit-summary, #rug-fitcheck-summary, #dining-fitcheck-summary, #fit-services-summary');
       const sticky = document.querySelector('[data-fit-sticky]');
       return { summaryState: summary?.getAttribute('data-fit-state'), stickyState: sticky?.getAttribute('data-fit-state'), summaryLabel: summary?.querySelector('[data-field=label]')?.textContent?.trim(), stickyLabel: sticky?.querySelector('[data-field=sticky-label]')?.textContent?.trim() };
     })()`);
@@ -1801,7 +1881,7 @@ async function smokePage(pathname, scope) {
 
   await tabUntil('input[data-unit-choice]:checked', 60);
   const unitInputBefore = await evaluate(`(() => {
-    const input = document.querySelector('#desk-width, #fit-item-width, [data-service-control="length"]');
+    const input = document.querySelector('#desk-width, #fit-item-width, #rug-room-width, [data-service-control="length"]');
     return input?.value ?? null;
   })()`);
   const resultBeforeUnits = await evaluate(`(() => {
@@ -1821,7 +1901,7 @@ async function smokePage(pathname, scope) {
       const imperial = document.querySelector('[data-unit="imperial"]');
       const separator = document.querySelector('[data-unit="separator"]');
       const summary = document.querySelector('.fit-summary');
-      const input = document.querySelector('#desk-width, #fit-item-width, [data-service-control="length"]');
+      const input = document.querySelector('#desk-width, #fit-item-width, #rug-room-width, [data-service-control="length"]');
       return {
         system: document.documentElement.dataset.unitSystem ?? 'metric',
         checked: document.querySelector('[data-unit-choice]:checked')?.value ?? '',
@@ -1866,19 +1946,21 @@ async function smokePage(pathname, scope) {
       ? '#desk-width'
       : pathname === '/bedroom/'
         ? '#room-width'
-        : pathname === '/dining/'
-          ? '#dining-room-width'
-          : pathname === '/fit-services/'
-            ? '#service-itemWidth'
-            : pathname === '/garden/'
-              ? '#service-plotWidth'
-              : pathname.startsWith('/appliances/')
-                ? '#service-itemWidth'
-                : pathname === '/game-room/pool-table-fit/'
-                  ? '#service-tableWidth'
-                  : pathname === '/vehicle/garage-fit/'
-                    ? '#service-vehicleWidth'
-                    : '#fit-item-width';
+        : pathname === '/rug-fit/'
+          ? '#rug-room-width'
+          : pathname === '/dining/'
+            ? '#dining-room-width'
+            : pathname === '/fit-services/'
+              ? '#service-itemWidth'
+              : pathname === '/garden/'
+                ? '#service-plotWidth'
+                : pathname.startsWith('/appliances/')
+                  ? '#service-itemWidth'
+                  : pathname === '/game-room/pool-table-fit/'
+                    ? '#service-tableWidth'
+                    : pathname === '/vehicle/garage-fit/'
+                      ? '#service-vehicleWidth'
+                      : '#fit-item-width';
   const targetServiceStep = await evaluate(
     `(() => { const section = document.querySelector(${JSON.stringify(dimensionField)})?.closest('[data-fit-service-step]'); return section ? Number(section.dataset.stepIndex) : null; })()`,
   );
@@ -2095,6 +2177,7 @@ try {
     `Small positive margin did not follow all unit modes: ${JSON.stringify(marginUnitModes)}.`,
   );
   console.log('Universal zero-margin and small-positive-margin result distinction passed.');
+  await smokePage('/rug-fit/', 'rug-fitcheck');
   await smokePage('/dining/', 'dining-fitcheck');
   await smokePage('/fit-services/', 'fit-services');
   await smokePage('/appliances/appliance-install-fit/', 'fit-services');
@@ -2451,6 +2534,149 @@ try {
     );
   }
   console.log(`Live sitemap crawl QA passed for ${sitemapRoutes.length} indexable routes.`);
+  if (process.env.FITWISE_QA_BLOG_PREVIEW === '1') {
+    const blogPreviewRoutes = [
+      {
+        route: '/blog/rug-fit-in-a-room/',
+        tool: '/rug-fit/',
+        prefix: '22-blog-rug-fit',
+      },
+      {
+        route: '/blog/sofa-through-a-doorway/',
+        tool: '/access/furniture-route-fit/',
+        prefix: '25-blog-sofa-route',
+      },
+      {
+        route: '/blog/two-monitors-one-desk/',
+        tool: '/workspace/',
+        prefix: '28-blog-dual-monitors',
+      },
+      {
+        route: '/blog/bed-and-wardrobe-clearance/',
+        tool: '/bedroom/',
+        prefix: '31-blog-bed-wardrobe',
+      },
+      {
+        route: '/blog/fridge-opening-vs-delivery-route/',
+        tool: '/appliances/fridge-fit/',
+        prefix: '34-blog-fridge-route',
+      },
+    ];
+
+    await cdp('Page.navigate', { url: new URL('/blog/', baseUrl).toString() });
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      if ((await evaluate('document.readyState')) === 'complete') break;
+      await delay(50);
+    }
+    const blogIndex = await evaluate(`(async () => ({
+      status: await fetch(location.href).then((response) => response.status),
+      noindex: document.querySelector('meta[name="robots"]')?.content?.includes('noindex') ?? false,
+      title: document.querySelector('h1')?.textContent.trim() ?? '',
+      articlePaths: [...new Set([...document.querySelectorAll('a[href^="/blog/"]')].map((link) => new URL(link.href).pathname).filter((path) => path !== '/blog/'))],
+    }))()`);
+    assert(
+      blogIndex.status === 200 &&
+        blogIndex.noindex &&
+        blogIndex.articlePaths.length === 5 &&
+        blogIndex.title === 'Fit stories: the measurements behind everyday fit problems',
+      `Local blog preview index failed: ${JSON.stringify(blogIndex)}.`,
+    );
+    await assertAccessibleForm('/blog/');
+    await tabUntil('a[href="/blog/rug-fit-in-a-room/"]');
+    assert(
+      await evaluate('document.activeElement?.getAttribute("href") === "/blog/rug-fit-in-a-room/"'),
+      'Blog preview article links are not reachable by keyboard.',
+    );
+    if (screenshotDirectory) {
+      await captureRouteScreenshot('/blog/', '20-blog-index-desktop', 1440, 1000, false);
+      await captureRouteScreenshot('/blog/', '21-blog-index-mobile', 390, 844, true);
+    }
+
+    for (const article of blogPreviewRoutes) {
+      await cdp('Page.navigate', { url: new URL(article.route, baseUrl).toString() });
+      for (let attempt = 0; attempt < 120; attempt += 1) {
+        if ((await evaluate('document.readyState')) === 'complete') break;
+        await delay(50);
+      }
+      const articleCheck = await evaluate(`(async () => {
+        const image = document.querySelector('.blog-article__hero img');
+        if (image) {
+          image.loading = 'eager';
+          try { await image.decode(); } catch {}
+        }
+        return {
+          status: await fetch(location.href).then((response) => response.status),
+          noindex: document.querySelector('meta[name="robots"]')?.content?.includes('noindex') ?? false,
+          canonical: document.querySelector('link[rel="canonical"]')?.href ?? null,
+          h1: document.querySelector('h1')?.textContent.trim() ?? '',
+          imageAlt: image?.alt ?? '',
+          imageWidth: image?.naturalWidth ?? 0,
+          photoCredit: Boolean(document.querySelector('.blog-article__hero figcaption a[href*="pexels.com"]')),
+          toolLink: Boolean(document.querySelector('a[href="${article.tool}"]')),
+          scenarioNotice: document.querySelector('.blog-article__scenario-note')?.textContent.includes('not a customer story') ?? false,
+          workedExample: document.querySelector('.blog-worked-example h2')?.textContent.trim() ?? '',
+          workedResult: document.querySelector('.blog-worked-example__state')?.textContent.trim() ?? '',
+          workedCheckCount: document.querySelectorAll('.blog-worked-example__checks section').length,
+          viewport: innerWidth,
+          pageWidth: document.documentElement.scrollWidth,
+        };
+      })()`);
+      assert(
+        articleCheck.status === 200 &&
+          articleCheck.noindex &&
+          articleCheck.canonical === null &&
+          articleCheck.h1 &&
+          articleCheck.imageAlt &&
+          articleCheck.imageWidth > 0 &&
+          articleCheck.photoCredit &&
+          articleCheck.toolLink &&
+          articleCheck.scenarioNotice &&
+          articleCheck.workedExample &&
+          articleCheck.workedResult.includes('FitWise output for those inputs:') &&
+          articleCheck.workedCheckCount > 0 &&
+          articleCheck.pageWidth <= articleCheck.viewport + 1,
+        `${article.route}: blog local-preview check failed: ${JSON.stringify(articleCheck)}.`,
+      );
+      await assertAccessibleForm(article.route);
+      await tabUntil(`a[href="${article.tool}"]`);
+      assert(
+        await evaluate('document.activeElement?.getAttribute("href") === "' + article.tool + '"'),
+        `${article.route}: primary tool link is not reachable by keyboard.`,
+      );
+      if (screenshotDirectory) {
+        await captureRouteScreenshot(
+          article.route,
+          `${article.prefix}-desktop`,
+          1440,
+          1000,
+          false,
+          true,
+        );
+        await captureRouteScreenshot(
+          article.route,
+          `${article.prefix}-mobile`,
+          390,
+          844,
+          true,
+          true,
+        );
+        await evaluate(
+          `document.querySelector('.blog-article__hero')?.scrollIntoView({ block: 'center' })`,
+        );
+        await delay(100);
+        await captureScreenshot(`${article.prefix}-mobile-photo`);
+        await evaluate(
+          `document.querySelector('.blog-worked-example')?.scrollIntoView({ block: 'center' })`,
+        );
+        await delay(100);
+        await captureScreenshot(`${article.prefix}-mobile-worked-example`);
+      }
+    }
+    console.log(
+      'Local noindex blog preview QA passed for one index and five articles, including Pexels image loads.',
+    );
+  }
+
   await cdp('Page.navigate', {
     url: new URL('/storage/what-fits-in-storage/', baseUrl).toString(),
   });
@@ -2526,17 +2752,63 @@ try {
       1000,
       false,
     );
-    await evaluate(
-      'document.querySelector(".universal-fitcheck__visual")?.scrollIntoView({ block: "center" })',
-    );
+    await evaluate(`(() => {
+      const visual = document.querySelector('.universal-fitcheck__visual');
+      if (!visual) return;
+      visual.scrollIntoView({ block: 'start' });
+      const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+      window.scrollBy(0, visual.getBoundingClientRect().top - headerBottom - 12);
+    })()`);
     await delay(100);
     await captureScreenshot('00-universal-footprint-desktop-detail');
     await captureRouteScreenshot('/will-it-fit/', '00-universal-footprint-mobile', 390, 844, true);
-    await evaluate(
-      'document.querySelector(".universal-fitcheck__visual")?.scrollIntoView({ block: "center" })',
-    );
+    await evaluate(`(() => {
+      const visual = document.querySelector('.universal-fitcheck__visual');
+      if (!visual) return;
+      visual.scrollIntoView({ block: 'start' });
+      const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+      window.scrollBy(0, visual.getBoundingClientRect().top - headerBottom - 12);
+    })()`);
     await delay(100);
     await captureScreenshot('00-universal-footprint-mobile-detail');
+    await captureRouteScreenshot(
+      '/rug-fit/',
+      '13-rug-fit-full-footprint-desktop',
+      1440,
+      1000,
+      false,
+    );
+    await evaluate(`(() => {
+      const visual = document.querySelector('.rug-fitcheck__visual');
+      if (!visual) return;
+      visual.scrollIntoView({ block: 'start' });
+      const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+      window.scrollBy(0, visual.getBoundingClientRect().top - headerBottom - 12);
+    })()`);
+    await delay(100);
+    await captureScreenshot('14-rug-fit-full-footprint-desktop-detail');
+    await captureRouteScreenshot('/rug-fit/', '14-rug-fit-full-footprint-mobile', 390, 844, true);
+    await evaluate(`(() => {
+      const visual = document.querySelector('.rug-fitcheck__visual');
+      if (!visual) return;
+      visual.scrollIntoView({ block: 'start' });
+      const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+      window.scrollBy(0, visual.getBoundingClientRect().top - headerBottom - 12);
+    })()`);
+    await delay(100);
+    await captureScreenshot('15-rug-fit-full-footprint-mobile-detail');
+    await evaluate(`(() => {
+      const mode = document.getElementById('rug-coverage-mode');
+      mode.value = 'front-edge';
+      mode.dispatchEvent(new Event('change', { bubbles: true }));
+      const visual = document.querySelector('.rug-fitcheck__visual');
+      if (!visual) return;
+      visual.scrollIntoView({ block: 'start' });
+      const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+      window.scrollBy(0, visual.getBoundingClientRect().top - headerBottom - 12);
+    })()`);
+    await delay(100);
+    await captureScreenshot('16-rug-fit-front-edge-mobile-detail');
     await captureRouteScreenshot('/fit-checks/', '01-fit-checks-desktop', 1440, 1000, false);
     await captureRouteScreenshot('/fit-checks/', '02-fit-checks-mobile', 390, 844, true);
     await captureRouteScreenshot('/fit-checks/', '03-fit-checks-mobile-320', 320, 740, true);

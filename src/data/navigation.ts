@@ -17,6 +17,7 @@ const fitCheckLinks = {
   workspace: { href: '/workspace/', label: 'Workspace' },
   bedroom: { href: '/bedroom/', label: 'Bedroom' },
   dining: { href: '/dining/', label: 'Dining' },
+  rugFit: { href: '/rug-fit/', label: 'Rug + furniture fit' },
   garden: { href: '/garden/', label: 'Garden' },
   appliances: { href: '/appliances/', label: 'Appliances' },
   tv: { href: '/tv/tv-stand-fit/', label: 'TV stand and mount' },
@@ -51,7 +52,12 @@ export const ADVANCED_FIT_CHECK_LINK = fitCheckLinks.advanced;
 export const FIT_CHECK_GROUPS: NavigationGroup[] = [
   {
     label: 'Rooms & spaces',
-    links: [fitCheckLinks.workspace, fitCheckLinks.bedroom, fitCheckLinks.dining],
+    links: [
+      fitCheckLinks.workspace,
+      fitCheckLinks.bedroom,
+      fitCheckLinks.dining,
+      fitCheckLinks.rugFit,
+    ],
     specialistGroups: [{ label: 'Workspace tools', links: [fitCheckLinks.monitorArm] }],
   },
   {

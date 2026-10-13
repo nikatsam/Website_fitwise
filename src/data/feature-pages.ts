@@ -8,6 +8,7 @@ export interface FeaturePageRecord {
   pageIntent: PageIntent;
   publication: SeoPublication;
   kind: FeaturePageKind;
+  toolRenderer?: 'rug-fit';
   mode?: FitServiceMode;
   modeCategory?: FitServiceCategory;
   relatedReasons?: Record<string, string>;
@@ -32,11 +33,15 @@ interface FeaturePageInput {
   limitations: string[];
   mode?: FitServiceMode;
   modeCategory?: FitServiceCategory;
+  toolRenderer?: 'rug-fit';
   breadcrumbIds?: string[];
   relatedPageIds?: string[];
   relatedReasons?: Record<string, string>;
   sourceIds?: string[];
   modifiedOn?: string;
+  publishedOn?: string;
+  justification?: string;
+  intentEvidence?: string;
 }
 
 const RELEASE_DATE = '2026-10-10';
@@ -51,6 +56,7 @@ function definePage(input: FeaturePageInput): FeaturePageRecord {
     entityIds: [],
     status: 'published',
     justification:
+      input.justification ??
       'Owner-directed feature release on 2026-10-10. The page has a unique server-rendered calculator mode, worked sample, formula/assumption copy and explicit limitations; query demand remains owner-unverified.',
   };
   const publication: SeoPublication = {
@@ -61,7 +67,7 @@ function definePage(input: FeaturePageInput): FeaturePageRecord {
     h1: input.h1,
     ...(input.breadcrumbLabel ? { breadcrumbLabel: input.breadcrumbLabel } : {}),
     canonicalPath: input.route,
-    publishedOn: RELEASE_DATE,
+    publishedOn: input.publishedOn ?? RELEASE_DATE,
     ...(input.modifiedOn ? { significantlyModifiedOn: input.modifiedOn } : {}),
     breadcrumbIds: input.breadcrumbIds ?? [],
     relatedPageIds: input.relatedPageIds ?? [],
@@ -69,12 +75,14 @@ function definePage(input: FeaturePageInput): FeaturePageRecord {
     language: 'en',
     sourceIds: input.sourceIds ?? ['src-fitwise-internal-convention'],
     intentEvidence:
+      input.intentEvidence ??
       "Published at the site owner's explicit direction to index the complete feature set. Search Console query data is unavailable; the page provides a distinct user-input calculation, assumptions and limitations rather than a product specification claim.",
   };
   return {
     pageIntent,
     publication,
     kind: input.kind,
+    ...(input.toolRenderer ? { toolRenderer: input.toolRenderer } : {}),
     ...(input.mode ? { mode: input.mode } : {}),
     ...(input.modeCategory ? { modeCategory: input.modeCategory } : {}),
     ...(input.relatedReasons ? { relatedReasons: input.relatedReasons } : {}),
@@ -95,6 +103,7 @@ const gymId = 'pi-feature-home-gym-hub';
 const storageId = 'pi-feature-storage-hub';
 const gameRoomId = 'pi-feature-game-room-hub';
 const vehicleId = 'pi-feature-vehicle-hub';
+const rugFitId = 'pi-feature-rug-fit';
 
 export const featurePages: FeaturePageRecord[] = [
   definePage({
@@ -154,6 +163,7 @@ export const featurePages: FeaturePageRecord[] = [
       storageId,
       gameRoomId,
       vehicleId,
+      rugFitId,
       fitServicesId,
     ],
     sourceIds: ['src-fitwise-internal-convention'],
@@ -231,7 +241,13 @@ export const featurePages: FeaturePageRecord[] = [
       'This version models rectangular tables and equal rectangular chair envelopes.',
       'It does not evaluate comfortable seating per person, place settings, round/oval geometry, accessibility or building-code aisle widths.',
     ],
-    relatedPageIds: ['pi-feature-garden-patio-dining'],
+    relatedPageIds: ['pi-feature-garden-patio-dining', rugFitId],
+    relatedReasons: {
+      '/garden/patio-dining-fit/':
+        'For outdoor table-to-gazebo post spacing, use the patio dining check.',
+      '/rug-fit/':
+        'Compare a measured rug with the dining table/chair-use footprint you want to cover.',
+    },
   }),
   definePage({
     id: workspaceId,
@@ -286,13 +302,54 @@ export const featurePages: FeaturePageRecord[] = [
       'Frame overhang and product dimensions vary by model.',
       'The clearance targets are planning assumptions, not universal minima or local code requirements.',
     ],
-    relatedPageIds: ['pi-p039-us-bed-size-dimensions', 'pi-p040-uk-bed-size-dimensions'],
+    relatedPageIds: ['pi-p039-us-bed-size-dimensions', 'pi-p040-uk-bed-size-dimensions', rugFitId],
+    relatedReasons: {
+      '/rug-fit/': 'Compare a rug with the measured bed footprint or use zone you want to cover.',
+    },
     sourceIds: [
       'src-sleep-foundation-us-mattress-sizes',
       'src-ikea-uk-malm-double',
       'src-ikea-uk-malm-king',
       'src-sleep-foundation-bedroom-clearance',
     ],
+  }),
+  definePage({
+    id: rugFitId,
+    route: '/rug-fit/',
+    family: 'configuration',
+    cluster: 'living',
+    query: 'will a rug fit in my room and under furniture',
+    title: 'Rug and Furniture Fit Calculator — Fitwise.stream',
+    description:
+      'Compare a measured rectangular rug with a room and an optional furniture/use footprint. Check full coverage or a user-selected front-edge overlap with a proportional diagram.',
+    h1: 'Will the rug fit your room and furniture?',
+    breadcrumbLabel: 'Rug + furniture fit',
+    kind: 'tool',
+    toolRenderer: 'rug-fit',
+    intro:
+      'Use one cross-room tool for a rug in a living room, bedroom, dining room or another rectangular space. Enter the rug and room dimensions, then optionally check a measured furniture/use footprint.',
+    calculation:
+      'The tool tests both axis-aligned rug orientations against the measured room. It separately compares the rug with either a complete furniture/use footprint or a user-selected front-edge overlap and projection.',
+    limitations: [
+      'The room view centers the rug for a proportional comparison; it is not a furniture placement or floor-plan designer.',
+      'Rooms, rugs and furniture/use zones are treated as rectangles. Irregular shapes, diagonal placement, actual rug materials and exact furniture-leg locations are not modelled.',
+      'Wall borders, furniture borders, front overlap and forward projection are user-selected layout values, not style recommendations or universal standards.',
+      'For dining, include the chair-use area only if you want that complete measured zone on the rug; no seating or comfort rule is inferred.',
+    ],
+    breadcrumbIds: [fitChecksDirectoryId],
+    relatedPageIds: [fitChecksDirectoryId, 'pi-feature-bedroom', 'pi-feature-dining'],
+    relatedReasons: {
+      '/fit-checks/': 'Browse the other fit calculators by task.',
+      '/bedroom/': 'Check a complete bed and bedroom layout with the bedroom-specific tool.',
+      '/dining/':
+        'Check a dining table, pulled-out chair envelopes and room circulation separately.',
+    },
+    sourceIds: ['src-fitwise-internal-convention'],
+    publishedOn: '2026-10-13',
+    justification:
+      'Owner-requested single cross-room rug-fit tool. It uses user-entered dimensions and explicit geometry rather than product presets; search demand remains unverified.',
+    intentEvidence:
+      'Published at the owner’s explicit request as one canonical tool linked from Rooms & spaces, Bedroom and Dining. It is not split into room-specific duplicate pages; search-volume evidence is unavailable.',
   }),
   definePage({
     id: 'pi-feature-about',

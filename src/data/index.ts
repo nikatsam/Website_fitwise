@@ -10,6 +10,7 @@ import { seoPublications } from './seo-publications';
 import { routeDispositions } from './route-dispositions';
 import { buildFamilySeoPublications } from './family-seo-publications';
 import { featurePageIntents, featureSeoPublications } from './feature-pages';
+import { blogPageIntents, blogSeoPublications } from './blog-posts';
 
 export { featurePages, featurePageByIntentId } from './feature-pages';
 
@@ -29,7 +30,7 @@ const dataWithoutSeo = {
   ],
   clearanceRules: [...clearanceRules, ...bedroomClearanceRules],
   relationships: [],
-  pageIntents: [...pageIntents, ...bedroomPageIntents, ...featurePageIntents],
+  pageIntents: [...pageIntents, ...bedroomPageIntents, ...featurePageIntents, ...blogPageIntents],
   routeDispositions,
 };
 
@@ -38,6 +39,7 @@ export const dataset: Dataset = {
   seoPublications: [
     ...seoPublications,
     ...featureSeoPublications,
+    ...blogSeoPublications,
     ...buildFamilySeoPublications(dataWithoutSeo),
   ],
 };

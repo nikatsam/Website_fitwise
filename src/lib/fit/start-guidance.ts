@@ -50,6 +50,17 @@ export const CORE_CALCULATOR_START_GUIDANCE = {
       'Choose any extra walking-space target for your layout; it is a planning input, not a universal standard.',
     ),
   ],
+  rug: [
+    required(
+      'Measure the room’s clear inside width/depth and the rug’s actual outside width/depth.',
+    ),
+    required(
+      'If checking furniture coverage, measure the full footprint/use zone or the front-edge overlap you want.',
+    ),
+    verification(
+      'Confirm dimensions on the rug and furniture labels; the diagram is a dimensional comparison, not a floor plan or styling recommendation.',
+    ),
+  ],
 } as const satisfies Record<string, readonly BeforeYouStartItem[]>;
 
 export function getFitServiceStartGuidance(

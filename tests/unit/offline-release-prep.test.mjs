@@ -44,6 +44,35 @@ describe('offline cloud release preparation', () => {
     expect(validateInfrastructureTemplate(template)).toEqual([]);
   });
 
+  it('allows Pexels only as an image source for the local blog preview', async () => {
+    const template = JSON.parse(await readFile(templatePath, 'utf8'));
+    const csp =
+      template.Resources.SiteSecurityHeadersPolicy.Properties.ResponseHeadersPolicyConfig
+        .SecurityHeadersConfig.ContentSecurityPolicy;
+    expect(csp.ContentSecurityPolicy).toMatch(/img-src[^;]*https:\/\/images\.pexels\.com/);
+
+    const missingImageHost = JSON.parse(JSON.stringify(template));
+    missingImageHost.Resources.SiteSecurityHeadersPolicy.Properties.ResponseHeadersPolicyConfig.SecurityHeadersConfig.ContentSecurityPolicy.ContentSecurityPolicy =
+      csp.ContentSecurityPolicy.replace(' https://images.pexels.com', '');
+    expect(
+      validateInfrastructureTemplate(missingImageHost).some((error) =>
+        error.includes('exact Pexels image host'),
+      ),
+    ).toBe(true);
+
+    const scriptHost = JSON.parse(JSON.stringify(template));
+    scriptHost.Resources.SiteSecurityHeadersPolicy.Properties.ResponseHeadersPolicyConfig.SecurityHeadersConfig.ContentSecurityPolicy.ContentSecurityPolicy =
+      csp.ContentSecurityPolicy.replace(
+        "script-src 'self' 'unsafe-inline'",
+        "script-src 'self' 'unsafe-inline' https://images.pexels.com",
+      );
+    expect(
+      validateInfrastructureTemplate(scriptHost).some((error) =>
+        error.includes('may only be allowed for images'),
+      ),
+    ).toBe(true);
+  });
+
   it('restricts OIDC deploy trust to the production GitHub environment and resource scope', async () => {
     const template = JSON.parse(await readFile(oidcTemplatePath, 'utf8'));
     expect(validateOidcDeployRoleTemplate(template)).toEqual([]);

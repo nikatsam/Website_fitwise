@@ -1,13 +1,16 @@
 ---
 import type { BreadcrumbItem } from '../../lib/content';
+import BeforeYouStart from '../fit/BeforeYouStart.astro';
+import type { BeforeYouStartItem } from '../../lib/fit/start-guidance';
 
 interface Props {
   h1: string;
   breadcrumb?: BreadcrumbItem[];
   eyebrow?: string;
+  beforeStart?: readonly BeforeYouStartItem[];
 }
 
-const { h1, breadcrumb, eyebrow } = Astro.props;
+const { h1, breadcrumb, eyebrow, beforeStart } = Astro.props;
 const hasPurpose = Astro.slots.has('purpose');
 const hasBeforeStart = Astro.slots.has('before-start');
 const hasExample = Astro.slots.has('example');
@@ -46,6 +49,14 @@ const hasRelated = Astro.slots.has('related');
       </div>
     )}
   </header>
+  {beforeStart && (
+    <BeforeYouStart
+      id="calculator-page-before-start"
+      items={beforeStart}
+      spansGrid
+      shellSection="before-start"
+    />
+  )}
   {hasBeforeStart && (
     <section class="calculator-page-shell__guidance" data-shell-section="before-start">
       <slot name="before-start" />

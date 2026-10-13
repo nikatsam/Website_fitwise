@@ -5,15 +5,17 @@ interface Props {
   id: string;
   items: readonly BeforeYouStartItem[];
   spansGrid?: boolean;
+  shellSection?: string;
 }
 
-const { id, items, spansGrid = false } = Astro.props;
+const { id, items, spansGrid = false, shellSection } = Astro.props;
 ---
 
 <section
   class:list={['before-you-start', { 'before-you-start--wide': spansGrid }]}
   id={id}
   data-before-you-start
+  data-shell-section={shellSection}
   aria-labelledby={`${id}-heading`}
 >
   <h2 id={`${id}-heading`}>Before you start</h2>

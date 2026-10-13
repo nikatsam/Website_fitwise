@@ -62,3 +62,9 @@ Audit and update critical dataset entries when physical standards/manufacturer s
 - Bing SERP checks for `monitor stand depth desk viewing distance screen size` returned general monitor retail pages, not a sourced combined stand/viewing/cable model.
 - DuckDuckGo automated SERP retrieval presented a human-verification challenge for repeat queries. No search-volume figures were recorded or inferred.
 - These observations inform content differentiation only; they do not satisfy the Search Console evidence gate. The desk/room/furniture guides added from existing published PageIntents remain `noindex`, and draft room-size PageIntents remain drafts and outside the sitemap until query evidence is available.
+
+### Story-Led FitWise Blog Pilot — 2026-10-13
+
+`specs/BLOG_CONTENT_SPEC.md` adds a story-led blog as a supporting content type for FitWise tools. The first five local-review drafts cover rug/furniture fit, sofa delivery route, dual-monitor desk fit, bed/wardrobe clearance, and refrigerator installation versus delivery access. Each story must be clearly illustrative (not a fabricated customer testimonial), explain real measurements and limits, link to its relevant FitWise check, show a checked hypothetical tool result, and include verified free-license media attribution.
+
+The five pilot posts are exposed only by the local Astro development server; the static production build emits a noindex `/blog/` placeholder and omits all five article routes. They are `noindex` and excluded from the sitemap pending owner review, a completed SEO page brief, unique-intent/SERP evidence, sourcing and editorial approval. Pexels is the image source for the local preview; the exact photo page, creator and Pexels License are recorded with each article. These local drafts are not a claim of search demand or an approval to publish/index them.

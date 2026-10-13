@@ -1,0 +1,178 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { BLOG_POSTS, BLOG_PREVIEW_STATUS } from '../../data/blog-posts';
+
+interface Props {
+  previewEnabled: boolean;
+}
+
+const { previewEnabled } = Astro.props;
+---
+
+<BaseLayout
+  title={
+    previewEnabled
+      ? 'FitWise Blog Preview — Fit Stories for Review'
+      : 'Blog Preview Unavailable — FitWise'
+  }
+  description={
+    previewEnabled
+      ? 'Local preview of five draft stories about measuring rooms, furniture and delivery routes with FitWise tools.'
+      : 'The FitWise blog articles are available only on the local development server and are not released.'
+  }
+  noindex
+>
+  <main class="blog-index wrapper">
+    <nav class="blog-index__breadcrumb" aria-label="Breadcrumb">
+      <ol>
+        <li>
+          <a href="/">Home</a>
+        </li>
+        <li>
+          <span aria-hidden="true"> / </span>
+          <span aria-current="page">Blog preview</span>
+        </li>
+      </ol>
+    </nav>
+    <header class="blog-index__header">
+      <p class="blog-index__eyebrow">{BLOG_PREVIEW_STATUS}</p>
+      <h1>
+        {previewEnabled
+          ? 'Fit stories: the measurements behind everyday fit problems'
+          : 'Blog articles are not released'}
+      </h1>
+      <p>
+        {previewEnabled
+          ? 'Five illustrative stories connect real measurement questions to the matching FitWise checks. They are local review drafts, not customer testimonials or published search pages.'
+          : 'The five draft articles are available only on the local development server. They are not included in this production build.'}
+      </p>
+    </header>
+    {previewEnabled && (
+      <ol class="blog-index__list">
+        {BLOG_POSTS.map((post) => (
+          <li>
+            <article class="blog-index__card">
+              <p class="blog-index__category">{post.categoryLabel}</p>
+              <h2>
+                <a href={post.route}>{post.h1}</a>
+              </h2>
+              <p>{post.excerpt}</p>
+              <a class="blog-index__read" href={post.route}>
+                Read draft <span aria-hidden="true">→</span>
+              </a>
+            </article>
+          </li>
+        ))}
+      </ol>
+    )}
+    <aside class="blog-index__note">
+      <p>
+        {previewEnabled
+          ? 'All scenarios are invented for explanation. Pexels photos are credited on each article. The images load from the Pexels CDN for this local preview; the blog and its articles are noindex and excluded from the sitemap.'
+          : 'This noindex placeholder contains no articles. Production publication requires a separate editorial and SEO approval.'}
+      </p>
+    </aside>
+  </main>
+</BaseLayout>
+
+<style>
+  .blog-index {
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-8);
+  }
+
+  .blog-index__breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+  }
+
+  .blog-index__breadcrumb a {
+    color: var(--color-text-secondary);
+  }
+
+  .blog-index__header {
+    max-width: 54rem;
+    margin: var(--space-7) auto;
+  }
+
+  .blog-index__eyebrow,
+  .blog-index__category {
+    color: var(--color-accent-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .blog-index__header h1 {
+    max-width: 24ch;
+    font-family: var(--font-heading);
+    font-size: var(--fs-3xl);
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  .blog-index__header p:last-child {
+    max-width: 68ch;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  .blog-index__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: var(--space-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .blog-index__card {
+    height: 100%;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+
+  .blog-index__card h2 {
+    font-family: var(--font-heading);
+    font-size: var(--fs-xl);
+    line-height: 1.25;
+  }
+
+  .blog-index__card h2 a {
+    color: var(--color-text-primary);
+  }
+
+  .blog-index__card > p:not(.blog-index__category) {
+    color: var(--color-text-secondary);
+    line-height: 1.55;
+  }
+
+  .blog-index__read {
+    display: inline-flex;
+    gap: var(--space-1);
+    padding: var(--space-2) 0;
+    font-weight: 700;
+  }
+
+  .blog-index__note {
+    max-width: 70ch;
+    margin-top: var(--space-6);
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+  }
+
+  @media (max-width: 40rem) {
+    .blog-index__header h1 {
+      font-size: var(--fs-2xl);
+    }
+  }
+</style>

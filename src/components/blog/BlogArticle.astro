@@ -1,0 +1,384 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RelatedPageLinks from '../content/RelatedPageLinks.astro';
+import { dataset } from '../../data';
+import { buildContentNavigationLinks } from '../../lib/content/navigation';
+import { BLOG_PREVIEW_STATUS, type BlogPost } from '../../data/blog-posts';
+import { evaluateBlogWorkedExample } from '../../lib/blog/worked-example';
+import { formatMeasurement, formatSignedMeasurement } from '../../lib/units';
+
+interface Props {
+  post: BlogPost;
+}
+
+const { post } = Astro.props;
+const relatedLinks = buildContentNavigationLinks(
+  post.pageIntentId,
+  dataset.pageIntents,
+  dataset.seoPublications,
+  dataset.routeDispositions,
+);
+const smallImage = post.image.sourceUrl.replace('w=1400', 'w=640');
+const workedExample = evaluateBlogWorkedExample(post.workedExample);
+---
+
+<BaseLayout title={post.title} description={post.description} noindex>
+  <main class="blog-article wrapper">
+    <nav class="blog-article__breadcrumb" aria-label="Breadcrumb">
+      <ol>
+        <li>
+          <a href="/">Home</a>
+        </li>
+        <li>
+          <span aria-hidden="true"> / </span>
+          <a href="/blog/">Blog preview</a>
+        </li>
+        <li>
+          <span aria-hidden="true"> / </span>
+          <span aria-current="page">{post.h1}</span>
+        </li>
+      </ol>
+    </nav>
+
+    <article>
+      <header class="blog-article__header">
+        <p class="blog-article__eyebrow">Fit stories · {BLOG_PREVIEW_STATUS}</p>
+        <h1>{post.h1}</h1>
+        <p class="blog-article__summary">{post.excerpt}</p>
+        <p class="blog-article__scenario-note">
+          Illustrative composite scenario. The people and events are invented; this is not a
+          customer story, testimonial or measured FitWise result.
+        </p>
+      </header>
+
+      <figure class="blog-article__hero">
+        <img
+          src={post.image.sourceUrl}
+          srcset={`${smallImage} 640w, ${post.image.sourceUrl} 1400w`}
+          sizes="(max-width: 840px) 100vw, 760px"
+          alt={post.image.alt}
+          width={post.image.width}
+          height={post.image.height}
+          loading="lazy"
+          decoding="async"
+          referrerpolicy="no-referrer"
+        />
+        <figcaption>
+          Photo by <a href={post.image.sourcePage}>{post.image.creator}</a> on Pexels, used under
+          the
+          <a href={post.image.licenseUrl}>{post.image.license}</a>. Stock image only; it does not
+          depict the illustrative scenario or a FitWise calculation.
+        </figcaption>
+      </figure>
+
+      <div class="blog-article__body">
+        {post.sections.map((section) => (
+          <section>
+            <h2>{section.heading}</h2>
+            {section.paragraphs.map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+            {section.bullets && (
+              <ul>
+                {section.bullets.map((bullet) => (
+                  <li>{bullet}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ))}
+      </div>
+
+      <section class="blog-worked-example" aria-labelledby="blog-worked-example-heading">
+        <p class="blog-worked-example__eyebrow">
+          Illustrative inputs — not a product recommendation
+        </p>
+        <h2 id="blog-worked-example-heading">{post.workedExample.heading}</h2>
+        <p>{post.workedExample.note}</p>
+        <ul class="blog-worked-example__inputs">
+          {post.workedExample.inputs.map((input) => (
+            <li>
+              <strong>{input.label}:</strong> {input.value}
+            </li>
+          ))}
+        </ul>
+        <p class="blog-worked-example__state">
+          <strong>FitWise output for those inputs:</strong> {workedExample.summary.resultLabel}
+        </p>
+        <p>{workedExample.summary.explanation}</p>
+        <p>
+          <strong>Next step:</strong> {workedExample.summary.nextAction}
+        </p>
+        {workedExample.missingRequirements.length > 0 && (
+          <ul class="blog-worked-example__missing">
+            {workedExample.missingRequirements.map((item) => (
+              <li>
+                <strong>{item.label}:</strong> {item.explanation} {item.action}
+              </li>
+            ))}
+          </ul>
+        )}
+        <div class="blog-worked-example__checks">
+          {workedExample.rows.map((row) => (
+            <section>
+              <h3>{row.label}</h3>
+              <p>
+                Physical requirement: {formatMeasurement(row.requiredMm, 'both')}; available:{' '}
+                {formatMeasurement(row.availableMm, 'both')}.
+              </p>
+              <p>
+                Selected target: {formatMeasurement(row.recommendedMm, 'both')}; target margin:{' '}
+                {formatSignedMeasurement(row.targetMarginMm)}.
+              </p>
+            </section>
+          ))}
+        </div>
+        <p class="blog-worked-example__disclaimer">
+          The calculation shown is generated by the same FitWise geometry used by the linked tool.
+          Replace every example value with current measurements and product documentation before
+          making a purchase or move.
+        </p>
+      </section>
+
+      <aside class="blog-article__tool-callout" aria-labelledby="blog-primary-tool-heading">
+        <h2 id="blog-primary-tool-heading">Try the matching FitWise check</h2>
+        <p>{post.primaryToolDescription}</p>
+        <a class="blog-article__tool-link" href={post.primaryToolHref}>
+          {post.primaryToolLabel}
+        </a>
+      </aside>
+
+      {post.references.length > 0 && (
+        <section class="blog-article__references" aria-labelledby="blog-references-heading">
+          <h2 id="blog-references-heading">Related tools and references</h2>
+          <ul>
+            {post.references.map((reference) => (
+              <li>
+                <a href={reference.href}>{reference.label}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {relatedLinks.length > 0 && (
+        <RelatedPageLinks links={relatedLinks} heading="Related FitWise checks" />
+      )}
+
+      <p class="blog-article__preview-note">
+        This article is a noindex local-review draft. Its image is loaded from Pexels for preview
+        and needs a production image-hosting and privacy review before release.
+      </p>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .blog-article {
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-8);
+  }
+
+  .blog-article__breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+  }
+
+  .blog-article__breadcrumb a {
+    color: var(--color-text-secondary);
+  }
+
+  .blog-article article {
+    max-width: 52rem;
+    margin: var(--space-7) auto 0;
+  }
+
+  .blog-article__header {
+    margin-bottom: var(--space-5);
+  }
+
+  .blog-article__eyebrow {
+    margin: 0 0 var(--space-2);
+    color: var(--color-accent-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .blog-article h1 {
+    max-width: 22ch;
+    margin: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-heading);
+    font-size: var(--fs-3xl);
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  .blog-article__summary {
+    max-width: 65ch;
+    margin: var(--space-3) 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-lg);
+    line-height: 1.55;
+  }
+
+  .blog-article__scenario-note,
+  .blog-article__preview-note {
+    padding: var(--space-3);
+    border-left: 3px solid var(--color-accent-1);
+    background: var(--color-surface-raised);
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+  }
+
+  .blog-article__scenario-note {
+    margin: var(--space-4) 0 0;
+  }
+
+  .blog-article__hero {
+    margin: var(--space-5) 0 var(--space-6);
+  }
+
+  .blog-article__hero img {
+    display: block;
+    width: 100%;
+    max-height: 34rem;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .blog-article__hero figcaption {
+    margin-top: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    line-height: 1.5;
+  }
+
+  .blog-article__body {
+    color: var(--color-text-primary);
+    line-height: 1.75;
+  }
+
+  .blog-article__body h2,
+  .blog-article__references h2 {
+    margin: var(--space-6) 0 var(--space-2);
+    font-family: var(--font-heading);
+    font-size: var(--fs-xl);
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+
+  .blog-article__body p {
+    max-width: 72ch;
+    margin: 0 0 var(--space-3);
+  }
+
+  .blog-worked-example {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-6) 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+
+  .blog-worked-example h2,
+  .blog-worked-example h3,
+  .blog-worked-example p {
+    margin: 0;
+  }
+
+  .blog-worked-example__eyebrow {
+    color: var(--color-accent-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+  }
+
+  .blog-worked-example__inputs,
+  .blog-worked-example__missing {
+    margin: 0;
+    padding-inline-start: 1.25rem;
+  }
+
+  .blog-worked-example__checks {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .blog-worked-example__checks section {
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .blog-worked-example__checks h3 {
+    margin-bottom: var(--space-1);
+    font-size: var(--fs-md);
+  }
+
+  .blog-worked-example__checks p,
+  .blog-worked-example__disclaimer {
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+  }
+
+  .blog-worked-example__disclaimer {
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .blog-article__tool-callout {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-6) 0;
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+
+  .blog-article__tool-callout h2,
+  .blog-article__tool-callout p {
+    margin: 0;
+  }
+
+  .blog-article__tool-link {
+    justify-self: start;
+    margin-top: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-accent-1);
+    color: var(--color-on-accent);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .blog-article__preview-note {
+    margin-top: var(--space-6);
+  }
+
+  @media (max-width: 40rem) {
+    .blog-article h1 {
+      font-size: var(--fs-2xl);
+    }
+
+    .blog-article__hero img {
+      aspect-ratio: 4 / 3;
+    }
+  }
+</style>

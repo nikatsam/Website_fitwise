@@ -56,13 +56,15 @@ After launch, at least one cluster shows repeated organic impressions/query patt
 - dresser drawer-opening clearance;
 - wardrobe door/sliding-door clearance;
 - bedside table size/spacing;
-- rug sizing as a supporting relationship;
+- rug sizing as a supporting relationship; implemented as one cross-room `/rug-fit/` tool linked from Bedroom and Dining, not separate room-specific pages;
 - complete room layout matrices;
 - more market-specific sizing only when clearly labeled.
 
 ### Phase 2 publishing rule
 
 Use Search Console evidence to select dedicated URLs. Keep weak permutations inside matrices/hubs.
+
+**Owner-approved exception (2026-10-13):** `/rug-fit/` is one unique, cross-room calculator requested by the owner. Its indexable route is present in the local build; demand/search-volume evidence remains unverified, and the production site is unchanged until deployment.
 
 ## Phase 3 — Adjacent rooms
 
