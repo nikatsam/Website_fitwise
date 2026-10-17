@@ -1,4 +1,7 @@
 ---
+import { localeFromPath } from '../../i18n/locale';
+import { translateTemplate } from '../../i18n/text';
+
 interface Props {
   step: number;
   title: string;
@@ -6,6 +9,7 @@ interface Props {
 }
 
 const { step, title, description } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
 const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 ---
 
@@ -17,7 +21,7 @@ const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0
   aria-labelledby={headingId}
 >
   <header class="calculator-step__header">
-    <p>Step {step}</p>
+    <p>{translateTemplate(locale, 'Step {step}', { step })}</p>
     <h2 id={headingId} tabindex="-1">
       {title}
     </h2>
@@ -75,7 +79,10 @@ const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0
 </style>
 
 <script>
+  import { translateRequired, translateTemplate } from '../../i18n/text';
+
   const mobileCalculatorQuery = '(max-width: 62rem)';
+  const locale = document.documentElement.lang.startsWith('es') ? 'es' : 'en';
 
   function initCoreProgressiveForms(): void {
     const media = window.matchMedia(mobileCalculatorQuery);
@@ -88,7 +95,7 @@ const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0
         let activeStep = 0;
         const nav = document.createElement('nav');
         nav.className = 'calculator-progress';
-        nav.setAttribute('aria-label', 'Calculator progress');
+        nav.setAttribute('aria-label', translateRequired(locale, 'Calculator progress'));
         nav.dataset.coreStepper = '';
         nav.hidden = true;
 
@@ -97,7 +104,8 @@ const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0
         const titles = steps.map((section, index) => {
           const heading = section.querySelector('h2');
           const title =
-            heading?.textContent?.trim().replace(/^Step\s+\d+\s*:\s*/i, '') || `Step ${index + 1}`;
+            heading?.textContent?.trim().replace(/^(?:Step|Paso)\s+\d+\s*:\s*/i, '') ||
+            translateTemplate(locale, 'Step {step}', { step: index + 1 });
           const item = document.createElement('li');
           const button = document.createElement('button');
           const number = document.createElement('span');
@@ -125,7 +133,7 @@ const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0
         previous.type = 'button';
         previous.className = 'calculator-progress__previous';
         previous.dataset.coreStepPrevious = '';
-        previous.textContent = 'Previous';
+        previous.textContent = translateRequired(locale, 'Previous');
         const status = document.createElement('p');
         status.className = 'calculator-progress__current';
         status.dataset.coreStepStatus = '';
@@ -209,9 +217,14 @@ const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0
           const stepStatus = steps.map((section, stepIndex) => {
             const ready = stepComplete(section);
             if (stepIndex === activeStep)
-              return ready ? 'Current · measurements entered' : 'Current · add required values';
-            if (stepIndex < activeStep) return ready ? 'Complete' : 'Needs input';
-            return 'Not started';
+              return ready
+                ? translateRequired(locale, 'Current · measurements entered')
+                : translateRequired(locale, 'Current · add required values');
+            if (stepIndex < activeStep)
+              return ready
+                ? translateRequired(locale, 'Complete')
+                : translateRequired(locale, 'Needs input');
+            return translateRequired(locale, 'Not started');
           });
           [...list.querySelectorAll<HTMLButtonElement>('[data-core-step-jump]')].forEach(
             (button) => {
@@ -222,15 +235,34 @@ const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0
               button.dataset.stepComplete = String(stepComplete(steps[stepIndex]));
               button.setAttribute(
                 'aria-label',
-                `Step ${stepIndex + 1}: ${titles[stepIndex]}. ${stepStatus[stepIndex]}`,
+                translateTemplate(locale, 'Step {step}: {title}. {status}', {
+                  step: stepIndex + 1,
+                  title: titles[stepIndex] ?? '',
+                  status: stepStatus[stepIndex] ?? '',
+                }),
               );
               if (state) state.textContent = stepStatus[stepIndex];
             },
           );
           previous.disabled = activeStep === 0;
           next.textContent =
-            activeStep === steps.length - 1 ? 'View result' : `Next: ${titles[activeStep + 1]}`;
-          status.textContent = `Step ${activeStep + 1} of ${steps.length}: ${titles[activeStep]}${isReady ? ', measurements entered' : ''}`;
+            activeStep === steps.length - 1
+              ? translateRequired(locale, 'View result')
+              : translateTemplate(locale, 'Next: {title}', { title: titles[activeStep + 1] ?? '' });
+          status.textContent = translateTemplate(
+            locale,
+            'Step {step} of {total}: {title}{entered}',
+            {
+              step: activeStep + 1,
+              total: steps.length,
+              title: titles[activeStep] ?? '',
+              entered: isReady
+                ? locale === 'es'
+                  ? ', medidas introducidas'
+                  : ', measurements entered'
+                : '',
+            },
+          );
 
           if (moveFocus && mobile) {
             const heading = steps[activeStep].querySelector<HTMLElement>('h2');

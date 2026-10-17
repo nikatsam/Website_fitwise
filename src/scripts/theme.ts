@@ -16,8 +16,10 @@ function initThemeToggle(): void {
 
   const sync = (): void => {
     const theme = currentTheme();
+    const lightLabel = button.dataset.themeLightLabel ?? 'Light';
+    const darkLabel = button.dataset.themeDarkLabel ?? 'Dark';
     button.setAttribute('aria-pressed', String(theme === 'dark'));
-    button.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+    button.textContent = theme === 'dark' ? `☀️ ${lightLabel}` : `🌙 ${darkLabel}`;
   };
 
   sync();

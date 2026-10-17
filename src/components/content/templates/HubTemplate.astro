@@ -1,6 +1,8 @@
 ---
 import PageFamilyLayout from '../PageFamilyLayout.astro';
 import type { BreadcrumbItem } from '../../../lib/content';
+import { localeFromPath } from '../../../i18n/locale';
+import { translateRequired } from '../../../i18n/text';
 
 interface HubLink {
   href: string;
@@ -16,12 +18,13 @@ interface Props {
 }
 
 const { breadcrumb, h1, intro, links } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
 ---
 
 <PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
   <p>{intro}</p>
-  <nav aria-label="Related planning guides">
-    <h2>Explore related planning guides</h2>
+  <nav aria-label={translateRequired(locale, 'Related planning guides')}>
+    <h2>{translateRequired(locale, 'Explore related planning guides')}</h2>
     <ul class="hub-links">
       {links.map((link) => (
         <li>

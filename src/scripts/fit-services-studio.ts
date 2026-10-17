@@ -11,7 +11,7 @@ import {
   type FitServiceValues,
 } from '../lib/geometry';
 import {
-  FIT_STATE_BADGE_COPY,
+  getFitStateBadgeCopy,
   getFitSummaryCopy,
   getFitSummaryResultLabel,
   renderFitSummaryContentHtml,
@@ -33,6 +33,18 @@ import {
 } from '../lib/fit/candidate-size-editor';
 import { getFitServiceStartGuidance } from '../lib/fit/start-guidance';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
+import type { Locale } from '../i18n/locale';
+import { fitServicesCopy, fitServicesTemplate } from '../i18n/es-fit-services-copy';
+
+const locale: Locale =
+  typeof document === 'undefined'
+    ? 'en'
+    : document.documentElement.lang.startsWith('es')
+      ? 'es'
+      : 'en';
+const copy = (text: string) => fitServicesCopy(text, locale);
+const template = (text: string, values: Record<string, string | number>) =>
+  fitServicesTemplate(text, locale, values);
 
 function escapeHtml(value: string): string {
   return value
@@ -73,7 +85,7 @@ function renderServiceStepMarkup(
     .map((step, index) => {
       const headingId = `fit-service-step-${mode}-${step.id}-heading`;
       const fieldsMarkup = step.fields.map((field) => markupByName.get(field.name) ?? '').join('');
-      return `<section class="fit-services__step" data-fit-service-step data-calculator-step data-step-index="${index}" aria-labelledby="${headingId}"><h2 id="${headingId}" data-step-heading tabindex="-1">Step ${index + 1} of ${steps.length}: ${escapeHtml(step.title)}</h2><div class="fit-services__step-fields field-grid">${fieldsMarkup}</div></section>`;
+      return `<section class="fit-services__step" data-fit-service-step data-calculator-step data-step-index="${index}" aria-labelledby="${headingId}"><h2 id="${headingId}" data-step-heading tabindex="-1">${escapeHtml(template('Step {n} of {total}: {title}', { n: index + 1, total: steps.length, title: copy(step.title) }))}</h2><div class="fit-services__step-fields field-grid">${fieldsMarkup}</div></section>`;
     })
     .join('');
 }
@@ -98,7 +110,11 @@ function applyMobileServiceStep(focusHeading = false): void {
   const next = stepper.querySelector<HTMLButtonElement>('[data-step-action="next"]');
   const current = activeServiceSteps[activeServiceStep];
   if (status && current) {
-    status.textContent = `Step ${activeServiceStep + 1} of ${activeServiceSteps.length}: ${current.title}`;
+    status.textContent = template('Step {n} of {total}: {title}', {
+      n: activeServiceStep + 1,
+      total: activeServiceSteps.length,
+      title: copy(current.title),
+    });
   }
   if (previous) previous.disabled = activeServiceStep === 0;
   if (next) next.disabled = activeServiceStep === activeServiceSteps.length - 1;
@@ -114,7 +130,7 @@ function renderMobileServiceStepper(mode: FitServiceMode, steps: FitServiceStep[
   activeServiceMode = mode;
   activeServiceSteps = steps;
   activeServiceStep = Math.min(activeServiceStep, steps.length - 1);
-  stepper.innerHTML = `<button type="button" data-step-action="previous" aria-label="Previous step">Previous</button><p role="status" aria-live="polite" data-step-status></p><button type="button" data-step-action="next" aria-label="Next step">Next</button>`;
+  stepper.innerHTML = `<button type="button" data-step-action="previous" aria-label="${copy('Previous')}">${copy('Previous')}</button><p role="status" aria-live="polite" data-step-status></p><button type="button" data-step-action="next" aria-label="${copy('Next')}">${copy('Next')}</button>`;
   applyMobileServiceStep();
 }
 
@@ -132,7 +148,7 @@ function renderField(field: FitServiceField, mode: FitServiceMode, value: string
   const condition = field.showWhen;
   const help = getFitServiceMeasurementGuidance(mode, field.name);
   const descriptionIds = `${id}-error${help ? ` ${id}-help` : ''}${field.type === 'length' ? ' fit-service-unit-note' : ''}`;
-  const helpMarkup = help ? renderMeasurementHelpMarkup(`${id}-help`, help) : '';
+  const helpMarkup = help ? renderMeasurementHelpMarkup(`${id}-help`, help, locale) : '';
   const conditionAttributes = condition
     ? ` data-show-when-name="${escapeHtml(condition.name)}" data-show-when-value="${escapeHtml(condition.value)}" hidden`
     : '';
@@ -153,7 +169,7 @@ function renderField(field: FitServiceField, mode: FitServiceMode, value: string
     )
       .map(
         (option) =>
-          `<option value="${escapeHtml(option.value)}"${option.value === value ? ' selected' : ''}>${escapeHtml(option.label)}</option>`,
+          `<option value="${escapeHtml(option.value)}"${option.value === value ? ' selected' : ''}>${escapeHtml(copy(option.label))}</option>`,
       )
       .join('')}</select>`;
   } else if (field.type === 'length') {
@@ -167,7 +183,7 @@ function renderField(field: FitServiceField, mode: FitServiceMode, value: string
     control = `<input id="${id}" name="${field.name}" type="number" step="${step}"${min}${max} value="${escapeHtml(value)}" data-service-control="${field.type}"${required} aria-describedby="${descriptionIds}" />`;
   }
   return `<div class="field" data-service-field data-name="${field.name}"${conditionAttributes}>
-    <label for="${id}">${escapeHtml(field.label)}</label>
+    <label for="${id}">${escapeHtml(copy(field.label))}</label>
     ${control}
     <span class="field__error" id="${id}-error" role="alert"></span>
     ${helpMarkup}
@@ -414,7 +430,7 @@ function refreshCompatibility(
   list.innerHTML = compatibility
     .map(
       (check) =>
-        `<li data-compatible="${check.compatible}"><strong>${check.compatible ? 'Compatible' : 'Check required'}:</strong> ${escapeHtml(check.label)}. ${escapeHtml(check.detail)}</li>`,
+        `<li data-compatible="${check.compatible}"><strong>${escapeHtml(copy(check.compatible ? 'Compatible' : 'Check required'))}:</strong> ${escapeHtml(copy(check.label))}. ${escapeHtml(copy(check.detail))}</li>`,
     )
     .join('');
 }
@@ -425,7 +441,7 @@ function refreshCandidates(candidates: ReturnType<typeof buildFitServicePlan>['c
   list.innerHTML = (candidates ?? [])
     .map(
       (candidate) =>
-        `<li data-candidate-state="${candidate.state}"><strong>${escapeHtml(candidate.label)}:</strong> ${escapeHtml(candidate.detail)}</li>`,
+        `<li data-candidate-state="${candidate.state}"><strong>${escapeHtml(copy(candidate.label))}:</strong> ${escapeHtml(copy(candidate.detail))}</li>`,
     )
     .join('');
 }
@@ -438,10 +454,11 @@ function updateSummary(
 ): void {
   const summary = document.getElementById('fit-services-summary');
   if (!summary) return;
-  const copy = FIT_STATE_BADGE_COPY[state];
+  const copy = getFitStateBadgeCopy(state, locale);
   const summaryCopy = getFitSummaryCopy(state, rows, {
     missingRequirements,
     compatibilityChecks: compatibility,
+    locale,
   });
   const resultLabel = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
   summary.dataset.fitState = state;
@@ -520,8 +537,8 @@ function recompute(): void {
   const preferredDisplay = document.documentElement.dataset.unitSystem;
   const display =
     preferredDisplay === 'imperial' || preferredDisplay === 'both' ? preferredDisplay : 'metric';
-  const preview = renderFitServiceAsciiPreview(form.mode, form.values, display);
-  const svgPlan = renderFitServiceSvgPlan(rows, state, display);
+  const preview = renderFitServiceAsciiPreview(form.mode, form.values, display, locale);
+  const svgPlan = renderFitServiceSvgPlan(rows, state, display, locale);
   const previewSvg = document.querySelector<HTMLElement>('[data-fit-service-preview-svg]');
   const previewArt = document.querySelector<HTMLElement>('[data-fit-service-preview-ascii]');
   const previewSummary = document.querySelector<HTMLElement>('[data-fit-service-preview-summary]');

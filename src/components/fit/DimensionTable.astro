@@ -1,6 +1,8 @@
 ---
 import type { DimensionDisplayRow } from '../../lib/fit';
 import UnitValue from './UnitValue.astro';
+import { localeFromPath } from '../../i18n/locale';
+import { translate, translateRequired } from '../../i18n/text';
 
 interface Props {
   rows: DimensionDisplayRow[];
@@ -10,20 +12,27 @@ interface Props {
 }
 
 const { rows, caption, id } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const dimensionLabel = translateRequired(locale, 'Dimension');
+const requiredLabel = translateRequired(locale, 'Required');
+const targetLabel = translateRequired(locale, 'Target');
+const availableLabel = translateRequired(locale, 'Available');
+const physicalMarginLabel = translateRequired(locale, 'Physical margin');
+const targetMarginLabel = translateRequired(locale, 'Target margin');
 ---
 
 <details class="dimension-table__details" id={id && `${id}-details`}>
-  <summary>Show calculation details</summary>
+  <summary>{translateRequired(locale, 'Show calculation details')}</summary>
   <table class="dimension-table" id={id}>
-    <caption class="visually-hidden">{caption}</caption>
+    <caption class="visually-hidden">{translate(locale, caption)}</caption>
     <thead>
       <tr>
-        <th scope="col">Dimension</th>
-        <th scope="col">Required</th>
-        <th scope="col">Target</th>
-        <th scope="col">Available</th>
-        <th scope="col">Physical margin</th>
-        <th scope="col">Target margin</th>
+        <th scope="col">{dimensionLabel}</th>
+        <th scope="col">{requiredLabel}</th>
+        <th scope="col">{targetLabel}</th>
+        <th scope="col">{availableLabel}</th>
+        <th scope="col">{physicalMarginLabel}</th>
+        <th scope="col">{targetMarginLabel}</th>
       </tr>
     </thead>
     <tbody>
@@ -33,19 +42,19 @@ const { rows, caption, id } = Astro.props;
           data-recommended-fit={row.recommendedFit}
           data-dimension={row.dimension}
         >
-          <th scope="row" data-label="Dimension">
+          <th scope="row" data-label={dimensionLabel}>
             {row.label}
           </th>
-          <td data-label="Required">
+          <td data-label={requiredLabel}>
             <UnitValue mm={row.requiredMm} id={id && `${id}-${row.dimension}-required`} />
           </td>
-          <td data-label="Target">
+          <td data-label={targetLabel}>
             <UnitValue mm={row.recommendedMm} id={id && `${id}-${row.dimension}-recommended`} />
           </td>
-          <td data-label="Available">
+          <td data-label={availableLabel}>
             <UnitValue mm={row.availableMm} id={id && `${id}-${row.dimension}-available`} />
           </td>
-          <td data-label="Physical margin">
+          <td data-label={physicalMarginLabel}>
             <span data-field="physical-margin-sign">
               {row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}
             </span>
@@ -55,7 +64,7 @@ const { rows, caption, id } = Astro.props;
               id={id && `${id}-${row.dimension}-physical-margin`}
             />
           </td>
-          <td data-label="Target margin">
+          <td data-label={targetMarginLabel}>
             <span data-field="target-margin-sign">
               {row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}
             </span>

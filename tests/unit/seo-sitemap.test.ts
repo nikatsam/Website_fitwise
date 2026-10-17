@@ -52,7 +52,7 @@ describe('SEO static outputs', () => {
     );
     const urls = entries.map((entry) => entry.url);
 
-    expect(urls).toHaveLength(43);
+    expect(urls).toHaveLength(47);
     for (const route of [
       '/',
       '/will-it-fit/',
@@ -91,6 +91,10 @@ describe('SEO static outputs', () => {
       '/workspace/120cm-vs-140cm-desk/',
       '/workspace/desk-size-guide/',
       '/workspace/desk-size-for-two-27-inch-monitors/',
+      '/workspace/desk-depth-for-monitor/',
+      '/workspace/desk-chair-clearance/',
+      '/bedroom/space-between-bed-and-wardrobe/',
+      '/bedroom/bed-and-dresser-clearance/',
       '/about/',
       '/methodology/',
       '/methodology/reference-conventions/',
@@ -101,21 +105,33 @@ describe('SEO static outputs', () => {
     expect(urls).toContain('https://fitwise.stream/bedroom/us-bed-size-dimensions/');
     expect(urls).toContain('https://fitwise.stream/bedroom/uk-bed-size-dimensions/');
     expect(urls).toContain('https://fitwise.stream/workspace/what-fits-on-a-140cm-desk/');
-    expect(urls).not.toContain('https://fitwise.stream/workspace/desk-chair-clearance/');
-    expect(urls).not.toContain('https://fitwise.stream/workspace/desk-depth-for-monitor/');
+    expect(urls).toContain('https://fitwise.stream/workspace/desk-chair-clearance/');
+    expect(urls).toContain('https://fitwise.stream/workspace/desk-depth-for-monitor/');
     expect(urls).not.toContain('https://fitwise.stream/bedroom/minimum-room-size-for-queen-bed/');
     expect(urls).not.toContain('https://fitwise.stream/bedroom/minimum-room-size-for-king-bed/');
-    expect(urls).not.toContain('https://fitwise.stream/bedroom/space-between-bed-and-wardrobe/');
-    expect(urls).not.toContain('https://fitwise.stream/bedroom/bed-and-dresser-clearance/');
+    expect(urls).toContain('https://fitwise.stream/bedroom/space-between-bed-and-wardrobe/');
+    expect(urls).toContain('https://fitwise.stream/bedroom/bed-and-dresser-clearance/');
     expect(urls).not.toContain(
       'https://fitwise.stream/bedroom/king-bed-two-nightstands-room-size/',
     );
     expect(urls).not.toContain(
       'https://fitwise.stream/bedroom/queen-bed-two-nightstands-room-size/',
     );
-    expect(urls).not.toContain('https://fitwise.stream/workspace/desk-chair-clearance/');
-    expect(urls).not.toContain('https://fitwise.stream/bedroom/space-between-bed-and-wardrobe/');
-    expect(urls).not.toContain('https://fitwise.stream/bedroom/bed-and-dresser-clearance/');
+    expect(urls).toContain('https://fitwise.stream/workspace/desk-chair-clearance/');
+    expect(urls).toContain('https://fitwise.stream/bedroom/space-between-bed-and-wardrobe/');
+    expect(urls).toContain('https://fitwise.stream/bedroom/bed-and-dresser-clearance/');
+    expect(entries.find((entry) => entry.url.endsWith('/desk-depth-for-monitor/'))?.lastmod).toBe(
+      '2026-10-16',
+    );
+    expect(entries.find((entry) => entry.url.endsWith('/desk-chair-clearance/'))?.lastmod).toBe(
+      '2026-10-16',
+    );
+    expect(
+      entries.find((entry) => entry.url.endsWith('/space-between-bed-and-wardrobe/'))?.lastmod,
+    ).toBe('2026-10-16');
+    expect(
+      entries.find((entry) => entry.url.endsWith('/bed-and-dresser-clearance/'))?.lastmod,
+    ).toBe('2026-10-16');
     expect(entries.find((entry) => entry.url.endsWith('/us-bed-size-dimensions/'))?.lastmod).toBe(
       '2026-10-08',
     );

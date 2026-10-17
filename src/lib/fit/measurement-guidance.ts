@@ -1,4 +1,6 @@
 import type { FitServiceMode } from '../geometry/fit-services';
+import type { Locale } from '../../i18n/locale';
+import { translateRequired, translateTemplate } from '../../i18n/text';
 
 export type MeasurementDiagram = 'fixed-span' | 'clearance-envelope' | 'route' | 'operating-zone';
 export type CoreCalculator = 'universal' | 'workspace' | 'bedroom' | 'dining' | 'rug';
@@ -1069,39 +1071,53 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#39;');
 }
 
-export function renderMeasurementSketchContents(diagram: MeasurementDiagram): string {
+export function renderMeasurementSketchContents(
+  diagram: MeasurementDiagram,
+  locale: Locale = 'en',
+): string {
+  const label = (value: string) => escapeHtml(translateRequired(locale, value));
   switch (diagram) {
     case 'fixed-span':
-      return '<path class="measurement-help__wall" d="M48 18v76M232 18v76"/><path class="measurement-help__measure" d="M56 56h168"/><path class="measurement-help__arrow" d="m56 56 10-6v12zM224 56l-10-6v12z"/><text x="140" y="40" text-anchor="middle">inside face to inside face</text>';
+      return `<path class="measurement-help__wall" d="M48 18v76M232 18v76"/><path class="measurement-help__measure" d="M56 56h168"/><path class="measurement-help__arrow" d="m56 56 10-6v12zM224 56l-10-6v12z"/><text x="140" y="40" text-anchor="middle">${label('inside face to inside face')}</text>`;
     case 'clearance-envelope':
-      return '<rect class="measurement-help__zone" x="40" y="16" width="200" height="80" rx="4"/><rect class="measurement-help__object" x="92" y="38" width="96" height="36" rx="3"/><path class="measurement-help__measure" d="M48 56h38M192 56h40"/><text x="140" y="88" text-anchor="middle">object + extra space</text>';
+      return `<rect class="measurement-help__zone" x="40" y="16" width="200" height="80" rx="4"/><rect class="measurement-help__object" x="92" y="38" width="96" height="36" rx="3"/><path class="measurement-help__measure" d="M48 56h38M192 56h40"/><text x="140" y="88" text-anchor="middle">${label('object + extra space')}</text>`;
     case 'route':
-      return '<path class="measurement-help__wall" d="M18 20v72M84 20v72M112 20v72M184 20v72M212 20v72M262 20v72"/><path class="measurement-help__measure" d="M26 52h50M120 52h58M220 52h34"/><text x="51" y="80" text-anchor="middle">door</text><text x="149" y="80" text-anchor="middle">hall / turn</text><text x="237" y="80" text-anchor="middle">opening</text>';
+      return `<path class="measurement-help__wall" d="M18 20v72M84 20v72M112 20v72M184 20v72M212 20v72M262 20v72"/><path class="measurement-help__measure" d="M26 52h50M120 52h58M220 52h34"/><text x="51" y="80" text-anchor="middle">${label('door')}</text><text x="149" y="80" text-anchor="middle">${label('hall / turn')}</text><text x="237" y="80" text-anchor="middle">${label('opening')}</text>`;
     case 'operating-zone':
-      return '<rect class="measurement-help__zone" x="38" y="14" width="204" height="84" rx="4"/><rect class="measurement-help__object" x="100" y="37" width="80" height="38" rx="3"/><text x="140" y="91" text-anchor="middle">manufacturer use zone</text>';
+      return `<rect class="measurement-help__zone" x="38" y="14" width="204" height="84" rx="4"/><rect class="measurement-help__object" x="100" y="37" width="80" height="38" rx="3"/><text x="140" y="91" text-anchor="middle">${label('manufacturer use zone')}</text>`;
   }
 }
 
-export function renderMeasurementSketch(id: string, diagram: MeasurementDiagram): string {
+export function renderMeasurementSketch(
+  id: string,
+  diagram: MeasurementDiagram,
+  locale: Locale = 'en',
+): string {
   const copy = MEASUREMENT_DIAGRAM_COPY[diagram];
   const titleId = `${id}-diagram-title`;
   const descriptionId = `${id}-diagram-desc`;
-  return `<svg viewBox="0 0 280 112" role="img" aria-labelledby="${escapeHtml(titleId)} ${escapeHtml(descriptionId)}"><title id="${escapeHtml(titleId)}">${escapeHtml(copy.title)}</title><desc id="${escapeHtml(descriptionId)}">${escapeHtml(copy.description)} Diagram is not to scale.</desc>${renderMeasurementSketchContents(diagram)}</svg>`;
+  return `<svg viewBox="0 0 280 112" role="img" aria-labelledby="${escapeHtml(titleId)} ${escapeHtml(descriptionId)}"><title id="${escapeHtml(titleId)}">${escapeHtml(translateRequired(locale, copy.title))}</title><desc id="${escapeHtml(descriptionId)}">${escapeHtml(translateRequired(locale, copy.description))} ${escapeHtml(translateRequired(locale, 'Diagram is not to scale.'))}</desc>${renderMeasurementSketchContents(diagram, locale)}</svg>`;
 }
 
-export function renderMeasurementHelpMarkup(id: string, guidance: MeasurementGuidance): string {
+export function renderMeasurementHelpMarkup(
+  id: string,
+  guidance: MeasurementGuidance,
+  locale: Locale = 'en',
+): string {
   const safeId = escapeHtml(id);
   const example = guidance.example
-    ? `<p class="measurement-help__example"><strong>Example:</strong> ${escapeHtml(guidance.example)}</p>`
+    ? `<p class="measurement-help__example"><strong>${escapeHtml(translateRequired(locale, 'Example'))}:</strong> ${escapeHtml(translateRequired(locale, guidance.example))}</p>`
     : '';
   const warning = guidance.warning
-    ? `<p class="measurement-help__warning"><strong>Check:</strong> ${escapeHtml(guidance.warning)}</p>`
+    ? `<p class="measurement-help__warning"><strong>${escapeHtml(translateRequired(locale, 'Check'))}:</strong> ${escapeHtml(translateRequired(locale, guidance.warning))}</p>`
     : '';
   const sourceRequirement = guidance.sourceRequirement
-    ? `<p class="measurement-help__source"><strong>Source requirement:</strong> ${escapeHtml(guidance.sourceRequirement)}</p>`
+    ? `<p class="measurement-help__source"><strong>${escapeHtml(translateRequired(locale, 'Source requirement'))}:</strong> ${escapeHtml(translateRequired(locale, guidance.sourceRequirement))}</p>`
     : '';
   const diagram = guidance.diagram
-    ? `<figure class="measurement-help__diagram">${renderMeasurementSketch(id, guidance.diagram)}<figcaption>Illustrative plan sketch; not to scale.</figcaption></figure>`
+    ? `<figure class="measurement-help__diagram">${renderMeasurementSketch(id, guidance.diagram, locale)}<figcaption>${escapeHtml(translateRequired(locale, 'Illustrative plan sketch; not to scale.'))}</figcaption></figure>`
     : '';
-  return `<div class="measurement-help" data-measurement-help="${safeId}"><details class="measurement-help__details"><summary aria-label="Show detailed measuring help: ${escapeHtml(guidance.label)}"><span class="measurement-help__summary" id="${safeId}">${escapeHtml(guidance.summaryHelp)}</span><span class="measurement-help__indicator" aria-hidden="true">?</span></summary><div class="measurement-help__content"><h3>${escapeHtml(guidance.label)}</h3><p>${escapeHtml(guidance.measureHelp)}</p>${example}${warning}${sourceRequirement}${diagram}</div></details></div>`;
+  const label = translateRequired(locale, guidance.label);
+  const ariaLabel = translateTemplate(locale, 'Show detailed measuring help: {label}', { label });
+  return `<div class="measurement-help" data-measurement-help="${safeId}"><details class="measurement-help__details"><summary aria-label="${escapeHtml(ariaLabel)}"><span class="measurement-help__summary" id="${safeId}">${escapeHtml(translateRequired(locale, guidance.summaryHelp))}</span><span class="measurement-help__indicator" aria-hidden="true">?</span></summary><div class="measurement-help__content"><h3>${escapeHtml(label)}</h3><p>${escapeHtml(translateRequired(locale, guidance.measureHelp))}</p>${example}${warning}${sourceRequirement}${diagram}</div></details></div>`;
 }

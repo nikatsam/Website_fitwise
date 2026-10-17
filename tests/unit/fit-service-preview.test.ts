@@ -60,11 +60,46 @@ describe('Fit Services ASCII previews', () => {
         definition.mode,
         getFitServiceDefaults(definition.mode),
       );
+      const spanishPreview = renderFitServiceAsciiPreview(
+        definition.mode,
+        getFitServiceDefaults(definition.mode),
+        'metric',
+        'es',
+      );
 
       expect(preview.art, definition.mode).toContain('SCHEMATIC');
       expect(preview.description, definition.mode).not.toBe('');
       expect(preview.summary, definition.mode).not.toBe('');
+      expect(spanishPreview.description, definition.mode).not.toMatch(/schematic|not to scale/i);
+      expect(spanishPreview.art, definition.mode).not.toMatch(
+        /SCHEMATIC|TOP-DOWN|SPACE:|OBJECT:|ZONE:|FRONT DOOR|STAIRS|DEST\. DOOR/i,
+      );
     }
+  });
+
+  it('renders Spanish labels throughout the diagram and delivery-route alternative', () => {
+    const appliance = renderFitServiceAsciiPreview(
+      'appliance-install',
+      getFitServiceDefaults('appliance-install'),
+      'metric',
+      'es',
+    );
+    expect(appliance.art).toContain('ESQUEMA, NO A ESCALA');
+    expect(appliance.art).toContain('ESPACIO:');
+    expect(appliance.art).toContain('OBJETO:');
+    expect(appliance.art).toContain('ZONA:');
+    expect(appliance.description).not.toContain('schematic');
+
+    const route = renderFitServiceAsciiPreview(
+      'delivery-route',
+      getFitServiceDefaults('delivery-route'),
+      'metric',
+      'es',
+    );
+    expect(route.art).toContain('RECORRIDO DE ANCHO LIBRE');
+    expect(route.summary).toContain('PUERTA:');
+    expect(route.summary).toContain('PASILLO:');
+    expect(route.description).toContain('Esquema de la ruta de entrega.');
   });
 
   it('renders a responsive accessible SVG from shared calculation rows for every service mode', () => {

@@ -1,7 +1,7 @@
 import {
   evaluateFit,
   toDimensionDisplayRows,
-  FIT_STATE_BADGE_COPY,
+  getFitStateBadgeCopy,
   getFitSummaryCopy,
   getFitSummaryResultLabel,
   renderFitSummaryContentHtml,
@@ -11,6 +11,15 @@ import {
 import { buildRugFitPlan, type RugCoverageMode, type RugOrientation } from '../lib/geometry';
 import { renderRugDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
+import type { Locale } from '../i18n/locale';
+import { translate, translateTemplate } from '../i18n/text';
+
+const locale: Locale =
+  typeof document === 'undefined'
+    ? 'en'
+    : document.documentElement.lang.startsWith('es')
+      ? 'es'
+      : 'en';
 
 const DIAGRAM_ID = 'rug-fitcheck-diagram';
 
@@ -197,31 +206,38 @@ function renderRows(rows: DimensionDisplayRow[]): void {
 function renderSummary(state: FitState, rows: DimensionDisplayRow[]): void {
   const summary = document.getElementById('rug-fitcheck-summary');
   if (!summary) return;
-  const summaryCopy = getFitSummaryCopy(state, rows);
+  const summaryCopy = getFitSummaryCopy(state, rows, { locale });
   const label = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
   summary.setAttribute('data-fit-state', state);
   summary.dataset.fitExact = String(summaryCopy.isExactFit);
-  summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent =
-    FIT_STATE_BADGE_COPY[state].icon;
+  summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent = getFitStateBadgeCopy(
+    state,
+    locale,
+  ).icon;
   summary.querySelector<HTMLElement>('[data-field="label"]')!.textContent = label;
   const content = summary.querySelector<HTMLElement>('[data-fit-summary-content]');
   if (content) content.innerHTML = renderFitSummaryContentHtml(summaryCopy);
   const sticky = summary.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
   if (sticky) {
     sticky.dataset.fitState = state;
-    sticky.setAttribute('aria-label', `Fit result: ${label}. View calculation details.`);
+    sticky.setAttribute(
+      'aria-label',
+      translateTemplate(locale, 'Fit result: {resultLabel}. View calculation details.', {
+        resultLabel: label,
+      }),
+    );
     sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent =
-      FIT_STATE_BADGE_COPY[state].icon;
+      getFitStateBadgeCopy(state, locale).icon;
     sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = label;
     const detail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
     if (detail) {
       detail.innerHTML = summaryCopy.isExactFit
-        ? 'No measurement tolerance remains'
+        ? translate(locale, 'No measurement tolerance remains')
         : summaryCopy.marginMm !== null && summaryCopy.marginLabel
           ? `${unitHtml(summaryCopy.marginMm, true)} ${summaryCopy.marginLabel.toLowerCase()}`
           : state === 'needs_information'
-            ? 'Measurement data needed'
-            : 'Check result details';
+            ? translate(locale, 'Measurement data needed')
+            : translate(locale, 'Check result details');
     }
   }
 }

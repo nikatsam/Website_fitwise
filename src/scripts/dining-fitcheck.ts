@@ -1,6 +1,6 @@
 import {
   evaluateFit,
-  FIT_STATE_BADGE_COPY,
+  getFitStateBadgeCopy,
   getFitSummaryCopy,
   getFitSummaryResultLabel,
   renderFitSummaryContentHtml,
@@ -10,6 +10,28 @@ import {
 import { buildDiningFitPlan, type DiningOrientation } from '../lib/geometry';
 import { renderDiningDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
+import type { Locale } from '../i18n/locale';
+import {
+  esDiningUniversalRugCopy as esCopy,
+  esDiningUniversalRugTemplates as esTemplates,
+} from '../i18n/es-dining-universal-rug-copy';
+import { translate as sharedTranslate, translateTemplate as sharedTemplate } from '../i18n/text';
+
+const locale: Locale =
+  typeof document === 'undefined'
+    ? 'en'
+    : document.documentElement.lang.startsWith('es')
+      ? 'es'
+      : 'en';
+const t = (source: string) =>
+  locale === 'es' ? (esCopy[source] ?? sharedTranslate(locale, source)) : source;
+const tt = (source: string, values: Record<string, string | number>) =>
+  locale === 'es'
+    ? (esTemplates[source] ?? sharedTemplate(locale, source, values)).replace(
+        /\{(\w+)\}/g,
+        (_, key: string) => String(values[key] ?? `{${key}}`),
+      )
+    : sharedTemplate(locale, source, values);
 
 type LengthField =
   | 'dining-room-width'
@@ -38,12 +60,12 @@ function readLength(id: LengthField, required: boolean): number | undefined {
   const input = document.getElementById(id) as HTMLInputElement | null;
   const raw = input?.value.trim() ?? '';
   if (!raw) {
-    setError(id, 'Enter a dimension with a unit, such as 90 cm or 36 in.');
+    setError(id, t('Enter a dimension with a unit, such as 90 cm or 36 in.'));
     return undefined;
   }
   const parsed = parseLength(raw);
   if (!parsed.ok || (required && parsed.valueMm <= 0)) {
-    setError(id, parsed.ok ? 'Enter a value greater than zero.' : parsed.error);
+    setError(id, t(parsed.ok ? 'Enter a value greater than zero.' : parsed.error));
     return undefined;
   }
   clearError(id);
@@ -56,7 +78,7 @@ function readCount(id: string, min: number, max: number): number | undefined {
   const error = document.getElementById(`${id}-error`);
   if (!Number.isInteger(value) || value < min || value > max) {
     input.setAttribute('aria-invalid', 'true');
-    if (error) error.textContent = `Enter a whole number from ${min} to ${max}.`;
+    if (error) error.textContent = tt('Enter a whole number from {min} to {max}.', { min, max });
     return undefined;
   }
   input.removeAttribute('aria-invalid');
@@ -127,10 +149,18 @@ function renderAssumptions(
   orientation: string,
 ): string[] {
   return [
-    'The model is a rectangular table with identical rectangular chair envelopes; round/oval tables and chair rotation are not represented.',
-    `Selected orientation: ${orientation}. Chairs per side and end are modeled as measured outside chair widths; no extra place-setting or elbow room is inferred.`,
-    `The ${formatMeasurement(values.chairEnvelopeDepthMm)} chair envelope is user-entered from table edge to pulled-out chair edge.`,
-    `The ${formatMeasurement(values.walkingClearanceMm)} circulation target is user-selected on each side of the occupied layout; it is not a universal minimum.`,
+    t(
+      'The model is a rectangular table with identical rectangular chair envelopes; round/oval tables and chair rotation are not represented.',
+    ),
+    tt('Selected orientation: {orientation}.', { orientation }),
+    tt(
+      'The {measurement} chair envelope is user-entered from table edge to pulled-out chair edge.',
+      { measurement: formatMeasurement(values.chairEnvelopeDepthMm) },
+    ),
+    tt(
+      'The {measurement} circulation target is user-selected on each side of the occupied layout; it is not a universal minimum.',
+      { measurement: formatMeasurement(values.walkingClearanceMm) },
+    ),
   ];
 }
 
@@ -156,7 +186,22 @@ function updateDiagram(
   const caption = svg.closest('figure')?.querySelector('figcaption');
   if (caption) {
     const seats = values.chairsPerLongSide * 2 + values.chairsPerEnd * 2;
-    caption.textContent = `${formatMeasurement(values.roomWidthMm)} by ${formatMeasurement(values.roomLengthMm)} room, ${formatMeasurement(values.tableWidthMm)} by ${formatMeasurement(values.tableLengthMm)} rectangular table, ${seats} seats, ${orientation === 'width-depth' ? 'table width along room width' : 'table rotated 90 degrees'}, and ${formatMeasurement(values.walkingClearanceMm)} selected walking clearance.`;
+    caption.textContent = tt(
+      '{width} by {length} room, {tableWidth} by {tableLength} rectangular table, {seats} seats, {orientation}, and {clearance} selected walking clearance.',
+      {
+        width: formatMeasurement(values.roomWidthMm),
+        length: formatMeasurement(values.roomLengthMm),
+        tableWidth: formatMeasurement(values.tableWidthMm),
+        tableLength: formatMeasurement(values.tableLengthMm),
+        seats,
+        orientation: t(
+          orientation === 'width-depth'
+            ? 'table width runs along room width'
+            : 'table is rotated 90 degrees',
+        ),
+        clearance: formatMeasurement(values.walkingClearanceMm),
+      },
+    );
   }
 }
 
@@ -172,10 +217,10 @@ function recompute(): void {
   );
   const result = evaluateFit(plan.checks, assumptions);
   const rows = toDimensionDisplayRows(plan.checks, result);
-  const summaryCopy = getFitSummaryCopy(result.state, rows);
+  const summaryCopy = getFitSummaryCopy(result.state, rows, { locale });
   const summary = document.getElementById('dining-fitcheck-summary');
   if (summary) {
-    const copy = FIT_STATE_BADGE_COPY[result.state];
+    const copy = getFitStateBadgeCopy(result.state, locale);
     const resultLabel = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
     summary.dataset.fitState = result.state;
     summary.dataset.fitExact = String(summaryCopy.isExactFit);
@@ -188,17 +233,17 @@ function recompute(): void {
       sticky.dataset.fitState = result.state;
       sticky.setAttribute(
         'aria-label',
-        `Dining fit result: ${resultLabel}. View calculation details.`,
+        tt('Fit result: {resultLabel}. View calculation details.', { resultLabel }),
       );
       sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = copy.icon;
       sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = resultLabel;
       const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
       if (stickyDetail) {
         stickyDetail.innerHTML = summaryCopy.isExactFit
-          ? 'No measurement tolerance remains'
+          ? t('No measurement tolerance remains')
           : summaryCopy.marginMm !== null && summaryCopy.marginLabel
             ? `${unitHtml(summaryCopy.marginMm, true)} ${summaryCopy.marginLabel.toLowerCase()}`
-            : 'Check result details';
+            : t('Check result details');
       }
     }
   }
@@ -211,7 +256,14 @@ function recompute(): void {
   }
   const orientationText = document.querySelector<HTMLElement>('[data-dining-orientation]');
   if (orientationText) {
-    orientationText.textContent = `${plan.seats} seats in the layout; ${plan.orientation === 'width-depth' ? 'table width runs along room width' : 'table is rotated 90 degrees'}.`;
+    orientationText.textContent = tt('{seats} seats in the selected layout; {orientation}.', {
+      seats: plan.seats,
+      orientation: t(
+        plan.orientation === 'width-depth'
+          ? 'table width runs along room width'
+          : 'table is rotated 90 degrees',
+      ),
+    });
   }
   updateDiagram(values, plan.orientation);
 }

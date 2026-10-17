@@ -1,27 +1,37 @@
 ---
+import { localeFromPath } from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
+
+const locale = localeFromPath(Astro.url.pathname);
 ---
 
 <fieldset class="unit-toggle" data-unit-toggle aria-describedby="unit-display-note unit-entry-note">
-  <legend>Result display units</legend>
+  <legend>{translateRequired(locale, 'Result display units')}</legend>
   <div class="unit-toggle__options">
     <label class="unit-toggle__option">
       <input type="radio" name="unit-system" value="metric" data-unit-choice checked />
-      <span>Metric</span>
+      <span>{translateRequired(locale, 'Metric')}</span>
     </label>
     <label class="unit-toggle__option">
       <input type="radio" name="unit-system" value="imperial" data-unit-choice />
-      <span>Imperial</span>
+      <span>{translateRequired(locale, 'Imperial')}</span>
     </label>
     <label class="unit-toggle__option">
       <input type="radio" name="unit-system" value="both" data-unit-choice />
-      <span>Both</span>
+      <span>{translateRequired(locale, 'Both')}</span>
     </label>
   </div>
   <p class="unit-toggle__note" id="unit-display-note">
-    Changes result display only; measurements already entered stay unchanged.
+    {translateRequired(
+      locale,
+      'Changes result display only; measurements already entered stay unchanged.',
+    )}
   </p>
   <p class="unit-toggle__note" id="unit-entry-note">
-    Enter lengths with mm, cm, m, in, ft, or ft/in. A number without a unit defaults to mm.
+    {translateRequired(
+      locale,
+      'Enter lengths with mm, cm, m, in, ft, or ft/in. A number without a unit defaults to mm.',
+    )}
   </p>
 </fieldset>
 

@@ -11,12 +11,12 @@ Complete this task without expanding scope into later tasks.
 
 - Create documented repeatable build/sync/deploy process.
 - Set cache metadata for HTML vs hashed assets.
-- Add minimal invalidation strategy.
+- Add a single-path CloudFront invalidation strategy with predictable path billing.
 
 ## Acceptance criteria
 
 - [x] Dry-run/local object and invalidation plan is documented and validated.
-- [x] GitHub Actions production workflow repeats build, CloudFormation apply, cache-metadata sync groups, and calculated invalidation without file-by-file edits.
+- [x] GitHub Actions production workflow repeats build, CloudFormation apply, cache-metadata sync groups, and one validated `/*` invalidation path after successful uploads.
 
 ## Required close-out
 

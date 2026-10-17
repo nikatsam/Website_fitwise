@@ -2,6 +2,8 @@
 import type { BreadcrumbItem } from '../../lib/content';
 import BeforeYouStart from '../fit/BeforeYouStart.astro';
 import type { BeforeYouStartItem } from '../../lib/fit/start-guidance';
+import { localeFromPath } from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
 
 interface Props {
   h1: string;
@@ -11,6 +13,7 @@ interface Props {
 }
 
 const { h1, breadcrumb, eyebrow, beforeStart } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
 const hasPurpose = Astro.slots.has('purpose');
 const hasBeforeStart = Astro.slots.has('before-start');
 const hasExample = Astro.slots.has('example');
@@ -23,7 +26,7 @@ const hasRelated = Astro.slots.has('related');
 
 <article class="page-family calculator-page-shell" data-calculator-shell>
   {breadcrumb && (
-    <nav class="page-family__breadcrumb" aria-label="Breadcrumb">
+    <nav class="page-family__breadcrumb" aria-label={translateRequired(locale, 'Breadcrumb')}>
       <ol>
         {breadcrumb.map((item, index) => (
           <li>

@@ -2,10 +2,17 @@
 import PageFamilyLayout from './PageFamilyLayout.astro';
 import FitServicesStudio from '../fitcheck/FitServicesStudio.astro';
 import RugFitCheck from '../fitcheck/RugFitCheck.astro';
+import WorkspaceFitCheck from '../fitcheck/WorkspaceFitCheck.astro';
+import BedroomFitCheck from '../fitcheck/BedroomFitCheck.astro';
+import DiningFitCheck from '../fitcheck/DiningFitCheck.astro';
+import UniversalFitCheck from '../fitcheck/UniversalFitCheck.astro';
 import { CORE_CALCULATOR_START_GUIDANCE } from '../../lib/fit/start-guidance';
 import type { BreadcrumbItem, ContentNavigationLink } from '../../lib/content';
 import type { FeaturePageRecord } from '../../data/feature-pages';
 import type { PageIntent, SeoPublication, SourceRecord } from '../../types';
+import { ES_FEATURE_COPY } from '../../i18n/es-features';
+import { englishPathname, localeFromPath, pathForLocale } from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
 
 interface Props {
   pageIntent: PageIntent;
@@ -17,23 +24,58 @@ interface Props {
 }
 
 const { pageIntent, publication, feature, breadcrumb, links, sources } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const localizedCopy = locale === 'es' ? ES_FEATURE_COPY[pageIntent.id] : undefined;
+if (locale === 'es' && !localizedCopy) {
+  throw new Error(`Missing Spanish feature content for '${pageIntent.id}'.`);
+}
+const intro = localizedCopy?.intro ?? feature.intro;
+const calculation = localizedCopy?.calculation ?? feature.calculation;
+const limitations = localizedCopy?.limitations ?? feature.limitations;
+const isIndexDirectory = ['pi-feature-fit-checks-directory', 'pi-feature-garden-hub'].includes(
+  pageIntent.id,
+);
+const isAdvancedStudio = pageIntent.id === 'pi-feature-fit-services-hub';
+const DirectTool = {
+  'pi-feature-workspace-hub': WorkspaceFitCheck,
+  'pi-feature-bedroom': BedroomFitCheck,
+  'pi-feature-dining': DiningFitCheck,
+  'pi-feature-will-it-fit': UniversalFitCheck,
+}[pageIntent.id];
+const hasCalculator = Boolean(
+  feature.toolRenderer === 'rug-fit' ||
+  (feature.mode && feature.modeCategory) ||
+  DirectTool ||
+  isAdvancedStudio,
+);
+const startGuidance =
+  feature.toolRenderer === 'rug-fit'
+    ? CORE_CALCULATOR_START_GUIDANCE.rug
+    : pageIntent.id === 'pi-feature-workspace-hub'
+      ? CORE_CALCULATOR_START_GUIDANCE.workspace
+      : pageIntent.id === 'pi-feature-bedroom'
+        ? CORE_CALCULATOR_START_GUIDANCE.bedroom
+        : pageIntent.id === 'pi-feature-dining'
+          ? CORE_CALCULATOR_START_GUIDANCE.dining
+          : pageIntent.id === 'pi-feature-will-it-fit'
+            ? CORE_CALCULATOR_START_GUIDANCE.universal
+            : undefined;
 const relatedLinks = links.map((link) => ({
   ...link,
-  description: feature.relatedReasons?.[link.href] ?? link.description,
+  description:
+    localizedCopy?.relatedReasons?.[englishPathname(link.href)] ??
+    (locale === 'en' ? feature.relatedReasons?.[englishPathname(link.href)] : undefined) ??
+    link.description,
 }));
 ---
 
-<PageFamilyLayout
-  breadcrumb={breadcrumb}
-  h1={publication.h1}
-  beforeStart={feature.toolRenderer === 'rug-fit' ? CORE_CALCULATOR_START_GUIDANCE.rug : undefined}
->
+<PageFamilyLayout breadcrumb={breadcrumb} h1={publication.h1} beforeStart={startGuidance}>
   <p slot="purpose" class="feature-intro">
-    {feature.intro}
+    {intro}
   </p>
-  {feature.kind === 'hub' ? (
+  {feature.kind === 'hub' || isIndexDirectory ? (
     <section aria-labelledby="feature-areas">
-      <h2 id="feature-areas">Fit services</h2>
+      <h2 id="feature-areas">{translateRequired(locale, 'Fit services')}</h2>
       <ul class="feature-links">
         {relatedLinks.map((link) => (
           <li>
@@ -42,17 +84,21 @@ const relatedLinks = links.map((link) => ({
           </li>
         ))}
       </ul>
-      <p>{feature.calculation}</p>
+      <p>{calculation}</p>
     </section>
-  ) : feature.toolRenderer === 'rug-fit' || (feature.mode && feature.modeCategory) ? (
+  ) : hasCalculator ? (
     <>
       <section aria-labelledby="feature-how-it-works">
-        <h2 id="feature-how-it-works">How this check works</h2>
-        <p>{feature.calculation}</p>
+        <h2 id="feature-how-it-works">{translateRequired(locale, 'How this check works')}</h2>
+        <p>{calculation}</p>
       </section>
       <div data-shell-section="calculator">
         {feature.toolRenderer === 'rug-fit' ? (
           <RugFitCheck />
+        ) : DirectTool ? (
+          <DirectTool />
+        ) : isAdvancedStudio ? (
+          <FitServicesStudio />
         ) : feature.mode && feature.modeCategory ? (
           <FitServicesStudio
             category={feature.modeCategory}
@@ -62,9 +108,9 @@ const relatedLinks = links.map((link) => ({
         ) : null}
       </div>
       <section aria-labelledby="feature-limitations">
-        <h2 id="feature-limitations">Scope and limitations</h2>
+        <h2 id="feature-limitations">{translateRequired(locale, 'Scope and limitations')}</h2>
         <ul>
-          {feature.limitations.map((limitation) => (
+          {limitations.map((limitation) => (
             <li>{limitation}</li>
           ))}
         </ul>
@@ -72,7 +118,7 @@ const relatedLinks = links.map((link) => ({
     </>
   ) : null}
   <section aria-labelledby="feature-sources">
-    <h2 id="feature-sources">Sources and entered data</h2>
+    <h2 id="feature-sources">{translateRequired(locale, 'Sources and entered data')}</h2>
     {sources.length > 0 ? (
       <ul class="feature-links">
         {sources.map((source) => (
@@ -84,19 +130,29 @@ const relatedLinks = links.map((link) => ({
       </ul>
     ) : (
       <p>
-        No product-specific dimension is preloaded for this feature. The live calculation uses the
-        dimensions you enter; copy model-specific limits from current manuals.
+        {translateRequired(
+          locale,
+          'No product-specific dimension is preloaded for this feature. The live calculation uses the dimensions you enter; copy model-specific limits from current manuals.',
+        )}
       </p>
     )}
     <p>
-      <a href="/methodology/">Calculation methodology</a> ·{' '}
-      <a href="/methodology/reference-conventions/">Measurement conventions</a> ·{' '}
-      <a href="/about/">About and data sources</a>
+      <a href={pathForLocale('/methodology/', locale)}>
+        {translateRequired(locale, 'Calculation methodology')}
+      </a>{' '}
+      ·{' '}
+      <a href={pathForLocale('/methodology/reference-conventions/', locale)}>
+        {translateRequired(locale, 'Measurement conventions')}
+      </a>{' '}
+      ·{' '}
+      <a href={pathForLocale('/about/', locale)}>
+        {translateRequired(locale, 'About and data sources')}
+      </a>
     </p>
   </section>
-  {relatedLinks.length > 0 && feature.kind !== 'hub' && (
-    <nav aria-label="Related next checks">
-      <h2>What to check next</h2>
+  {relatedLinks.length > 0 && feature.kind !== 'hub' && !isIndexDirectory && (
+    <nav aria-label={translateRequired(locale, 'Related next checks')}>
+      <h2>{translateRequired(locale, 'What to check next')}</h2>
       <ul class="feature-links">
         {relatedLinks
           .filter((link) => link.href !== pageIntent.route)

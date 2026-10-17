@@ -92,17 +92,23 @@ for (const file of files) {
       href: attribute(tag, 'href'),
     }))
     .filter((link) => link.rel === 'alternate');
-  const alternateLinks = allAlternateTags.filter((link) => link.language && link.href);
-  assert(
-    allAlternateTags.length === alternateLinks.length,
-    `${route}: every hreflang alternate must have both language and href attributes.`,
+  const alternateLinks = allAlternateTags.filter(
+    (link) => link.language && link.language !== 'x-default' && link.href,
   );
+  const xDefaultLinks = allAlternateTags.filter(
+    (link) => link.language === 'x-default' && link.href,
+  );
+  assert(
+    allAlternateTags.length === alternateLinks.length + xDefaultLinks.length,
+    `${route}: every alternate link must have a language and href.`,
+  );
+  const documentLanguage = html.match(/<html\b[^>]*lang="([^"]+)"/i)?.[1];
   const isNoindex = /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(html);
   if (isNoindex) {
     assert(canonicalTags.length === 0, `${route}: noindex page must not emit a canonical.`);
     assert(
-      alternateLinks.length === 0,
-      `${route}: noindex page must not emit hreflang alternates.`,
+      alternateLinks.length === 0 && xDefaultLinks.length === 0,
+      `${route}: noindex page must not emit hreflang alternates or x-default.`,
     );
     continue;
   }
@@ -139,7 +145,6 @@ for (const file of files) {
   }
 
   if (alternateLinks.length > 0) {
-    const documentLanguage = html.match(/<html\b[^>]*lang="([^"]+)"/i)?.[1];
     const selfAlternates = alternateLinks.filter((link) => link.href === canonical);
     assert(
       selfAlternates.length === 1 && selfAlternates[0]?.language === documentLanguage,
@@ -159,13 +164,32 @@ for (const file of files) {
       ...html.matchAll(/<meta\b[^>]*property="og:locale:alternate"[^>]*content="([^"]+)"[^>]*>/gi),
     ].map((match) => match[1]);
     const expectedOgAlternateLocales = alternateLinks
-      .filter((link) => link.href !== canonical)
+      .filter((link) => link.href !== canonical && link.language.includes('-'))
       .map((link) => link.language.replace('-', '_'))
       .sort();
     assert(
       ogAlternateLocales.sort().join(',') === expectedOgAlternateLocales.join(','),
       `${route}: Open Graph alternate locales must match hreflang alternates.`,
     );
+    const hasSpanishAlternate = alternateLinks.some(
+      (link) => link.language === 'es' || link.language.startsWith('es-'),
+    );
+    if (hasSpanishAlternate) {
+      const englishAlternates = alternateLinks.filter(
+        (link) => link.language === 'en' || link.language.startsWith('en-'),
+      );
+      const expectedFallback = documentLanguage?.startsWith('es')
+        ? `${siteOrigin}${route.startsWith('/es/') ? route.slice(3) : '/'}`
+        : canonical;
+      assert(
+        xDefaultLinks.length === 1 &&
+          xDefaultLinks[0]?.href === expectedFallback &&
+          englishAlternates.some((alternate) => alternate.href === expectedFallback),
+        `${route}: x-default must point to the English fallback URL.`,
+      );
+    } else {
+      assert(xDefaultLinks.length === 0, `${route}: x-default requires a localized alternate set.`);
+    }
     const seenLanguages = new Set();
     for (const link of alternateLinks) {
       assert(
@@ -218,11 +242,19 @@ for (const file of files) {
     }
   }
 
-  if (route === '/') {
+  if (route === '/' || route === '/es/') {
     assert(
       structuredData.some((item) => item['@type'] === 'WebSite'),
-      '/: missing WebSite JSON-LD.',
+      `${route}: missing WebSite JSON-LD.`,
     );
+    const homeWebPage = structuredData.find((item) => item['@type'] === 'WebPage');
+    if (homeWebPage) {
+      assert(
+        homeWebPage.url === canonical,
+        `${route}: WebPage JSON-LD URL does not match canonical.`,
+      );
+      assert(homeWebPage.name === title, `${route}: WebPage JSON-LD name does not match title.`);
+    }
     continue;
   }
 
@@ -237,7 +269,13 @@ for (const file of files) {
   if (!breadcrumb) continue;
 
   const itemList = breadcrumb.itemListElement ?? [];
-  assert(itemList.length >= 2, `${route}: breadcrumb must contain Home and current page.`);
+  const isSpanishPage = documentLanguage?.startsWith('es') ?? false;
+  const visibleBreadcrumbLabel = isSpanishPage ? 'Ruta de navegación' : 'Breadcrumb';
+  const homeBreadcrumbLabel = isSpanishPage ? 'Inicio' : 'Home';
+  assert(
+    itemList.length >= 2,
+    `${route}: breadcrumb must contain ${homeBreadcrumbLabel} and current page.`,
+  );
   itemList.forEach((item, index) => {
     assert(
       item.position === index + 1,
@@ -248,8 +286,10 @@ for (const file of files) {
       `${route}: breadcrumb item ${index + 1} needs name and URL.`,
     );
   });
-  const visibleNav = html.match(/<nav\b[^>]*aria-label="Breadcrumb"[^>]*>([\s\S]*?)<\/nav>/i)?.[1];
-  assert(visibleNav, `${route}: missing visible breadcrumb navigation.`);
+  const visibleNav = html.match(
+    new RegExp(`<nav\\b[^>]*aria-label="${visibleBreadcrumbLabel}"[^>]*>([\\s\\S]*?)<\\/nav>`, 'i'),
+  )?.[1];
+  assert(visibleNav, `${route}: missing visible ${visibleBreadcrumbLabel} navigation.`);
   const visibleItems = visibleNav
     ? [...visibleNav.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].map((item) => ({
         html: item[1],

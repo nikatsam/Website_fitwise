@@ -1,6 +1,7 @@
 import type { BedOrientation } from '../geometry';
 import { computeScale, labelFontSizePx, mmToPx } from './scale';
 import { formatMeasurement } from '../units';
+import { translateWorkspaceBedroomText } from '../../i18n/es-workspace-bedroom-copy';
 
 export interface BedroomDiagramInput {
   diagramId: string;
@@ -18,6 +19,7 @@ export interface BedroomDiagramInput {
   /** One width per bedside table, in bed-width-axis order. */
   nightstandWidthsMm: number[];
   nightstandDepthMm: number;
+  locale?: 'en' | 'es';
 }
 
 function escapeXml(value: string): string {
@@ -58,6 +60,7 @@ export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
     footClearanceMm,
     nightstandWidthsMm,
     nightstandDepthMm,
+    locale = 'en',
   } = input;
 
   if (orientation !== 'portrait' && orientation !== 'landscape') {
@@ -129,9 +132,9 @@ export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
 
   const bedGroup = `
     <g class="diagram-object">
-      <title>Bed and frame footprint</title>
+      <title>${escapeXml(translateWorkspaceBedroomText(locale, 'Bed and frame footprint'))}</title>
       <rect x="${bedX}" y="${bedY}" width="${bedW}" height="${bedH}" class="diagram-object__rect" vector-effect="non-scaling-stroke" />
-      <text x="${bedX + bedW / 2}" y="${bedY + bedH / 2}" class="diagram-object__label" font-size="${bedFontSize}" text-anchor="middle" dominant-baseline="middle">Bed</text>
+      <text x="${bedX + bedW / 2}" y="${bedY + bedH / 2}" class="diagram-object__label" font-size="${bedFontSize}" text-anchor="middle" dominant-baseline="middle">${escapeXml(translateWorkspaceBedroomText(locale, 'Bed'))}</text>
     </g>`;
 
   const nightstandGroups: string[] = [];
@@ -148,7 +151,7 @@ export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
     const y = mmToPx(yMm, scale);
     nightstandGroups.push(`
       <g class="diagram-object">
-        <title>Bedside table ${index + 1} measured footprint</title>
+        <title>${escapeXml(locale === 'es' ? `Huella medida de la mesilla ${index + 1}` : `Bedside table ${index + 1} measured footprint`)}</title>
         <rect x="${x}" y="${y}" width="${width}" height="${height}" class="diagram-object__rect" vector-effect="non-scaling-stroke" />
       </g>`);
   };
@@ -209,7 +212,7 @@ export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
   return `
     <g class="diagram-space">
       <rect x="${roomX}" y="${roomY}" width="${roomW}" height="${roomH}" class="diagram-space__rect" vector-effect="non-scaling-stroke" />
-      <text x="${roomX + 6}" y="${roomY + roomFontSize + 4}" class="diagram-space__label" font-size="${roomFontSize}">${escapeXml(`Room (${orientation})`)}</text>
+      <text x="${roomX + 6}" y="${roomY + roomFontSize + 4}" class="diagram-space__label" font-size="${roomFontSize}">${escapeXml(`${translateWorkspaceBedroomText(locale, 'Room')} (${orientation === 'portrait' ? (locale === 'es' ? 'vertical' : 'portrait') : locale === 'es' ? 'horizontal' : 'landscape'})`)}</text>
     </g>
     ${sideClearanceZones}
     ${footClearanceZone}

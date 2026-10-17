@@ -16,6 +16,10 @@ import {
 } from '../../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../../lib/diagram';
 import { formatMeasurement } from '../../lib/units';
+import { localeFromPath } from '../../i18n/locale';
+import { pathForLocale } from '../../i18n/locale';
+import { translateWorkspaceBedroomText as t } from '../../i18n/es-workspace-bedroom-copy';
+const locale = localeFromPath(Astro.url.pathname);
 
 // Default, SSR-rendered scenario: this is the complete static answer a
 // visitor gets with JavaScript disabled (tasks/T012 acceptance criterion 1).
@@ -60,12 +64,27 @@ const depthCheck = buildWorkspaceDepthCheck({
 const checks = [widthCheck, depthCheck];
 
 const assumptions = [
-  `Monitor width: approximate screen-only width derived from a ${DEFAULTS.monitorDiagonalIn}" ${DEFAULTS.monitorAspectRatio} diagonal and rounded to the nearest millimetre; actual device is typically wider due to bezel. Enter an exact overall width below to override.`,
-  `Monitor stand/base depth: ${formatMeasurement(DEFAULTS.monitorDepthMm)} initial example; replace it with the actual model's sourced depth.`,
-  `Rear cable/vent allowance: ${formatMeasurement(DEFAULTS.rearCableClearanceMm)}. Zero means no rear allowance was included.`,
-  `Keyboard/mouse surface zone: ${formatMeasurement(DEFAULTS.keyboardZoneMm)}, selected by the user. Zero means no front working zone was included.`,
-  'Eye-to-screen viewing distance is separate from the desktop-depth envelope and is not calculated as a desk surface measurement.',
-  `Gap between monitors: ${formatMeasurement(DEFAULTS.gapMm)}.`,
+  t(
+    locale,
+    `Monitor width: approximate screen-only width derived from a ${DEFAULTS.monitorDiagonalIn}" ${DEFAULTS.monitorAspectRatio} diagonal and rounded to the nearest millimetre; actual device is typically wider due to bezel. Enter an exact overall width below to override.`,
+  ),
+  t(
+    locale,
+    `Monitor stand/base depth: ${formatMeasurement(DEFAULTS.monitorDepthMm)} initial example; replace it with the actual model's sourced depth.`,
+  ),
+  t(
+    locale,
+    `Rear cable/vent allowance: ${formatMeasurement(DEFAULTS.rearCableClearanceMm)}. Zero means no rear allowance was included.`,
+  ),
+  t(
+    locale,
+    `Keyboard/mouse surface zone: ${formatMeasurement(DEFAULTS.keyboardZoneMm)}, selected by the user. Zero means no front working zone was included.`,
+  ),
+  t(
+    locale,
+    'Eye-to-screen viewing distance is separate from the desktop-depth envelope and is not calculated as a desk surface measurement.',
+  ),
+  t(locale, `Gap between monitors: ${formatMeasurement(DEFAULTS.gapMm)}.`),
 ];
 
 const result = evaluateFit(checks, assumptions);
@@ -83,9 +102,13 @@ const diagramMarkup = renderWorkspaceDiagramMarkup({
   monitorCount: DEFAULTS.monitorCount,
   gapMm: DEFAULTS.gapMm,
   sideMarginMm: DEFAULTS.sideMarginMm,
+  locale,
 });
 
-const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMeasurement(DEFAULTS.deskDepthMm)} desk with ${DEFAULTS.monitorCount} monitors (${formatMeasurement(monitorWidthMm)} screen width each), ${formatMeasurement(DEFAULTS.gapMm)} gap. Stand depth and user-selected cable/keyboard zones are checked separately in the results table.`;
+const diagramSummary = t(
+  locale,
+  `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMeasurement(DEFAULTS.deskDepthMm)} desk with ${DEFAULTS.monitorCount} monitors (${formatMeasurement(monitorWidthMm)} screen width each), ${formatMeasurement(DEFAULTS.gapMm)} gap. Stand depth and user-selected cable/keyboard zones are checked separately in the results table.`,
+);
 ---
 
 <div
@@ -100,14 +123,19 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
     data-core-progressive-form
     novalidate
   >
-    <ExampleDataNotice note="Replace the starter equipment and desk values with your own measurements." />
+    <ExampleDataNotice
+      note={t(locale, 'Replace the starter equipment and desk values with your own measurements.')}
+    />
     <CalculatorStep
       step={1}
-      title="What are you fitting?"
-      description="Describe the monitor setup whose combined footprint will sit on the desk."
+      title={t(locale, 'What are you fitting?')}
+      description={t(
+        locale,
+        'Describe the monitor setup whose combined footprint will sit on the desk.',
+      )}
     >
       <div class="field">
-        <label for="monitor-count">Number of monitors</label>
+        <label for="monitor-count">{t(locale, 'Number of monitors')}</label>
         <select id="monitor-count" name="monitorCount">
           {[1, 2, 3, 4].map((count) => (
             <option value={count} selected={count === DEFAULTS.monitorCount}>
@@ -118,7 +146,7 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
       </div>
 
       <div class="field">
-        <label for="monitor-diagonal">Screen diagonal (inches)</label>
+        <label for="monitor-diagonal">{t(locale, 'Screen diagonal (inches)')}</label>
         <select
           id="monitor-diagonal"
           name="monitorDiagonalIn"
@@ -140,7 +168,7 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
       </div>
 
       <div class="field">
-        <label for="monitor-aspect-ratio">Screen aspect ratio</label>
+        <label for="monitor-aspect-ratio">{t(locale, 'Screen aspect ratio')}</label>
         <select
           id="monitor-aspect-ratio"
           name="monitorAspectRatio"
@@ -162,11 +190,11 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
 
     <CalculatorStep
       step={2}
-      title="Where does it need to fit?"
-      description="Enter the usable desktop width and depth."
+      title={t(locale, 'Where does it need to fit?')}
+      description={t(locale, 'Enter the usable desktop width and depth.')}
     >
       <div class="field">
-        <label for="desk-width">Desk width</label>
+        <label for="desk-width">{t(locale, 'Desk width')}</label>
         <input
           type="text"
           inputmode="text"
@@ -180,7 +208,7 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
       </div>
 
       <div class="field">
-        <label for="desk-depth">Desk depth</label>
+        <label for="desk-depth">{t(locale, 'Desk depth')}</label>
         <input
           type="text"
           inputmode="text"
@@ -193,25 +221,35 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
         <MeasurementFieldHelp calculator="workspace" fieldId="desk-depth" id="desk-depth-help" />
       </div>
       <p class="field__note">
-        Lengths accept mm, cm, m, in, ft, or feet plus inches. Bare numbers default to mm.
+        {t(
+          locale,
+          'Lengths accept mm, cm, m, in, ft, or feet plus inches. Bare numbers default to mm.',
+        )}
       </p>
     </CalculatorStep>
 
     <details class="workspace-fitcheck__advanced">
-      <summary>Advanced options · Optional</summary>
+      <summary>{t(locale, 'Advanced options · Optional')}</summary>
       <CalculatorStep
         step={3}
-        title="Advanced options"
-        description="Measure the exact monitor setup, reserve workspace, or set monitor spacing and clearance targets."
+        title={t(locale, 'Advanced options')}
+        description={t(
+          locale,
+          'Measure the exact monitor setup, reserve workspace, or set monitor spacing and clearance targets.',
+        )}
       >
         <section
           class="advanced-options__group"
           data-advanced-options-group
           aria-labelledby="workspace-monitor-footprint-heading"
         >
-          <h3 id="workspace-monitor-footprint-heading">Measure the actual monitor footprint</h3>
+          <h3 id="workspace-monitor-footprint-heading">
+            {t(locale, 'Measure the actual monitor footprint')}
+          </h3>
           <div class="field">
-            <label for="monitor-depth">Monitor stand/base depth (editable example)</label>
+            <label for="monitor-depth">
+              {t(locale, 'Monitor stand/base depth (editable example)')}
+            </label>
             <input
               type="text"
               inputmode="text"
@@ -228,19 +266,24 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
             >
               <p>
                 See the{' '}
-                <a href="/workspace/desk-depth-for-monitor/">Samsung M7 stand-depth example</a>.
+                <a href={pathForLocale('/workspace/desk-depth-for-monitor/', locale)}>
+                  {t(locale, 'Samsung M7 stand-depth example')}
+                </a>
+                .
               </p>
             </MeasurementFieldHelp>
           </div>
           <div class="field">
-            <label for="monitor-width-override">Exact overall monitor width including bezel</label>
+            <label for="monitor-width-override">
+              {t(locale, 'Exact overall monitor width including bezel')}
+            </label>
             <input
               type="text"
               inputmode="text"
               id="monitor-width-override"
               name="monitorWidthOverrideMm"
               data-step-optional
-              placeholder="Auto from size"
+              placeholder={t(locale, 'Auto from size')}
               aria-describedby="monitor-width-override-error monitor-width-override-help"
             />
             <span class="field__error" id="monitor-width-override-error" role="alert"></span>
@@ -257,9 +300,11 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
           data-advanced-options-group
           aria-labelledby="workspace-working-space-heading"
         >
-          <h3 id="workspace-working-space-heading">Reserve cable and keyboard space</h3>
+          <h3 id="workspace-working-space-heading">
+            {t(locale, 'Reserve cable and keyboard space')}
+          </h3>
           <div class="field">
-            <label for="rear-cable-clearance">Rear cable/vent allowance</label>
+            <label for="rear-cable-clearance">{t(locale, 'Rear cable/vent allowance')}</label>
             <input
               type="text"
               inputmode="text"
@@ -276,7 +321,9 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
             />
           </div>
           <div class="field">
-            <label for="keyboard-zone">Keyboard/mouse surface zone (user-selected)</label>
+            <label for="keyboard-zone">
+              {t(locale, 'Keyboard/mouse surface zone (user-selected)')}
+            </label>
             <input
               type="text"
               inputmode="text"
@@ -292,8 +339,10 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
               id="keyboard-zone-help"
             />
             <p class="field__note">
-              Viewing distance is not added to desk depth. Enter the actual keyboard/cable areas you
-              want to reserve; zero means they are excluded.
+              {t(
+                locale,
+                'Viewing distance is not added to desk depth. Enter the actual keyboard/cable areas you want to reserve; zero means they are excluded.',
+              )}
             </p>
           </div>
         </section>
@@ -303,9 +352,11 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
           data-advanced-options-group
           aria-labelledby="workspace-monitor-spacing-heading"
         >
-          <h3 id="workspace-monitor-spacing-heading">Set monitor spacing and side clearance</h3>
+          <h3 id="workspace-monitor-spacing-heading">
+            {t(locale, 'Set monitor spacing and side clearance')}
+          </h3>
           <div class="field">
-            <label for="monitor-gap">Gap between monitors</label>
+            <label for="monitor-gap">{t(locale, 'Gap between monitors')}</label>
             <input
               type="text"
               inputmode="text"
@@ -323,7 +374,7 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
           </div>
 
           <div class="field">
-            <label for="side-margin">Recommended side clearance target</label>
+            <label for="side-margin">{t(locale, 'Recommended side clearance target')}</label>
             <input
               type="text"
               inputmode="text"
@@ -367,7 +418,10 @@ const diagramSummary = `${formatMeasurement(DEFAULTS.deskWidthMm)} by ${formatMe
     <DimensionTable
       id="workspace-fitcheck-table"
       rows={rows}
-      caption="Desk width and depth envelopes: required, selected, available and margin"
+      caption={t(
+        locale,
+        'Desk width and depth envelopes: required, selected, available and margin',
+      )}
     />
 
     <AssumptionList id="workspace-fitcheck-assumptions" assumptions={result.assumptions} />

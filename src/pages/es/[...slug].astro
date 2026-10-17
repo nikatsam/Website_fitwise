@@ -1,0 +1,242 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EntityTemplate from '../../components/content/templates/EntityTemplate.astro';
+import FitFeatureLanding from '../../components/content/FitFeatureLanding.astro';
+import FamilyFactsTemplate from '../../components/content/templates/FamilyFactsTemplate.astro';
+import HubTemplate from '../../components/content/templates/HubTemplate.astro';
+import SpanishStaticPage from '../../components/content/SpanishStaticPage.astro';
+import SpanishDualMonitorAnswer from '../../components/content/SpanishDualMonitorAnswer.astro';
+import { dataset, featurePageByIntentId } from '../../data';
+import { buildContentNavigationLinks, buildBreadcrumb } from '../../lib/content';
+import { buildFamilyAnswer } from '../../lib/content/build-family-answer';
+import { buildFurniturePlanningAnswer } from '../../lib/content/build-planning-example';
+import {
+  absoluteCanonical,
+  buildPublicationBreadcrumbs,
+  breadcrumbListStructuredData,
+  publicationStructuredData,
+} from '../../lib/seo/metadata';
+import { localizeDatasetToSpanish } from '../../i18n/localize-dataset';
+import { ES_FEATURE_COPY } from '../../i18n/es-features';
+import { pathForLocale, publishedSpanishRoutes } from '../../i18n/locale';
+import { translate } from '../../i18n/text';
+import { localizeFurniturePlanningAnswer } from '../../i18n/localize-planning';
+
+const spanishDataset = localizeDatasetToSpanish(dataset);
+const originalPublications = new Map(
+  dataset.seoPublications.map((record) => [record.pageIntentId, record]),
+);
+const publishedIntentIds = new Set(
+  publishedSpanishRoutes(dataset).map((route) => route.pageIntentId),
+);
+
+export async function getStaticPaths() {
+  return publishedSpanishRoutes(dataset).map((route) => ({
+    params: { slug: route.sourcePath.split('/').filter(Boolean).join('/') },
+    props: { pageIntentId: route.pageIntentId },
+  }));
+}
+
+interface Props {
+  pageIntentId: string;
+}
+
+const { pageIntentId } = Astro.props;
+if (!publishedIntentIds.has(pageIntentId)) {
+  throw new Error(`Spanish route '${pageIntentId}' is not in the published route manifest.`);
+}
+const pageIntent = spanishDataset.pageIntents.find((intent) => intent.id === pageIntentId);
+const publication = spanishDataset.seoPublications.find(
+  (record) => record.pageIntentId === pageIntentId,
+);
+const originalPageIntent = dataset.pageIntents.find((intent) => intent.id === pageIntentId);
+const originalPublication = originalPublications.get(pageIntentId);
+const isBlogIndex = pageIntentId === 'pi-blog-index';
+if (!pageIntent || !publication || !originalPageIntent || !originalPublication) {
+  throw new Error(`Missing Spanish route data for '${pageIntentId}'.`);
+}
+
+const featureRecord = featurePageByIntentId.get(pageIntentId);
+const featureCopy = featureRecord
+  ? {
+      ...featureRecord,
+      pageIntent,
+      ...ES_FEATURE_COPY[pageIntentId],
+    }
+  : undefined;
+const breadcrumbs = isBlogIndex
+  ? [
+      { label: 'Home', href: '/' },
+      { label: publication.breadcrumbLabel ?? publication.h1, href: publication.canonicalPath },
+    ]
+  : publication.indexable
+    ? buildPublicationBreadcrumbs(
+        pageIntent,
+        publication,
+        spanishDataset.pageIntents,
+        spanishDataset.seoPublications,
+      )
+    : buildBreadcrumb(pageIntent.route, pageIntent.cluster);
+const localizedBreadcrumbs = breadcrumbs.map((item) => ({
+  ...item,
+  label: translate('es', item.label),
+  href: pathForLocale(item.href, 'es'),
+}));
+const structuredData = publication.indexable
+  ? publicationStructuredData(publication, localizedBreadcrumbs)
+  : [breadcrumbListStructuredData(publication.canonicalPath, localizedBreadcrumbs)];
+const alternateIds = [pageIntentId, ...(originalPublication.alternatePageIds ?? [])];
+const alternateLanguages = alternateIds.flatMap((alternateId) => {
+  const alternate = originalPublications.get(alternateId);
+  return alternate?.indexable && alternate.canonicalPath
+    ? [{ language: alternate.language ?? 'en', href: absoluteCanonical(alternate.canonicalPath) }]
+    : [];
+});
+const contentLinks = buildContentNavigationLinks(
+  pageIntent.id,
+  spanishDataset.pageIntents,
+  spanishDataset.seoPublications,
+  spanishDataset.routeDispositions,
+);
+const sources = spanishDataset.sources.filter((source) =>
+  publication.sourceIds.includes(source.id),
+);
+const isAbout = pageIntentId === 'pi-feature-about';
+const isMethodology = pageIntentId === 'pi-feature-methodology';
+const isReference = pageIntentId === 'pi-feature-reference-conventions';
+const isDualMonitorSource = pageIntentId === 'pi-p004-desk-size-two-27in';
+const staticPageKind = isAbout
+  ? 'about'
+  : isMethodology
+    ? 'methodology'
+    : isReference
+      ? 'reference'
+      : isBlogIndex
+        ? 'blog'
+        : undefined;
+const isSourcedPlanning = [
+  'pi-p015-desk-depth-for-monitor',
+  'pi-p018-desk-chair-clearance',
+  'pi-p034-space-bed-wardrobe',
+  'pi-p035-bed-dresser-clearance',
+  'pi-p036-king-bed-nightstands-room',
+  'pi-p037-queen-bed-nightstands-room',
+].includes(pageIntentId);
+const planningAnswer = isSourcedPlanning
+  ? localizeFurniturePlanningAnswer(
+      pageIntentId,
+      buildFurniturePlanningAnswer(originalPageIntent, dataset),
+      spanishDataset,
+    )
+  : undefined;
+const familyAnswer =
+  !featureRecord &&
+  !staticPageKind &&
+  !isDualMonitorSource &&
+  !isSourcedPlanning &&
+  pageIntent.family !== 'hub' &&
+  pageIntent.family !== 'entity'
+    ? buildFamilyAnswer(pageIntent, spanishDataset, 'es')
+    : undefined;
+
+const measurements = spanishDataset.entities
+  .filter((entity) => pageIntent.entityIds.includes(entity.id))
+  .flatMap((entity) => {
+    const rows: { label: string; valueMm: number; note?: string }[] = [];
+    const add = (label: string, measurement: { valueMm: number; note?: string } | undefined) => {
+      if (measurement)
+        rows.push({ label: `${entity.name}: ${translate('es', label)}`, ...measurement });
+    };
+    if (entity.category === 'display') {
+      add('screen width', entity.screenWidthMm);
+      add('screen height', entity.screenHeightMm);
+      add('active panel width (excludes bezel)', entity.activeWidthMm);
+      add('overall width', entity.overallWidthMm);
+      add('overall height', entity.overallHeightMm);
+      add('stand width', entity.standWidthMm);
+      add('stand depth', entity.standDepthMm);
+    } else if (entity.category === 'desk') {
+      add('width', entity.widthMm);
+      add('depth', entity.depthMm);
+      add('height', entity.heightMm);
+    } else if (entity.category === 'bed') {
+      add('mattress width', entity.mattressWidthMm);
+      add('mattress length', entity.mattressLengthMm);
+    } else if (entity.category === 'room') {
+      add('width', entity.widthMm);
+      add('length', entity.lengthMm);
+      add('ceiling height', entity.ceilingHeightMm);
+    }
+    return rows;
+  });
+---
+
+<BaseLayout
+  title={publication.title}
+  description={publication.description}
+  noindex={!publication.indexable}
+  canonicalPath={publication.indexable ? publication.canonicalPath : undefined}
+  language={publication.language ?? 'es'}
+  alternateLanguages={alternateLanguages}
+  structuredData={structuredData}
+>
+  {staticPageKind ? (
+    <SpanishStaticPage
+      kind={staticPageKind}
+      breadcrumb={localizedBreadcrumbs}
+      h1={publication.h1}
+      sources={isAbout ? spanishDataset.sources : sources}
+    />
+  ) : isDualMonitorSource ? (
+    <SpanishDualMonitorAnswer
+      breadcrumb={localizedBreadcrumbs}
+      h1={publication.h1}
+      dataset={spanishDataset}
+    />
+  ) : featureCopy ? (
+    <FitFeatureLanding
+      breadcrumb={localizedBreadcrumbs}
+      pageIntent={pageIntent}
+      publication={publication}
+      feature={featureCopy}
+      links={contentLinks}
+      sources={sources}
+    />
+  ) : pageIntent.family === 'hub' ? (
+    <HubTemplate
+      breadcrumb={localizedBreadcrumbs}
+      h1={publication.h1}
+      intro={publication.description}
+      links={contentLinks}
+    />
+  ) : pageIntent.family === 'entity' ? (
+    <EntityTemplate
+      breadcrumb={localizedBreadcrumbs}
+      h1={publication.h1}
+      intro={publication.description}
+      measurements={measurements}
+    />
+  ) : planningAnswer ? (
+    <FamilyFactsTemplate
+      breadcrumb={localizedBreadcrumbs}
+      h1={publication.h1}
+      intro={planningAnswer.intro}
+      sections={planningAnswer.sections}
+      sources={planningAnswer.sources}
+      relatedPages={contentLinks}
+    />
+  ) : familyAnswer ? (
+    <FamilyFactsTemplate
+      breadcrumb={localizedBreadcrumbs}
+      h1={publication.h1}
+      intro={familyAnswer.intro}
+      sections={familyAnswer.sections}
+      sources={familyAnswer.sources}
+      relatedPages={contentLinks}
+    />
+  ) : (
+    <p class="wrapper locale-route-error">
+      {translate('es', 'This Spanish page is not yet available.')}
+    </p>
+  )}
+</BaseLayout>

@@ -13,6 +13,7 @@ import {
 const root = process.cwd();
 const templatePath = path.join(root, 'infra', 'fitwise-static-site.template.json');
 const oidcTemplatePath = path.join(root, 'infra', 'github-oidc-deploy-role.template.json');
+const deployWorkflowPath = path.join(root, '.github', 'workflows', 'deploy-production.yml');
 const temporaryDirectories = [];
 
 async function makeDist() {
@@ -231,8 +232,27 @@ describe('offline cloud release preparation', () => {
     expect(
       first.objects.find((object) => object.path.startsWith('_astro/'))?.cacheControl,
     ).toContain('immutable');
-    expect(first.invalidationPaths).toContain('/index.html');
-    expect(first.invalidationPaths).not.toContain('/_astro/app.deadbeef.js');
+    expect(first.invalidationPaths).toEqual(['/*']);
+    expect(first.notes.join(' ')).toContain('one /* invalidation path');
     expect(first.postApprovalDryRunCommands[0]).toContain('--exclude "dev/*"');
+  });
+
+  it('uses exactly one wildcard invalidation after every successful object sync', async () => {
+    const workflow = await readFile(deployWorkflowPath, 'utf8');
+    const htmlSync = workflow.indexOf('name: Sync HTML routes');
+    const assetSync = workflow.indexOf('name: Sync fingerprinted Astro assets');
+    const imageSync = workflow.indexOf('name: Sync mutable images');
+    const crawlSync = workflow.indexOf('name: Sync crawl-control and remaining static files');
+    const invalidation = workflow.indexOf('name: Invalidate distribution with one wildcard path');
+
+    expect(htmlSync).toBeGreaterThanOrEqual(0);
+    expect(assetSync).toBeGreaterThan(htmlSync);
+    expect(imageSync).toBeGreaterThan(assetSync);
+    expect(crawlSync).toBeGreaterThan(imageSync);
+    expect(invalidation).toBeGreaterThan(crawlSync);
+    expect(workflow.slice(invalidation)).toContain('"${paths[0]}" == \'/*\'');
+    expect(workflow.slice(invalidation)).toMatch(
+      /aws cloudfront create-invalidation --distribution-id "\$DISTRIBUTION_ID" --paths "\$\{paths\[@\]\}"/,
+    );
   });
 });

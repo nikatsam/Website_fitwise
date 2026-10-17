@@ -61,7 +61,7 @@ Audit and update critical dataset entries when physical standards/manufacturer s
 - Bing SERP checks for `space between bed and wardrobe hinged door clearance` were ambiguous and returned unrelated “space” results; no reliable numeric standard was established.
 - Bing SERP checks for `monitor stand depth desk viewing distance screen size` returned general monitor retail pages, not a sourced combined stand/viewing/cable model.
 - DuckDuckGo automated SERP retrieval presented a human-verification challenge for repeat queries. No search-volume figures were recorded or inferred.
-- These observations inform content differentiation only; they do not satisfy the Search Console evidence gate. The desk/room/furniture guides added from existing published PageIntents remain `noindex`, and draft room-size PageIntents remain drafts and outside the sitemap until query evidence is available.
+- These observations inform content differentiation only; they do not establish Search Console performance or search volume. Most remaining desk/room/furniture variants stay `noindex`. On 2026-10-16, the owner directed four low-overlap, source-backed pages to become indexable: `/workspace/desk-depth-for-monitor/`, `/workspace/desk-chair-clearance/`, `/bedroom/space-between-bed-and-wardrobe/` and `/bedroom/bed-and-dresser-clearance/`. The locally generated sitemap now has 47 URLs; no traffic or ranking outcome has been measured.
 
 ### Story-Led FitWise Blog Pilot — 2026-10-13
 

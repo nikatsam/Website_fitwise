@@ -7,11 +7,14 @@ import type {
 } from '../../lib/fit';
 import {
   FIT_STATE_BADGE_COPY,
+  getFitStateBadgeCopy,
   getFitSummaryCopy,
   getFitSummaryResultLabel,
   renderFitSummaryContentHtml,
 } from '../../lib/fit';
 import UnitValue from './UnitValue.astro';
+import { localeFromPath } from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
 
 interface Props {
   state: FitState;
@@ -37,11 +40,13 @@ const {
   compatibilityChecks = [],
   resultOrigin,
 } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
 const summaryCopy = getFitSummaryCopy(state, rows, {
   missingRequirements,
   compatibilityChecks,
+  locale,
 });
-const { icon } = FIT_STATE_BADGE_COPY[state];
+const { icon } = getFitStateBadgeCopy(state, locale);
 const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
 ---
 
@@ -67,16 +72,22 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
     set:html={renderFitSummaryContentHtml(summaryCopy)}
   />
   <details class="fit-summary__legend" data-fit-state-legend>
-    <summary>What these results mean</summary>
+    <summary>{translateRequired(locale, 'What these results mean')}</summary>
     <ul>
-      {Object.values(FIT_STATE_BADGE_COPY).map((fitState) => (
-        <li>
-          <strong>
-            <span aria-hidden="true">{fitState.icon}</span> {fitState.label}:
-          </strong>{' '}
-          {fitState.meaning}
-        </li>
-      ))}
+      {Object.keys(FIT_STATE_BADGE_COPY).map((stateKey) => {
+        const localized = getFitStateBadgeCopy(
+          stateKey as keyof typeof FIT_STATE_BADGE_COPY,
+          locale,
+        );
+        return (
+          <li>
+            <strong>
+              <span aria-hidden="true">{localized.icon}</span> {localized.label}:
+            </strong>{' '}
+            {localized.meaning}
+          </li>
+        );
+      })}
     </ul>
   </details>
   {resultId && (
@@ -113,6 +124,10 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
 </div>
 
 <script>
+  import { translateRequired, translateTemplate } from '../../i18n/text';
+
+  const locale = document.documentElement.lang.startsWith('es') ? 'es' : 'en';
+
   function markEditedExampleAsUserResult(event: Event): void {
     const target = event.target;
     const isFieldChange =
@@ -140,8 +155,10 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
     const label = summary.querySelector<HTMLElement>('[data-field="label"]');
     const stateLabel = label?.textContent
       ?.trim()
-      .replace(/^(Example result|Your result)\s*—\s*/, '');
-    const resultLabel = `Your result — ${stateLabel ?? 'Fit result'}`;
+      .replace(/^(Example result|Your result|Resultado de ejemplo|Tu resultado)\s*—\s*/, '');
+    const resultLabel = translateTemplate(locale, 'Your result — {label}', {
+      label: stateLabel ?? translateRequired(locale, 'Fit result'),
+    });
     if (label) label.textContent = resultLabel;
 
     const sticky = summary.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
@@ -150,8 +167,9 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
     if (sticky) {
       sticky.setAttribute(
         'aria-label',
-        sticky.getAttribute('aria-label')?.replace(/Example result\s*—\s*/, 'Your result — ') ??
-          `Fit result: ${resultLabel}. View calculation details.`,
+        translateTemplate(locale, 'Fit result: {resultLabel}. View calculation details.', {
+          resultLabel,
+        }),
       );
     }
   }

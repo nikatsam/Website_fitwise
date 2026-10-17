@@ -96,7 +96,7 @@ The values below are hypothetical user inputs, not a product specification or re
 
 ## Pilot Release Checklist
 
-**Local browser/screenshot check:** 2026-10-13 at `http://127.0.0.1:4328/blog/`. Headless Chrome checked the noindex blog index and five dev-only article routes, including tool links, noindex/canonical state, keyboard reachability, computed worked-example outputs and Pexels image loads; desktop/mobile screenshots were reviewed. The dev server has no generated sitemap, so its route-crawl count is zero; the separate production build/SEO/route validators confirmed the 43-URL sitemap. Captures are under `%TEMP%\kilo\fitwise-blog-worked-examples-2026-10-13`.
+**Local browser/screenshot check:** 2026-10-13 at `http://127.0.0.1:4328/blog/`. Headless Chrome checked the noindex blog index and five dev-only article routes, including tool links, noindex/canonical state, keyboard reachability, computed worked-example outputs and Pexels image loads; desktop/mobile screenshots were reviewed. The dev server has no generated sitemap, so its route-crawl count is zero; the separate production build/SEO/route validators confirmed the 47-URL sitemap. Captures are under `%TEMP%\kilo\fitwise-blog-worked-examples-2026-10-13`.
 
 - [x] Five scenarios are visibly illustrative, not represented as real customers.
 - [x] Each article links to the correct FitWise tool and explains its limits accurately.

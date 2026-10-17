@@ -7,25 +7,62 @@ import {
   UNIVERSAL_FIT_LINK,
   getNavigationCurrent,
 } from '../../data/navigation';
+import type { NavigationLink } from '../../data/navigation';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import { localeFromPath, pathForLocale, type Locale } from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
 
+interface Props {
+  showLanguageSwitcher?: boolean;
+}
+
+const { showLanguageSwitcher = true } = Astro.props;
 const currentPath = new URL(Astro.request.url).pathname;
-const fitCheckLinks = FIT_CHECK_GROUPS.flatMap((group) => [
+const locale: Locale = localeFromPath(currentPath);
+const shouldShowLanguageSwitcher = showLanguageSwitcher && !currentPath.startsWith('/dev/');
+const localizeLink = (link: NavigationLink): NavigationLink => ({
+  ...link,
+  href: pathForLocale(link.href, locale),
+  label: translateRequired(locale, link.label),
+  ...(link.activeRoutes
+    ? { activeRoutes: link.activeRoutes.map((route) => pathForLocale(route, locale)) }
+    : {}),
+});
+const universalLink = localizeLink(UNIVERSAL_FIT_LINK);
+const allFitChecksLink = localizeLink(ALL_FIT_CHECKS_LINK);
+const fitCheckGroups = FIT_CHECK_GROUPS.map((group) => ({
+  ...group,
+  label: translateRequired(locale, group.label),
+  links: group.links.map(localizeLink),
+  specialistGroups: group.specialistGroups?.map((specialistGroup) => ({
+    ...specialistGroup,
+    label: translateRequired(locale, specialistGroup.label),
+    links: specialistGroup.links.map(localizeLink),
+  })),
+}));
+const guideLinks = GUIDE_LINKS.map(localizeLink);
+const fitCheckLinks = fitCheckGroups.flatMap((group) => [
   ...group.links,
   ...(group.specialistGroups?.flatMap((specialistGroup) => specialistGroup.links) ?? []),
 ]);
 const activeFitCheck =
-  (currentPath === ADVANCED_FIT_CHECK_LINK.href ? ADVANCED_FIT_CHECK_LINK : undefined) ??
+  (currentPath === pathForLocale(ADVANCED_FIT_CHECK_LINK.href, locale)
+    ? localizeLink(ADVANCED_FIT_CHECK_LINK)
+    : undefined) ??
   fitCheckLinks.find((link) => getNavigationCurrent(currentPath, link.href) === 'page') ??
   fitCheckLinks.find((link) => getNavigationCurrent(currentPath, link.href) === 'location');
+const homePath = pathForLocale('/', locale);
+const darkLabel = translateRequired(locale, 'Dark');
+const lightLabel = translateRequired(locale, 'Light');
 ---
 
 <header class="site-header">
   <div class="wrapper site-header__inner">
     <a
-      href="/"
+      href={homePath}
       class="brand"
-      aria-label="Fitwise.stream home"
-      aria-current={currentPath === '/' ? 'page' : undefined}
+      aria-label={translateRequired(locale, 'Fitwise.stream home')}
+      aria-current={currentPath === homePath ? 'page' : undefined}
     >
       <img
         src="/assets/images/logo.svg"
@@ -43,26 +80,31 @@ const activeFitCheck =
       />
     </a>
 
-    <nav class="site-nav" aria-label="Primary" data-global-navigation>
+    <nav class="site-nav" aria-label={translateRequired(locale, 'Primary')} data-global-navigation>
       <ul class="site-nav__list">
         <li>
           <a
-            href={UNIVERSAL_FIT_LINK.href}
-            aria-current={getNavigationCurrent(currentPath, UNIVERSAL_FIT_LINK.href)}
+            href={universalLink.href}
+            aria-current={getNavigationCurrent(currentPath, universalLink.href)}
           >
-            {UNIVERSAL_FIT_LINK.label}
+            {universalLink.label}
           </a>
         </li>
         <li class="site-nav__group">
           <details data-nav-group="fit-checks">
             <summary>
-              Fit checks
+              {translateRequired(locale, 'Fit checks')}
               {activeFitCheck && (
-                <span class="site-nav__current">Current: {activeFitCheck.label}</span>
+                <span class="site-nav__current">
+                  {translateRequired(locale, 'Current: {label}').replace(
+                    '{label}',
+                    activeFitCheck.label,
+                  )}
+                </span>
               )}
             </summary>
             <div class="site-nav__mega">
-              {FIT_CHECK_GROUPS.map((group) => (
+              {fitCheckGroups.map((group) => (
                 <section class="site-nav__mega-group">
                   <h3>{group.label}</h3>
                   <ul>
@@ -84,21 +126,21 @@ const activeFitCheck =
         </li>
         <li>
           <a
-            href={ALL_FIT_CHECKS_LINK.href}
+            href={allFitChecksLink.href}
             aria-current={getNavigationCurrent(
               currentPath,
-              ALL_FIT_CHECKS_LINK.href,
-              ALL_FIT_CHECKS_LINK.activeRoutes,
+              allFitChecksLink.href,
+              allFitChecksLink.activeRoutes,
             )}
           >
-            {ALL_FIT_CHECKS_LINK.label}
+            {allFitChecksLink.label}
           </a>
         </li>
         <li class="site-nav__group">
           <details data-nav-group="guides">
-            <summary>Guides</summary>
+            <summary>{translateRequired(locale, 'Guides')}</summary>
             <ul class="site-nav__submenu">
-              {GUIDE_LINKS.map((item) => (
+              {guideLinks.map((item) => (
                 <li>
                   <a href={item.href} aria-current={getNavigationCurrent(currentPath, item.href)}>
                     {item.label}
@@ -109,20 +151,34 @@ const activeFitCheck =
           </details>
         </li>
         <li>
-          <a href="/methodology/" aria-current={getNavigationCurrent(currentPath, '/methodology/')}>
-            Methodology
+          <a
+            href={pathForLocale('/methodology/', locale)}
+            aria-current={getNavigationCurrent(currentPath, pathForLocale('/methodology/', locale))}
+          >
+            {translateRequired(locale, 'Methodology')}
           </a>
         </li>
         <li>
-          <a href="/about/" aria-current={getNavigationCurrent(currentPath, '/about/')}>
-            About
+          <a
+            href={pathForLocale('/about/', locale)}
+            aria-current={getNavigationCurrent(currentPath, pathForLocale('/about/', locale))}
+          >
+            {translateRequired(locale, 'About')}
           </a>
         </li>
       </ul>
     </nav>
 
-    <button type="button" class="theme-toggle" data-theme-toggle aria-pressed="false">
-      🌙 Dark
+    {shouldShowLanguageSwitcher && <LanguageSwitcher currentPath={currentPath} language={locale} />}
+    <button
+      type="button"
+      class="theme-toggle"
+      data-theme-toggle
+      data-theme-dark-label={darkLabel}
+      data-theme-light-label={lightLabel}
+      aria-pressed="false"
+    >
+      🌙 {darkLabel}
     </button>
   </div>
 </header>
@@ -146,6 +202,10 @@ const activeFitCheck =
     align-items: center;
     gap: var(--space-5);
     padding-block: var(--space-3);
+  }
+
+  .language-control {
+    flex: 0 0 auto;
   }
 
   .brand {
@@ -338,6 +398,13 @@ const activeFitCheck =
     .site-nav {
       order: 3;
       flex-basis: 100%;
+    }
+    .language-control {
+      order: 2;
+      margin-inline-start: auto;
+    }
+    .theme-toggle {
+      order: 1;
     }
     .site-nav__list {
       justify-content: flex-start;

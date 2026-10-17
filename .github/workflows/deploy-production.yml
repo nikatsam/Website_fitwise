@@ -181,7 +181,7 @@ jobs:
           aws s3 cp dist/favicon.ico "s3://$SITE_BUCKET/favicon.ico" --cache-control 'public, max-age=3600' --content-type 'image/vnd.microsoft.icon'
           aws s3 cp dist/40256e983b29eef42f0a6d265551140c.txt "s3://$SITE_BUCKET/40256e983b29eef42f0a6d265551140c.txt" --cache-control 'public, max-age=300' --content-type 'text/plain; charset=utf-8'
 
-      - name: Invalidate mutable published objects only
+      - name: Invalidate distribution with one wildcard path
         shell: bash
         env:
           DISTRIBUTION_ID: ${{ steps.outputs.outputs.distribution }}
@@ -189,14 +189,17 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t paths < <(node --input-type=module -e 'import fs from "node:fs"; console.log(JSON.parse(fs.readFileSync(process.argv[1], "utf8")).invalidationPaths.join("\n"))' "$DEPLOYMENT_PLAN")
-          if (( ${#paths[@]} > 0 )); then
-            aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "${paths[@]}"
-          fi
+          [[ ${#paths[@]} -eq 1 && "${paths[0]}" == '/*' ]] || {
+            echo 'Deployment plan must contain exactly one /* CloudFront invalidation path.'
+            exit 1
+          }
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "${paths[@]}"
           {
             echo "### Fitwise production deployment"
             printf 'Bucket: %s\n' "${{ steps.outputs.outputs.bucket }}"
             printf 'CloudFront distribution: %s\n' "$DISTRIBUTION_ID"
             printf 'CloudFront DNS target: %s\n' "${{ steps.outputs.outputs.domain }}"
+            printf 'CloudFront invalidation path count: %s (%s)\n' "${#paths[@]}" "${paths[*]}"
             echo 'Set the Cloudflare apex CNAME to the DNS target above (DNS only initially).'
           } >> "$GITHUB_STEP_SUMMARY"
 

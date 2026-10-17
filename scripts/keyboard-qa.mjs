@@ -31,7 +31,7 @@ let websocket;
 const pending = new Map();
 let nextId = 0;
 let sharedApplianceEvidence;
-let sharedFooterLinkSignature;
+const sharedFooterLinkSignatures = new Map();
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -270,6 +270,7 @@ async function tabUntil(selector, maxTabs = 24) {
 
 async function assertAccessibleForm(pathname) {
   const audit = await evaluate(`(() => {
+    const locale = document.documentElement.lang.startsWith('es') ? 'es' : 'en';
     const isVisible = (element) => {
       for (let node = element; node && node !== document.body; node = node.parentElement) {
         if (node.hidden || node.getAttribute('aria-hidden') === 'true') return false;
@@ -320,18 +321,24 @@ async function assertAccessibleForm(pathname) {
     const fitSummary = document.querySelector('.fit-summary');
     const summaryContent = fitSummary?.querySelector('[data-fit-summary-content]');
     const detailDisclosure = document.querySelector('.dimension-table__details');
+    const physicalFitLabel = locale === 'es' ? 'Ajuste físico' : 'Physical fit';
+    const clearanceLabel = locale === 'es' ? 'Holgura seleccionada' : 'Selected clearance';
+    const detailsLabel = locale === 'es' ? 'Mostrar detalles del cálculo' : 'Show calculation details';
     const resultSummaryIssues = fitSummary
       ? [
-          !summaryContent?.textContent.includes('Physical fit') && 'physical-fit status missing',
-          !summaryContent?.textContent.includes('Selected clearance') && 'selected-clearance status missing',
+          !summaryContent?.textContent.includes(physicalFitLabel) && 'physical-fit status missing',
+          !summaryContent?.textContent.includes(clearanceLabel) && 'selected-clearance status missing',
           !summaryContent?.querySelector('[data-field=detail]')?.textContent.trim() && 'plain-language explanation missing',
           !summaryContent?.querySelector('[data-field=next-action]')?.textContent.trim() && 'next action missing',
           !detailDisclosure && 'calculation details disclosure missing',
-          detailDisclosure?.querySelector('summary')?.textContent.trim() !== 'Show calculation details' && 'details disclosure label mismatch',
+          detailDisclosure?.querySelector('summary')?.textContent.trim() !== detailsLabel && 'details disclosure label mismatch',
           detailDisclosure?.open && 'calculation details should start collapsed',
         ].filter(Boolean)
       : [];
     const footer = document.querySelector('[data-site-footer]');
+    const spanish = locale === 'es';
+    const gardenHref = spanish ? '/es/garden/' : '/garden/';
+    const fitChecksHref = spanish ? '/es/fit-checks/' : '/fit-checks/';
     const footerLinks = [...(footer?.querySelectorAll('a[href]') ?? [])].map((link) => ({
       href: link.getAttribute('href'),
       label: link.textContent.trim(),
@@ -360,9 +367,9 @@ async function assertAccessibleForm(pathname) {
         present: Boolean(footer),
         hrefs: footerHrefs,
         duplicates: footerDuplicates,
-        gardenCount: footerLinks.filter((link) => link.href === '/garden/').length,
-        hasAllChecks: footerLinks.some((link) => link.href === '/fit-checks/' && link.label === 'All fit checks'),
-        hasBrittleCopy: /appliance, route, garage and more/i.test(footer?.textContent ?? ''),
+        gardenCount: footerLinks.filter((link) => link.href === gardenHref).length,
+        hasAllChecks: footerLinks.some((link) => link.href === fitChecksHref && link.label === (spanish ? 'Todas las comprobaciones de ajuste' : 'All fit checks')),
+        hasBrittleCopy: /appliance, route, garage and more|electrodomésticos, rutas, garajes y más/i.test(footer?.textContent ?? ''),
       },
       smallTargets,
     };
@@ -414,10 +421,12 @@ async function assertAccessibleForm(pathname) {
       audit.smallTargets.length === 0,
     `${pathname}: form/AX-tree accessibility gate failed: ${JSON.stringify({ audit, axUnnamed, axGenericNames })}.`,
   );
+  const locale = pathname.startsWith('/es/') ? 'es' : 'en';
   const footerLinkSignature = JSON.stringify(audit.footer.hrefs);
-  if (sharedFooterLinkSignature === undefined) sharedFooterLinkSignature = footerLinkSignature;
+  if (!sharedFooterLinkSignatures.has(locale))
+    sharedFooterLinkSignatures.set(locale, footerLinkSignature);
   assert(
-    footerLinkSignature === sharedFooterLinkSignature,
+    footerLinkSignature === sharedFooterLinkSignatures.get(locale),
     `${pathname}: footer link set differs from the shared footer component.`,
   );
 }
@@ -516,6 +525,7 @@ async function assertKeyboardReachability(pathname) {
 }
 
 async function exerciseMobileServiceSteps(pathname, expectedCount) {
+  const stepStatusPrefix = pathname.startsWith('/es/') ? 'Paso' : 'Step';
   const readInitialStep = () =>
     evaluate(`(() => {
     const nav = document.querySelector('[data-fit-service-stepper]');
@@ -544,7 +554,9 @@ async function exerciseMobileServiceSteps(pathname, expectedCount) {
     initial.isVisible &&
       initial.stepCount === expectedCount &&
       initial.activeCount === 1 &&
-      initial.status?.includes(`Step 1 of ${expectedCount}`) &&
+      initial.status?.includes(
+        `${stepStatusPrefix} 1 ${stepStatusPrefix === 'Paso' ? 'de' : 'of'} ${expectedCount}`,
+      ) &&
       initial.nextDisabled === false &&
       initial.previousDisabled === true &&
       initial.stickyPosition === 'fixed',
@@ -578,7 +590,9 @@ async function exerciseMobileServiceSteps(pathname, expectedCount) {
       active.index === step &&
         active.activeCount === 1 &&
         active.currentHeading === 'step' &&
-        active.status?.includes(`Step ${step + 1} of ${expectedCount}`) &&
+        active.status?.includes(
+          `${stepStatusPrefix} ${step + 1} ${stepStatusPrefix === 'Paso' ? 'de' : 'of'} ${expectedCount}`,
+        ) &&
         active.nextDisabled === (step === expectedCount - 1) &&
         active.previousDisabled === false &&
         active.stickyPosition === 'fixed' &&
@@ -2407,10 +2421,10 @@ try {
     await delay(50);
     const globalNavigation = await evaluate(`(() => {
       const header = document.querySelector('header');
-      const nav = header?.querySelector('[data-global-navigation][aria-label="Primary"]');
+      const nav = header?.querySelector('[data-global-navigation]');
       return {
-        sharedCount: header?.querySelectorAll('[data-global-navigation][aria-label="Primary"]').length ?? 0,
-        legacyPrimaryCount: header?.querySelectorAll('nav[aria-label="Primary"]').length ?? 0,
+        sharedCount: header?.querySelectorAll('[data-global-navigation]').length ?? 0,
+        legacyPrimaryCount: header?.querySelectorAll('nav[data-global-navigation]').length ?? 0,
         fitGroupCount: header?.querySelectorAll('[data-nav-group="fit-checks"]').length ?? 0,
         guideGroupCount: header?.querySelectorAll('[data-nav-group="guides"]').length ?? 0,
         currentItems: header ? [...header.querySelectorAll('[aria-current="page"], [aria-current="location"]')].map((item) => item.textContent.trim()) : [],
@@ -2458,17 +2472,19 @@ try {
     const crawlCheck = await evaluate(`(async () => {
       const canonical = document.querySelector('link[rel="canonical"]')?.href;
       const robots = document.querySelector('meta[name="robots"]')?.content?.toLowerCase() ?? '';
+      const isHome = location.pathname === '/' || location.pathname === '/es/';
+      const breadcrumbLabel = document.documentElement.lang.startsWith('es') ? 'Ruta de navegación' : 'Breadcrumb';
       const breadcrumbs = [...document.querySelectorAll('script[type="application/ld+json"]')].some((node) => {
         try { return JSON.parse(node.textContent)['@type'] === 'BreadcrumbList'; } catch { return node.textContent.includes('BreadcrumbList'); }
       });
-      const breadcrumbNavs = [...document.querySelectorAll('nav[aria-label="Breadcrumb"]')];
-      const visibleBreadcrumb = location.pathname === '/' || (
+      const breadcrumbNavs = [...document.querySelectorAll('nav[aria-label="' + breadcrumbLabel + '"]')];
+      const visibleBreadcrumb = isHome || (
         breadcrumbNavs.length === 1 &&
         breadcrumbNavs[0].querySelectorAll('li').length >= 2 &&
         Boolean(breadcrumbNavs[0].querySelector('[aria-current="page"]'))
       );
       const status = await fetch(location.href).then((response) => response.status);
-      return { path: location.pathname, status, canonicalPath: canonical ? new URL(canonical).pathname : null, noindex: robots.includes('noindex'), hasH1: Boolean(document.querySelector('h1')), breadcrumbs: location.pathname === '/' || breadcrumbs, visibleBreadcrumb, breadcrumbCount: breadcrumbNavs.length, breadcrumbLabels: breadcrumbNavs.map((nav) => nav.textContent.trim()), breadcrumbCurrent: breadcrumbNavs.some((nav) => Boolean(nav.querySelector('[aria-current="page"]'))), pageWidth: document.documentElement.scrollWidth, viewport: innerWidth, floatingArtifact: /[0-9]+[.][0-9]{8,}/.test(document.body.innerText) };
+      return { path: location.pathname, status, canonicalPath: canonical ? new URL(canonical).pathname : null, noindex: robots.includes('noindex'), hasH1: Boolean(document.querySelector('h1')), breadcrumbs: isHome || breadcrumbs, visibleBreadcrumb, breadcrumbCount: breadcrumbNavs.length, breadcrumbLabels: breadcrumbNavs.map((nav) => nav.textContent.trim()), breadcrumbCurrent: breadcrumbNavs.some((nav) => Boolean(nav.querySelector('[aria-current="page"]'))), pageWidth: document.documentElement.scrollWidth, viewport: innerWidth, floatingArtifact: /[0-9]+[.][0-9]{8,}/.test(document.body.innerText) };
     })()`);
     await assertAccessibleForm(route);
     await assertKeyboardReachability(route);
@@ -2492,6 +2508,7 @@ try {
       const items = [...summary.querySelectorAll('.fit-summary__missing li')];
       return {
         count: items.length,
+        actionPrefix: document.documentElement.lang.startsWith('es') ? 'Acción:' : 'Action:',
         requirements: items.map((item) => ({
           label: item.querySelector('strong')?.textContent.trim() ?? '',
           explanation: item.querySelector('p')?.textContent.trim() ?? '',
@@ -2507,7 +2524,7 @@ try {
             (requirement) =>
               requirement.label &&
               requirement.explanation &&
-              requirement.action.startsWith('Action:'),
+              requirement.action.startsWith(incompleteResult.actionPrefix),
           ) &&
           !/reviewRequired|needsInformation|\[object Object\]|undefined|result\.\.|assessment\.\./i.test(
             incompleteResult.copy,
@@ -2534,6 +2551,67 @@ try {
     );
   }
   console.log(`Live sitemap crawl QA passed for ${sitemapRoutes.length} indexable routes.`);
+
+  async function navigateAndWait(route) {
+    await cdp('Page.navigate', { url: new URL(route, baseUrl).toString() });
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      if ((await evaluate('document.readyState')) === 'complete') return;
+      await delay(50);
+    }
+    assert(false, `Language preference test timed out loading ${route}.`);
+  }
+
+  async function waitForPath(expectedPath) {
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      if ((await evaluate('location.pathname')) === expectedPath) return;
+      await delay(50);
+    }
+    assert(false, `Language choice did not navigate to ${expectedPath}.`);
+  }
+
+  await navigateAndWait('/');
+  await evaluate(`(() => {
+    localStorage.removeItem('fitwise-language-preference');
+    sessionStorage.removeItem('fitwise-language-suggestion-dismissed');
+  })()`);
+  assert(
+    (await evaluate('location.pathname')) === '/',
+    'English home should remain the default with no saved preference.',
+  );
+  await evaluate(`document.querySelector('[data-language-choice="es"]')?.focus()`);
+  await press('Enter', 'Enter', 13);
+  await waitForPath('/es/');
+  assert(
+    (await evaluate("localStorage.getItem('fitwise-language-preference')")) === 'es',
+    'Choosing Spanish should persist the browser preference.',
+  );
+  await navigateAndWait('/workspace/');
+  assert(
+    (await evaluate('location.pathname')) === '/workspace/',
+    'A saved Spanish preference must not redirect a direct English URL.',
+  );
+  assert(
+    !(await evaluate('document.documentElement.lang')).startsWith('es'),
+    'The directly requested English page must remain English.',
+  );
+  await evaluate(`document.querySelector('[data-language-choice="es"]')?.focus()`);
+  await press('Enter', 'Enter', 13);
+  await waitForPath('/es/workspace/');
+  assert(
+    (await evaluate("localStorage.getItem('fitwise-language-preference')")) === 'es',
+    'The preference should remain Spanish after switching to its equivalent route.',
+  );
+  await evaluate(`document.querySelector('[data-language-choice="en"]')?.focus()`);
+  await press('Enter', 'Enter', 13);
+  await waitForPath('/workspace/');
+  assert(
+    (await evaluate("localStorage.getItem('fitwise-language-preference')")) === 'en',
+    'Choosing English should replace the remembered preference.',
+  );
+  console.log(
+    'Manual language choice persists in-browser without redirecting or locking direct URLs.',
+  );
+
   if (process.env.FITWISE_QA_BLOG_PREVIEW === '1') {
     const blogPreviewRoutes = [
       {

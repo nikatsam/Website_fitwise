@@ -1,5 +1,7 @@
 ---
 import type { BeforeYouStartItem } from '../../lib/fit/start-guidance';
+import { localeFromPath } from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
 
 interface Props {
   id: string;
@@ -9,6 +11,7 @@ interface Props {
 }
 
 const { id, items, spansGrid = false, shellSection } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
 ---
 
 <section
@@ -18,18 +21,18 @@ const { id, items, spansGrid = false, shellSection } = Astro.props;
   data-shell-section={shellSection}
   aria-labelledby={`${id}-heading`}
 >
-  <h2 id={`${id}-heading`}>Before you start</h2>
+  <h2 id={`${id}-heading`}>{translateRequired(locale, 'Before you start')}</h2>
   <ul data-before-you-start-items>
     {items.map((item) => (
       <li data-preparation-type={item.type}>
         <span class="before-you-start__type">
           {item.type === 'verification'
-            ? 'For verification'
+            ? translateRequired(locale, 'For verification')
             : item.type === 'required'
-              ? 'Required'
-              : 'Optional'}
+              ? translateRequired(locale, 'Required')
+              : translateRequired(locale, 'Optional')}
         </span>
-        <span>{item.text}</span>
+        <span>{translateRequired(locale, item.text)}</span>
       </li>
     ))}
   </ul>

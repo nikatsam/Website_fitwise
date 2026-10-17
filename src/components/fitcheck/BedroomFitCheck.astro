@@ -17,6 +17,9 @@ import {
 import { renderBedroomDiagramMarkup } from '../../lib/diagram';
 import { BEDROOM_FIT_PRESETS, DEFAULT_BEDROOM_FIT_PRESET_KEY } from '../../lib/fitcheck/presets';
 import { formatMeasurement } from '../../lib/units';
+import { localeFromPath } from '../../i18n/locale';
+import { translateWorkspaceBedroomText as t } from '../../i18n/es-workspace-bedroom-copy';
+const locale = localeFromPath(Astro.url.pathname);
 
 const DEFAULTS = {
   roomWidthMm: 3000,
@@ -114,9 +117,13 @@ const diagramMarkup = renderBedroomDiagramMarkup({
   footClearanceMm: DEFAULTS.footClearanceMm,
   nightstandWidthsMm,
   nightstandDepthMm: DEFAULTS.nightstandCount > 0 ? DEFAULTS.nightstandDepthMm : 0,
+  locale,
 });
 
-const diagramSummary = `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMeasurement(DEFAULTS.roomLengthMm)} room with ${preset.label}, ${DEFAULTS.orientation} orientation, ${formatMeasurement(DEFAULTS.sideClearanceMm)} selected side target, and ${DEFAULTS.nightstandCount} bedside tables.`;
+const diagramSummary = t(
+  locale,
+  `${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMeasurement(DEFAULTS.roomLengthMm)} room with ${preset.label}, ${DEFAULTS.orientation} orientation, ${formatMeasurement(DEFAULTS.sideClearanceMm)} selected side target, and ${DEFAULTS.nightstandCount} bedside tables.`,
+);
 ---
 
 <div

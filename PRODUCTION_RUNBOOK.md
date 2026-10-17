@@ -17,11 +17,19 @@
 
 1. Run `npm ci` and `npm run verify`.
 2. Run `npm run infra:validate` and local `sam validate --template-file infra/fitwise-static-site.template.json --lint` plus `sam validate --template-file infra/github-oidc-deploy-role.template.json --lint`.
-3. Run `npm run deploy:plan`. It reads `dist/`, reports object hashes/content types/cache-control groups and invalidation paths, and prints illustrative AWS CLI commands containing `--dryrun`. It makes no network calls and does not run the printed commands.
-4. Inspect every planned deletion, cache header and CloudFront invalidation path. Fingerprinted `/_astro/` assets are not invalidated; mutable HTML/images and crawl-control objects are.
+3. Run `npm run deploy:plan`. It reads `dist/`, reports object hashes/content types/cache-control groups and one CloudFront invalidation path (`/*`), and prints illustrative AWS CLI commands containing `--dryrun`. It makes no network calls and does not run the printed commands.
+4. Inspect planned deletions, cache headers and the wildcard scope. The single `/*` path clears all cached distribution objects, including fingerprinted `/_astro/` assets; expect cache misses while they refill.
 5. After a later explicit deployment authorization, run `aws s3 sync ... --dryrun` with the actual `SiteBucketName` stack output and review the output before a separate owner-authorized real sync. Do not copy the placeholder destination from the local plan into a real command.
 
 The production workflow `.github/workflows/deploy-production.yml` deploys only from `main`, requires manual confirmation, and assumes the OIDC role through the production environment. Its trust pins GitHub's immutable owner/repository IDs as well as the names. It uses no long-lived AWS keys. After a successful deployment, it notifies IndexNow only for changed canonical URLs and can resubmit the sitemap to Search Console if the owner configures the optional Google service-account/property values.
+
+## CloudFront Invalidation Cost Control
+
+- The production workflow now submits one CloudFront invalidation path, `/*`, after every HTML, fingerprinted-asset, image and crawl-control upload step has succeeded. It validates that the local deployment plan contains exactly this one path before calling AWS. The job is manually dispatched, has one invalidation step, and uses a concurrency group to prevent overlapping production deploys.
+- AWS documents the first 1,000 invalidation paths per account per month as free, then `$0.005` per path; `/*` counts as **one path regardless of how many cached objects it matches** ([AWS billing guidance](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/PayingForInvalidation.html)). Based on the reported 233 billable paths across three October deployments, the estimated path charge is `$1.165`; three one-path wildcard deploys would be `$0.015` (about 98.7% lower). Actual account billing depends on all distributions and the remaining account-wide free allowance.
+- Trade-off: `/*` evicts all cached objects, including one-year immutable hashed assets. This may temporarily increase S3 origin requests and reduce cache hits while the distribution warms. The FitWise static site is small; the immediate choice prioritizes one billable path over selective cache preservation.
+- The workflow remains manual, so avoid dispatching a second deployment for a SHA that already deployed successfully unless a re-publication is intended. A content-hash/no-op deploy guard is a possible later optimization; it is not included in this immediate fix.
+- This workflow change is prepared locally and has not been pushed or production-deployed in this operation. After it is pushed, the next confirmed production workflow run will apply the one-path policy.
 
 ## Live Deployment Record
 

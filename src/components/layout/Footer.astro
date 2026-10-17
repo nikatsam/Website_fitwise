@@ -5,30 +5,55 @@ import {
   GUIDE_LINKS,
   UNIVERSAL_FIT_LINK,
 } from '../../data/navigation';
+import type { NavigationLink } from '../../data/navigation';
+import { localeFromPath, pathForLocale, type Locale } from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
 
 const year = new Date().getFullYear();
+const locale: Locale = localeFromPath(Astro.url.pathname);
+const localizeLink = (link: NavigationLink): NavigationLink => ({
+  ...link,
+  href: pathForLocale(link.href, locale),
+  label: translateRequired(locale, link.label),
+});
+const universalLink = localizeLink(UNIVERSAL_FIT_LINK);
+const allFitChecksLink = localizeLink(ALL_FIT_CHECKS_LINK);
+const fitCheckGroups = FIT_CHECK_GROUPS.map((group) => ({
+  ...group,
+  label: translateRequired(locale, group.label),
+  links: group.links.map(localizeLink),
+}));
+const guideLinks = GUIDE_LINKS.map(localizeLink);
 ---
 
 <footer class="site-footer" data-site-footer>
   <div class="wrapper site-footer__inner">
     <div class="site-footer__brand">
-      <p class="site-footer__tagline">Know what fits before you buy, arrange or move it.</p>
+      <p class="site-footer__tagline">
+        {translateRequired(locale, 'Know what fits before you buy, arrange or move it.')}
+      </p>
       <p class="site-footer__summary">
-        Measure the item and space, compare clearances, and check model-specific requirements.
+        {translateRequired(
+          locale,
+          'Measure the item and space, compare clearances, and check model-specific requirements.',
+        )}
       </p>
     </div>
     <div class="site-footer__navigation">
-      <nav class="site-footer__fit-checks" aria-label="Footer fit checks">
+      <nav
+        class="site-footer__fit-checks"
+        aria-label={translateRequired(locale, 'Footer fit checks')}
+      >
         <ul class="site-footer__primary">
           <li>
-            <a href={UNIVERSAL_FIT_LINK.href}>{UNIVERSAL_FIT_LINK.label}</a>
+            <a href={universalLink.href}>{universalLink.label}</a>
           </li>
           <li>
-            <a href={ALL_FIT_CHECKS_LINK.href}>{ALL_FIT_CHECKS_LINK.label}</a>
+            <a href={allFitChecksLink.href}>{allFitChecksLink.label}</a>
           </li>
         </ul>
         <div class="site-footer__groups">
-          {FIT_CHECK_GROUPS.map((group) => (
+          {fitCheckGroups.map((group) => (
             <section class="site-footer__group" aria-label={group.label}>
               <h2>{group.label}</h2>
               <ul>
@@ -42,27 +67,36 @@ const year = new Date().getFullYear();
           ))}
         </div>
       </nav>
-      <nav class="site-footer__guides" aria-label="Footer guides">
-        <h2>Guides</h2>
+      <nav class="site-footer__guides" aria-label={translateRequired(locale, 'Footer guides')}>
+        <h2>{translateRequired(locale, 'Guides')}</h2>
         <ul>
-          {GUIDE_LINKS.map((link) => (
+          {guideLinks.map((link) => (
             <li>
               <a href={link.href}>{link.label}</a>
             </li>
           ))}
         </ul>
       </nav>
-      <nav class="site-footer__site-info" aria-label="Site information">
+      <nav
+        class="site-footer__site-info"
+        aria-label={translateRequired(locale, 'Site information')}
+      >
         <h2>FitWise</h2>
         <ul>
           <li>
-            <a href="/methodology/">Methodology</a>
+            <a href={pathForLocale('/methodology/', locale)}>
+              {translateRequired(locale, 'Methodology')}
+            </a>
           </li>
           <li>
-            <a href="/about/">About and data sources</a>
+            <a href={pathForLocale('/about/', locale)}>
+              {translateRequired(locale, 'About and data sources')}
+            </a>
           </li>
           <li>
-            <a href="/about/#corrections">Corrections policy</a>
+            <a href={`${pathForLocale('/about/', locale)}#corrections`}>
+              {translateRequired(locale, 'Corrections policy')}
+            </a>
           </li>
         </ul>
       </nav>

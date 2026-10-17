@@ -24,6 +24,8 @@ import {
   type FitServiceMode,
 } from '../../lib/geometry';
 import { formatMeasurement } from '../../lib/units';
+import { localeFromPath } from '../../i18n/locale';
+import { fitServicesCopy, fitServicesTemplate } from '../../i18n/es-fit-services-copy';
 
 interface Props {
   category?: FitServiceCategory | 'all';
@@ -32,6 +34,10 @@ interface Props {
 }
 
 const { category = 'core', initialMode: requestedInitialMode, pinnedMode = false } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const copy = (text: string) => fitServicesCopy(text, locale);
+const template = (text: string, values: Record<string, string | number>) =>
+  fitServicesTemplate(text, locale, values);
 const serviceDefinitions = FIT_SERVICE_DEFINITIONS.filter(
   (definition) => category === 'all' || (definition.category ?? 'core') === category,
 );
@@ -47,15 +53,15 @@ const initialRows = toDimensionDisplayRows(initialPlan.checks, {
   ...initialResult,
   state: initialState,
 });
-const initialPreview = renderFitServiceAsciiPreview(INITIAL_MODE, initialValues);
-const initialPlanSvg = renderFitServiceSvgPlan(initialRows, initialState);
+const initialPreview = renderFitServiceAsciiPreview(INITIAL_MODE, initialValues, 'metric', locale);
+const initialPlanSvg = renderFitServiceSvgPlan(initialRows, initialState, 'metric', locale);
 const initialBeforeStart = getFitServiceStartGuidance(INITIAL_MODE, initialValues);
 const initialVisibleFields = initialDefinition.fields.filter(
   (field) => !field.showWhen || initialValues[field.showWhen.name] === field.showWhen.value,
 );
 const initialUnitNotes = [
   ...(initialVisibleFields.some((field) => field.type === 'decimal')
-    ? ['Weight fields use kg.']
+    ? [copy('Weight fields use kg.')]
     : []),
 ];
 
@@ -76,7 +82,7 @@ const renderInitialField = (field: (typeof initialDefinition.fields)[number]) =>
       ? formatMeasurement(initialValue)
       : String(initialValue);
   const describedBy = `${id}-error${help ? ` ${id}-help` : ''}${field.type === 'length' ? ' fit-service-unit-note' : ''}`;
-  const helpMarkup = help ? renderMeasurementHelpMarkup(`${id}-help`, help) : '';
+  const helpMarkup = help ? renderMeasurementHelpMarkup(`${id}-help`, help, locale) : '';
   if (field.name === 'candidateSizes') {
     return renderCandidateSizeEditorMarkup(
       id,
@@ -88,7 +94,7 @@ const renderInitialField = (field: (typeof initialDefinition.fields)[number]) =>
   }
   let control: string;
   if (field.type === 'select') {
-    control = `<select id="${id}" name="${field.name}" data-service-control="${field.type}"${required} aria-describedby="${describedBy}">${(field.options ?? []).map((option) => `<option value="${escapeAttribute(option.value)}"${option.value === value ? ' selected' : ''}>${escapeAttribute(option.label)}</option>`).join('')}</select>`;
+    control = `<select id="${id}" name="${field.name}" data-service-control="${field.type}"${required} aria-describedby="${describedBy}">${(field.options ?? []).map((option) => `<option value="${escapeAttribute(option.value)}"${option.value === value ? ' selected' : ''}>${escapeAttribute(copy(option.label))}</option>`).join('')}</select>`;
   } else {
     const type = field.type === 'length' || field.type === 'text' ? 'text' : 'number';
     const inputMode = field.type === 'length' ? ' inputmode="text"' : '';
@@ -98,7 +104,7 @@ const renderInitialField = (field: (typeof initialDefinition.fields)[number]) =>
       field.type === 'count' ? ' step="1"' : field.type === 'decimal' ? ' step="any"' : '';
     control = `<input id="${id}" name="${field.name}" type="${type}"${inputMode}${min}${max}${step} value="${escapeAttribute(value)}" data-service-control="${field.type}"${required} aria-describedby="${describedBy}" />`;
   }
-  return `<div class="field" data-service-field data-name="${field.name}"${condition}><label for="${id}">${escapeAttribute(field.label)}</label>${control}<span class="field__error" id="${id}-error" role="alert"></span>${helpMarkup}</div>`;
+  return `<div class="field" data-service-field data-name="${field.name}"${condition}><label for="${id}">${escapeAttribute(copy(field.label))}</label>${control}<span class="field__error" id="${id}-error" role="alert"></span>${helpMarkup}</div>`;
 };
 const initialSteps = getFitServiceSteps(INITIAL_MODE, initialDefinition.fields);
 const initialFieldMarkup = new Map(
@@ -107,7 +113,7 @@ const initialFieldMarkup = new Map(
 const initialFields = initialSteps
   .map((step, index) => {
     const headingId = `fit-service-step-${INITIAL_MODE}-${step.id}-heading`;
-    return `<section class="fit-services__step" data-fit-service-step data-calculator-step data-step-index="${index}" aria-labelledby="${headingId}"><h2 id="${headingId}" data-step-heading tabindex="-1">Step ${index + 1} of ${initialSteps.length}: ${escapeAttribute(step.title)}</h2><div class="fit-services__step-fields field-grid">${step.fields.map((field) => initialFieldMarkup.get(field.name) ?? '').join('')}</div></section>`;
+    return `<section class="fit-services__step" data-fit-service-step data-calculator-step data-step-index="${index}" aria-labelledby="${headingId}"><h2 id="${headingId}" data-step-heading tabindex="-1">${escapeAttribute(template('Step {n} of {total}: {title}', { n: index + 1, total: initialSteps.length, title: copy(step.title) }))}</h2><div class="fit-services__step-fields field-grid">${step.fields.map((field) => initialFieldMarkup.get(field.name) ?? '').join('')}</div></section>`;
   })
   .join('');
 ---
@@ -115,7 +121,11 @@ const initialFields = initialSteps
 <div class="fit-services calculator-split" data-fit-services data-fit-result-scope>
   <BeforeYouStart id="fit-services-before-start" items={initialBeforeStart} spansGrid />
   <form class="fit-services__form" data-fit-services-form novalidate>
-    <ExampleDataNotice note="These values are not product defaults, manufacturer requirements, or local standards. Replace them with measured dimensions and verified sources." />
+    <ExampleDataNotice
+      note={copy(
+        'These values are not product defaults, manufacturer requirements, or local standards. Replace them with measured dimensions and verified sources.',
+      )}
+    />
     {pinnedMode ? (
       <>
         <input id="fit-service-mode" name="mode" type="hidden" value={INITIAL_MODE} />
@@ -124,21 +134,21 @@ const initialFields = initialSteps
           id="fit-service-description"
           data-fit-service-description
         >
-          {initialDefinition.description}
+          {copy(initialDefinition.description)}
         </p>
       </>
     ) : (
       <div class="field">
-        <label for="fit-service-mode">Choose a fit relationship</label>
+        <label for="fit-service-mode">{copy('Choose a fit relationship')}</label>
         <select id="fit-service-mode" name="mode" aria-describedby="fit-service-description">
           {serviceDefinitions.map((definition) => (
             <option value={definition.mode} selected={definition.mode === INITIAL_MODE}>
-              {definition.title}
+              {copy(definition.title)}
             </option>
           ))}
         </select>
         <p class="field__note" id="fit-service-description" data-fit-service-description>
-          {initialDefinition.description}
+          {copy(initialDefinition.description)}
         </p>
       </div>
     )}
@@ -153,14 +163,17 @@ const initialFields = initialSteps
     <nav
       class="fit-services__mobile-stepper"
       data-fit-service-stepper
-      aria-label="Calculator steps"
+      aria-label={copy('Calculator steps')}
       hidden
     ></nav>
     <div class="fit-services__fields" data-fit-service-fields set:html={initialFields} />
     <UnitToggle />
   </form>
 
-  <section class="fit-services__result calculator-split__result" aria-label="Fit services result">
+  <section
+    class="fit-services__result calculator-split__result"
+    aria-label={copy('Fit services result')}
+  >
     <FitSummary
       id="fit-services-summary"
       resultId="fit-services-table"
@@ -171,52 +184,54 @@ const initialFields = initialSteps
       resultOrigin="example"
     />
     <figure class="fit-service-preview">
-      <figcaption>Fit dimension comparison (schematic, not to scale)</figcaption>
+      <figcaption>{copy('Fit dimension comparison (schematic, not to scale)')}</figcaption>
       <div data-fit-service-preview-svg set:html={initialPlanSvg} />
-      <p data-fit-service-preview-summary>{initialPreview.summary}</p>
+      <p data-fit-service-preview-summary>{copy(initialPreview.summary)}</p>
       <details class="fit-service-preview__text">
-        <summary>Open the text plan alternative</summary>
+        <summary>{copy('Open the text plan alternative')}</summary>
         <pre
           data-fit-service-preview-ascii
           role="img"
-          aria-label={initialPreview.description}
+          aria-label={copy(initialPreview.description)}
         >{initialPreview.art}</pre>
       </details>
     </figure>
     <p class="fit-services__extra" data-fit-service-extra>
-      {initialPlan.extra ?? initialDefinition.description}
+      {copy(initialPlan.extra ?? initialDefinition.description)}
       {initialPlan.capacity !== undefined &&
-        ` Estimated single-layer capacity: ${initialPlan.capacity}; requested ${initialPlan.capacityRequested}.`}
+        ` ${template('Estimated single-layer capacity: {capacity}; requested {requested}.', { capacity: initialPlan.capacity, requested: initialPlan.capacityRequested ?? 0 })}`}
     </p>
     <ul
       class="fit-services__compatibility"
       data-fit-service-compatibility
-      aria-label="Compatibility checks"
+      aria-label={copy('Compatibility checks')}
     >
       {initialPlan.compatibility.map((check) => (
         <li data-compatible={check.compatible}>
-          <strong>{check.compatible ? 'Compatible' : 'Check required'}:</strong> {check.label}.{' '}
-          {check.detail}
+          <strong>{copy(check.compatible ? 'Compatible' : 'Check required')}:</strong>{' '}
+          {copy(check.label)}. {copy(check.detail)}
         </li>
       ))}
     </ul>
     <ul
       class="fit-services__candidates"
       data-fit-service-candidates
-      aria-label="Candidate structure sizes"
+      aria-label={copy('Candidate structure sizes')}
     >
       {initialPlan.candidates?.map((candidate) => (
         <li data-candidate-state={candidate.state}>
-          <strong>{candidate.label}:</strong> {candidate.detail}
+          <strong>{copy(candidate.label)}:</strong> {copy(candidate.detail)}
         </li>
       ))}
     </ul>
     <DimensionTable
       id="fit-services-table"
       rows={initialRows}
-      caption="Dimensions and compatibility envelopes for the selected Fit Services calculation"
+      caption={copy(
+        'Dimensions and compatibility envelopes for the selected Fit Services calculation',
+      )}
     />
-    <AssumptionList id="fit-services-assumptions" assumptions={initialPlan.assumptions} />
+    <AssumptionList id="fit-services-assumptions" assumptions={initialPlan.assumptions.map(copy)} />
   </section>
 </div>
 

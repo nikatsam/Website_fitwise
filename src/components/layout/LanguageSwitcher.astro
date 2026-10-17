@@ -1,0 +1,247 @@
+---
+import { localeFromPath, pathForLocale, type Locale } from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
+
+interface Props {
+  currentPath: string;
+  language?: string;
+}
+
+const { currentPath, language } = Astro.props;
+const locale: Locale = language?.startsWith('es') ? 'es' : localeFromPath(currentPath);
+const englishHref = pathForLocale(currentPath, 'en');
+const spanishHref = pathForLocale(currentPath, 'es');
+const shouldShow = !currentPath.startsWith('/dev/');
+const isHome = currentPath === '/' || currentPath === '/es/' || currentPath === '/es';
+const messageEn = translateRequired('en', 'Your saved language preference is {language}.');
+const messageEs = translateRequired('es', 'Your saved language preference is {language}.');
+const continueEn = translateRequired('en', 'Continue to {language}');
+const continueEs = translateRequired('es', 'Continue to {language}');
+---
+
+<div class="language-control" hidden={!shouldShow}>
+  <nav class="language-switcher" aria-label={translateRequired(locale, 'Site language')}>
+    <a
+      href={englishHref}
+      lang="en"
+      hreflang="en"
+      data-language-choice="en"
+      aria-current={locale === 'en' ? 'page' : undefined}
+    >
+      {translateRequired(locale, 'English')}
+      <small data-saved-language hidden>
+        {translateRequired(locale, 'Saved preference')}
+      </small>
+    </a>
+    <span aria-hidden="true">/</span>
+    <a
+      href={spanishHref}
+      lang="es"
+      hreflang="es"
+      data-language-choice="es"
+      aria-current={locale === 'es' ? 'page' : undefined}
+    >
+      {translateRequired(locale, 'Spanish')}
+      <small data-saved-language hidden>
+        {translateRequired(locale, 'Saved preference')}
+      </small>
+    </a>
+  </nav>
+  {isHome && (
+    <aside
+      class="language-suggestion"
+      data-language-suggestion
+      data-message-en={messageEn}
+      data-message-es={messageEs}
+      data-continue-en={continueEn}
+      data-continue-es={continueEs}
+      data-href-en={englishHref}
+      data-href-es={spanishHref}
+      hidden
+    >
+      <span data-suggestion-message></span>
+      <a data-suggestion-link></a>
+      <button
+        type="button"
+        data-suggestion-dismiss
+        aria-label={translateRequired(locale, 'Dismiss language suggestion')}
+      >
+        ×
+      </button>
+    </aside>
+  )}
+</div>
+
+<script>
+  const preferenceKey = 'fitwise-language-preference';
+  const dismissedKey = 'fitwise-language-suggestion-dismissed';
+  const controls = [...document.querySelectorAll<HTMLAnchorElement>('[data-language-choice]')];
+  const suggestion = document.querySelector<HTMLElement>('[data-language-suggestion]');
+
+  const savedPreference = () => {
+    try {
+      const value = localStorage.getItem(preferenceKey);
+      return value === 'en' || value === 'es' ? value : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const updatePreferenceIndicator = () => {
+    const saved = savedPreference();
+    controls.forEach((link) => {
+      const marker = link.querySelector<HTMLElement>('[data-saved-language]');
+      const isSaved = Boolean(saved && link.dataset.languageChoice === saved);
+      if (marker) marker.hidden = !isSaved;
+      if (isSaved)
+        link.setAttribute(
+          'aria-label',
+          `${link.textContent?.trim()} (${marker?.textContent?.trim()})`,
+        );
+      else link.removeAttribute('aria-label');
+    });
+  };
+
+  controls.forEach((link) => {
+    link.addEventListener('click', () => {
+      try {
+        localStorage.setItem(preferenceKey, link.dataset.languageChoice ?? 'en');
+      } catch {
+        // Navigation still works when browser storage is disabled.
+      }
+    });
+  });
+
+  updatePreferenceIndicator();
+
+  if (suggestion) {
+    const saved = savedPreference();
+    const current = document.documentElement.lang.startsWith('es') ? 'es' : 'en';
+    if (saved && saved !== current) {
+      const savedLanguage = saved === 'es' ? 'Spanish' : 'English';
+      const translatedLanguage = saved === 'es' ? 'Español' : 'English';
+      const messageTemplate =
+        saved === 'es' ? suggestion.dataset.messageEs : suggestion.dataset.messageEn;
+      const continueTemplate =
+        saved === 'es' ? suggestion.dataset.continueEs : suggestion.dataset.continueEn;
+      const message =
+        saved === 'es'
+          ? messageTemplate?.replace('{language}', translatedLanguage)
+          : messageTemplate?.replace('{language}', savedLanguage);
+      const continueLabel =
+        saved === 'es'
+          ? continueTemplate?.replace('{language}', translatedLanguage)
+          : continueTemplate?.replace('{language}', savedLanguage);
+      const messageNode = suggestion.querySelector<HTMLElement>('[data-suggestion-message]');
+      const link = suggestion.querySelector<HTMLAnchorElement>('[data-suggestion-link]');
+      const href = saved === 'es' ? suggestion.dataset.hrefEs : suggestion.dataset.hrefEn;
+      if (messageNode && link && message && continueLabel && href) {
+        messageNode.textContent = message;
+        link.textContent = continueLabel;
+        link.href = href;
+        link.dataset.languageChoice = saved;
+        suggestion.hidden = false;
+        link.addEventListener('click', () => {
+          try {
+            localStorage.setItem(preferenceKey, saved);
+          } catch {
+            /* User can still navigate. */
+          }
+        });
+      }
+    }
+
+    suggestion
+      .querySelector<HTMLButtonElement>('[data-suggestion-dismiss]')
+      ?.addEventListener('click', () => {
+        suggestion.hidden = true;
+        try {
+          sessionStorage.setItem(dismissedKey, '1');
+        } catch {
+          /* Dismissal is optional. */
+        }
+      });
+    try {
+      if (sessionStorage.getItem(dismissedKey) === '1') suggestion.hidden = true;
+    } catch {
+      // The suggestion remains available when session storage is disabled.
+    }
+  }
+</script>
+
+<style>
+  .language-control {
+    display: grid;
+    justify-items: end;
+    gap: var(--space-2);
+    flex: 0 0 auto;
+  }
+
+  .language-control[hidden] {
+    display: none;
+  }
+
+  .language-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-sm);
+  }
+
+  .language-switcher a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--color-text-secondary);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  .language-switcher a[aria-current='page'] {
+    color: var(--color-text-primary);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .language-switcher small {
+    color: var(--color-accent-1);
+    font-size: 0.65rem;
+  }
+
+  .language-suggestion {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+  }
+
+  .language-suggestion[hidden],
+  .language-switcher small[hidden] {
+    display: none;
+  }
+
+  .language-suggestion a {
+    white-space: nowrap;
+    font-weight: 700;
+  }
+
+  .language-suggestion button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+
+  @media (max-width: 40rem) {
+    .language-control {
+      order: 2;
+      margin-inline-start: auto;
+    }
+  }
+</style>

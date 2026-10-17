@@ -1,5 +1,7 @@
 ---
 import type { ContentNavigationLink } from '../../lib/content/navigation';
+import { localeFromPath } from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
 
 interface Props {
   links: ContentNavigationLink[];
@@ -7,11 +9,12 @@ interface Props {
 }
 
 const { links, heading = 'Related planning guides' } = Astro.props;
+const localizedHeading = translateRequired(localeFromPath(Astro.url.pathname), heading);
 ---
 
 {links.length > 0 && (
-  <nav class="related-pages" aria-label={heading}>
-    <h2>{heading}</h2>
+  <nav class="related-pages" aria-label={localizedHeading}>
+    <h2>{localizedHeading}</h2>
     <ul>
       {links.map((link) => (
         <li>

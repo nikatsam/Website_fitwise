@@ -1,4 +1,9 @@
 ---
+import { localeFromPath } from '../../i18n/locale';
+import { translate } from '../../i18n/text';
+
+const locale = localeFromPath(Astro.url.pathname);
+
 interface Props {
   assumptions: string[];
   heading?: string;
@@ -13,13 +18,13 @@ const { assumptions, heading = 'Assumptions', headingLevel = 2, id } = Astro.pro
 {assumptions.length > 0 && (
   <div class="assumption-list" id={id}>
     {headingLevel === 2 ? (
-      <h2 class="assumption-list__heading">{heading}</h2>
+      <h2 class="assumption-list__heading">{translate(locale, heading)}</h2>
     ) : (
-      <h3 class="assumption-list__heading">{heading}</h3>
+      <h3 class="assumption-list__heading">{translate(locale, heading)}</h3>
     )}
     <ul data-field="items">
       {assumptions.map((assumption) => (
-        <li>{assumption}</li>
+        <li>{translate(locale, assumption)}</li>
       ))}
     </ul>
   </div>

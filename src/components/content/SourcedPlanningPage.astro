@@ -2,7 +2,11 @@
 import { dataset } from '../../data';
 import { buildFurniturePlanningAnswer } from '../../lib/content/build-planning-example';
 import { buildBreadcrumb, buildContentNavigationLinks } from '../../lib/content';
-import { breadcrumbListStructuredData } from '../../lib/seo/metadata';
+import {
+  breadcrumbListStructuredData,
+  buildPublicationBreadcrumbs,
+  publicationStructuredData,
+} from '../../lib/seo/metadata';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import FamilyFactsTemplate from './templates/FamilyFactsTemplate.astro';
 
@@ -13,15 +17,21 @@ interface Props {
 const { pageIntentId } = Astro.props;
 const pageIntent = dataset.pageIntents.find((intent) => intent.id === pageIntentId);
 const publication = dataset.seoPublications.find((item) => item.pageIntentId === pageIntentId);
-if (!pageIntent || !publication || publication.indexable) {
-  throw new Error(
-    `Sourced planning page '${pageIntentId}' must have a published noindex envelope.`,
-  );
-}
+if (!pageIntent || !publication)
+  throw new Error(`Missing published metadata for '${pageIntentId}'.`);
 
 const answer = buildFurniturePlanningAnswer(pageIntent, dataset);
-const breadcrumb = buildBreadcrumb(pageIntent.route, pageIntent.cluster);
-const structuredData = [breadcrumbListStructuredData(publication.canonicalPath, breadcrumb)];
+const breadcrumb = publication.indexable
+  ? buildPublicationBreadcrumbs(
+      pageIntent,
+      publication,
+      dataset.pageIntents,
+      dataset.seoPublications,
+    )
+  : buildBreadcrumb(pageIntent.route, pageIntent.cluster);
+const structuredData = publication.indexable
+  ? publicationStructuredData(publication, breadcrumb)
+  : [breadcrumbListStructuredData(publication.canonicalPath, breadcrumb)];
 const relatedPages = buildContentNavigationLinks(
   pageIntent.id,
   dataset.pageIntents,
@@ -33,7 +43,9 @@ const relatedPages = buildContentNavigationLinks(
 <BaseLayout
   title={publication.title}
   description={publication.description}
-  noindex
+  noindex={!publication.indexable}
+  canonicalPath={publication.indexable ? publication.canonicalPath : undefined}
+  language={publication.language}
   structuredData={structuredData}
 >
   <FamilyFactsTemplate

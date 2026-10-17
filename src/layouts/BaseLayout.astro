@@ -3,6 +3,8 @@ import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import '../styles/global.css';
 import { absoluteCanonical, serializeJsonLd } from '../lib/seo/metadata';
+import { languageAlternates as buildLanguageAlternates, xDefaultPath } from '../i18n/locale';
+import { translate } from '../i18n/text';
 
 interface Props {
   title: string;
@@ -11,6 +13,7 @@ interface Props {
   canonicalPath?: string;
   language?: string;
   alternateLanguages?: { language: string; href: string }[];
+  showLanguageSwitcher?: boolean;
   structuredData?: Record<string, unknown>[];
 }
 
@@ -21,9 +24,29 @@ const {
   canonicalPath,
   language = 'en',
   alternateLanguages = [],
+  showLanguageSwitcher = true,
   structuredData = [],
 } = Astro.props;
 const canonicalUrl = canonicalPath ? absoluteCanonical(canonicalPath) : undefined;
+const localizedAlternates =
+  canonicalPath && !noindex
+    ? buildLanguageAlternates(canonicalPath, language, alternateLanguages).map((alternate) => ({
+        ...alternate,
+        href: alternate.href.startsWith('http')
+          ? alternate.href
+          : absoluteCanonical(alternate.href),
+      }))
+    : [];
+const alternateOgLocales = localizedAlternates.filter((alternate) =>
+  alternate.language.includes('-'),
+);
+const xDefaultUrl =
+  canonicalPath && !noindex ? absoluteCanonical(xDefaultPath(canonicalPath)) : undefined;
+const hasSpanishAlternate =
+  language.startsWith('es') ||
+  localizedAlternates.some(
+    (alternate) => alternate.language === 'es' || alternate.language.startsWith('es-'),
+  );
 const ogLocale = language.includes('-') ? language.replace('-', '_') : undefined;
 ---
 
@@ -39,12 +62,13 @@ const ogLocale = language.includes('-') ? language.replace('-', '_') : undefined
     <meta name="theme-color" content="#7c3aed" />
     {noindex && <meta name="robots" content="noindex" />}
     {canonicalUrl && !noindex && <link rel="canonical" href={canonicalUrl} />}
-    {canonicalUrl && !noindex && alternateLanguages.length > 0 && (
+    {canonicalUrl && !noindex && hasSpanishAlternate && (
       <>
         <link rel="alternate" hreflang={language} href={canonicalUrl} />
-        {alternateLanguages.map((alternate) => (
+        {localizedAlternates.map((alternate) => (
           <link rel="alternate" hreflang={alternate.language} href={alternate.href} />
         ))}
+        {xDefaultUrl && <link rel="alternate" hreflang="x-default" href={xDefaultUrl} />}
       </>
     )}
     {canonicalUrl && !noindex && (
@@ -52,7 +76,7 @@ const ogLocale = language.includes('-') ? language.replace('-', '_') : undefined
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Fitwise.stream" />
         {ogLocale && <meta property="og:locale" content={ogLocale} />}
-        {alternateLanguages.map((alternate) => (
+        {alternateOgLocales.map((alternate) => (
           <meta property="og:locale:alternate" content={alternate.language.replace('-', '_')} />
         ))}
         <meta property="og:title" content={title} />
@@ -151,9 +175,9 @@ const ogLocale = language.includes('-') ? language.replace('-', '_') : undefined
   </head>
   <body>
     <a class="skip-link" href="#main-content">
-      Skip to main content
+      {translate(language.startsWith('es') ? 'es' : 'en', 'Skip to main content')}
     </a>
-    <Header />
+    <Header showLanguageSwitcher={showLanguageSwitcher} />
     <main id="main-content">
       <slot />
     </main>

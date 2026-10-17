@@ -1,4 +1,9 @@
 ---
+import { localeFromPath } from '../../i18n/locale';
+import { translate, translateRequired } from '../../i18n/text';
+
+const locale = localeFromPath(Astro.url.pathname);
+
 interface Props {
   note?: string;
 }
@@ -12,11 +17,11 @@ const {
   class="fit-example-notice"
   data-fit-example-notice
   role="note"
-  aria-label="Example data loaded"
+  aria-label={translateRequired(locale, 'Example data loaded')}
 >
-  <strong>Example data loaded</strong>
-  <p>The values below are illustrative.</p>
-  <p>{note}</p>
+  <strong>{translateRequired(locale, 'Example data loaded')}</strong>
+  <p>{translateRequired(locale, 'The values below are illustrative.')}</p>
+  <p>{translate(locale, note)}</p>
 </aside>
 
 <style>

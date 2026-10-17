@@ -193,14 +193,20 @@ function checkSpecialistCalculatorShell(route, source) {
   );
 }
 
-function checkGlobalNavigation(route, source, { requireCurrent = true } = {}) {
+function checkGlobalNavigation(route, source, { requireCurrent = true, locale = 'en' } = {}) {
   const header = source.match(/<header\b[\s\S]*?<\/header>/i)?.[0] ?? '';
+  const primaryLabel = locale === 'es' ? 'Navegación principal' : 'Primary';
   const primaryNavs = [
     ...header.matchAll(
-      /<nav\b(?=[^>]*aria-label="Primary")(?=[^>]*data-global-navigation)[^>]*>/gi,
+      new RegExp(
+        `<nav\\b(?=[^>]*aria-label="${primaryLabel}")(?=[^>]*data-global-navigation)[^>]*>`,
+        'gi',
+      ),
     ),
   ];
-  const legacyPrimaryNavs = [...header.matchAll(/<nav\b(?=[^>]*aria-label="Primary")[^>]*>/gi)];
+  const legacyPrimaryNavs = [
+    ...header.matchAll(new RegExp(`<nav\\b(?=[^>]*aria-label="${primaryLabel}")[^>]*>`, 'gi')),
+  ];
   const fitGroups = [...header.matchAll(/<details\b[^>]*data-nav-group="fit-checks"/gi)];
   const guideGroups = [...header.matchAll(/<details\b[^>]*data-nav-group="guides"/gi)];
   const currentItems = [...header.matchAll(/\baria-current="(?:page|location)"/gi)];
@@ -222,8 +228,11 @@ function checkGlobalNavigation(route, source, { requireCurrent = true } = {}) {
   }
 }
 
-function breadcrumbLabels(source) {
-  const nav = source.match(/<nav\b[^>]*aria-label="Breadcrumb"[^>]*>([\s\S]*?)<\/nav>/i)?.[1];
+function breadcrumbLabels(source, locale = 'en') {
+  const label = locale === 'es' ? 'Ruta de navegación' : 'Breadcrumb';
+  const nav = source.match(
+    new RegExp(`<nav\\b[^>]*aria-label="${label}"[^>]*>([\\s\\S]*?)<\\/nav>`, 'i'),
+  )?.[1];
   if (!nav) return [];
   return [...nav.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].map((match) =>
     match[1]
@@ -235,19 +244,23 @@ function breadcrumbLabels(source) {
   );
 }
 
-function checkVisibleBreadcrumb(route, source, { requireStructured = true } = {}) {
+function checkVisibleBreadcrumb(route, source, { requireStructured = true, locale = 'en' } = {}) {
+  const breadcrumbLabel = locale === 'es' ? 'Ruta de navegación' : 'Breadcrumb';
   const breadcrumbNavs = [
-    ...source.matchAll(/<nav\b[^>]*aria-label="Breadcrumb"[^>]*>([\s\S]*?)<\/nav>/gi),
+    ...source.matchAll(
+      new RegExp(`<nav\\b[^>]*aria-label="${breadcrumbLabel}"[^>]*>([\\s\\S]*?)<\\/nav>`, 'gi'),
+    ),
   ];
   const nav = breadcrumbNavs[0]?.[1];
   assert(Boolean(nav), `${route}: non-home page is missing its visible breadcrumb.`);
   assert(breadcrumbNavs.length === 1, `${route}: expected exactly one visible breadcrumb trail.`);
   if (!nav) return;
 
-  const labels = breadcrumbLabels(source);
+  const labels = breadcrumbLabels(source, locale);
+  const homeLabel = locale === 'es' ? 'Inicio' : 'Home';
   assert(
-    labels.length >= 2 && labels[0] === 'Home' && /aria-current="page"/.test(nav),
-    `${route}: breadcrumb must show Home and the current page in order (${labels.join(' > ')}).`,
+    labels.length >= 2 && labels[0] === homeLabel && /aria-current="page"/.test(nav),
+    `${route}: breadcrumb must show ${homeLabel} and the current page in order (${labels.join(' > ')}).`,
   );
   if (!requireStructured) return;
 
@@ -709,12 +722,12 @@ const dedicatedPages = [
   },
   {
     route: '/bedroom/space-between-bed-and-wardrobe/',
-    heading: 'Wardrobe door swing: measured PAX/GRIMO example',
+    heading: 'US PAX/GRIMO wardrobe door swing: measured fit example',
     includes: ['495 mm', 'not a paired bed/wardrobe room plan', 'not a recommended walking aisle'],
   },
   {
     route: '/bedroom/bed-and-dresser-clearance/',
-    heading: 'Bed-to-dresser clearance: measured drawer-extension example',
+    heading: 'UK bed-to-dresser clearance: measured drawer-extension example',
     includes: ['294 mm', 'not a standing or walking allowance'],
   },
   {
@@ -871,6 +884,148 @@ for (const record of routeDispositions) {
       `${record.route}: draft PageIntent '${record.pageIntentId}' became a public route.`,
     );
   }
+}
+
+const spanishHome = await html('/es/');
+checkPage('/es/', spanishHome, {
+  heading: '¿Cabrá?',
+  includes: ['lang="es"', 'Comprobaciones de ajuste por tarea', 'Fitwise.stream'],
+});
+assert(
+  spanishHome.includes('<link rel="canonical" href="https://fitwise.stream/es/"'),
+  '/es/: Spanish home must self-canonicalize to its Spanish URL.',
+);
+checkGlobalNavigation('/es/', spanishHome, { locale: 'es' });
+
+let sitemapXml = '';
+try {
+  sitemapXml = await readFile(path.join(dist, 'sitemap.xml'), 'utf8');
+} catch {
+  // The sitemap-missing error is reported by the main route checks above.
+}
+
+for (const record of routeDispositions) {
+  if (record.intentStatus !== 'published' || record.disposition !== 'generated') continue;
+  const englishPath = record.route;
+  const spanishPath = `/es${englishPath}`;
+  const englishSource = await html(englishPath);
+  const spanishSource = await html(spanishPath);
+  const spanishNoindex = /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(spanishSource);
+  const englishNoindex = /<meta\b[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(englishSource);
+  const spanishLanguage = spanishSource.match(/<html\b[^>]*lang="([^"]+)"/i)?.[1] ?? 'es';
+  const spanishCanonical = `https://fitwise.stream${spanishPath}`;
+  const englishCanonical = `https://fitwise.stream${englishPath}`;
+  const internalHeaderLinks = [
+    ...(spanishSource.match(/<header\b[\s\S]*?<\/header>/i)?.[0] ?? '').matchAll(/<a\b[^>]*>/gi),
+  ]
+    .map(([tag]) => tag)
+    .filter((tag) => !/data-language-choice="en"/.test(tag))
+    .map((tag) => tag.match(/\bhref="(\/[^"#]*)/)?.[1])
+    .filter((href) => Boolean(href));
+
+  assert(
+    spanishLanguage.startsWith('es'),
+    `${spanishPath}: Spanish route must use an es or es-REGION document language.`,
+  );
+  assert(
+    spanishSource.includes('aria-label="Idioma del sitio"') &&
+      spanishSource.includes('lang="en"') &&
+      spanishSource.includes('lang="es"'),
+    `${spanishPath}: visible language links to English and Spanish are required.`,
+  );
+  assert(
+    internalHeaderLinks.every((href) => href === '/es' || href.startsWith('/es/')),
+    `${spanishPath}: internal header navigation must stay in Spanish (${internalHeaderLinks.filter((href) => href !== '/es' && !href.startsWith('/es/')).join(', ')}).`,
+  );
+  const footer = spanishSource.match(/<footer\b[\s\S]*?<\/footer>/i)?.[0] ?? '';
+  const internalFooterLinks = [...footer.matchAll(/<a\b[^>]*href="(\/[^"#]*)/gi)].map(
+    (match) => match[1],
+  );
+  assert(
+    internalFooterLinks.every((href) => href === '/es' || href.startsWith('/es/')),
+    `${spanishPath}: internal footer navigation must stay in Spanish (${internalFooterLinks.filter((href) => href !== '/es' && !href.startsWith('/es/')).join(', ')}).`,
+  );
+  const untranslatedChrome = [
+    'aria-label="Primary"',
+    'aria-label="Breadcrumb"',
+    'Skip to main content',
+    '<summary>Fit checks',
+    '<summary>Guides</summary>',
+    '<h2>Before you start</h2>',
+    '<h3>What this means</h3>',
+    '<dt>Physical fit</dt>',
+    '<dt>Selected clearance</dt>',
+  ].filter((snippet) => spanishSource.includes(snippet));
+  assert(
+    untranslatedChrome.length === 0,
+    `${spanishPath}: English shell/calculator text remains: ${untranslatedChrome.join(', ')}.`,
+  );
+  assert(
+    !/<meta\b[^>]*http-equiv="refresh"/i.test(spanishSource) &&
+      !/(?:window|location)\.(?:href\s*=|replace\()/i.test(spanishSource),
+    `${spanishPath}: language selection must not force a locale redirect.`,
+  );
+
+  if (englishNoindex) {
+    assert(spanishNoindex, `${spanishPath}: Spanish noindex policy must match its English source.`);
+    continue;
+  }
+
+  assert(
+    !spanishNoindex,
+    `${spanishPath}: indexable English page must not produce a noindex Spanish translation.`,
+  );
+  assert(
+    spanishSource.includes(`<link rel="canonical" href="${spanishCanonical}"`),
+    `${spanishPath}: Spanish translation must have a self-referential canonical.`,
+  );
+  assert(
+    [
+      ...spanishSource.matchAll(
+        /<link\b[^>]*rel="alternate"[^>]*hreflang="(en(?:-[A-Z]{2})?)"[^>]*href="([^"]+)"[^>]*>/gi,
+      ),
+    ].some((match) => match[2] === englishCanonical),
+    `${spanishPath}: Spanish page must link back to its English hreflang equivalent.`,
+  );
+  assert(
+    spanishSource.includes(
+      `<link rel="alternate" hreflang="${spanishLanguage}" href="${spanishCanonical}"`,
+    ),
+    `${spanishPath}: Spanish page must include its own hreflang URL.`,
+  );
+  assert(
+    spanishSource.includes(`<link rel="alternate" hreflang="x-default" href="${englishCanonical}"`),
+    `${spanishPath}: x-default must use the English fallback page.`,
+  );
+  assert(
+    [
+      ...englishSource.matchAll(
+        /<link\b[^>]*rel="alternate"[^>]*hreflang="(es(?:-[A-Z]{2})?)"[^>]*href="([^"]+)"[^>]*>/gi,
+      ),
+    ].some((match) => match[2] === spanishCanonical),
+    `${englishPath}: English source page must link to the Spanish translation.`,
+  );
+  assert(
+    sitemapXml.includes(`<loc>${spanishCanonical}</loc>`),
+    `${spanishPath}: indexable Spanish translation must be listed in sitemap.xml.`,
+  );
+  checkGlobalNavigation(spanishPath, spanishSource, {
+    locale: 'es',
+    requireCurrent: !spanishNoindex,
+  });
+  checkVisibleBreadcrumb(spanishPath, spanishSource, {
+    locale: 'es',
+    requireStructured: !spanishNoindex,
+  });
+}
+
+for (const record of routeDispositions) {
+  if (!['draft', 'deferred'].includes(record.disposition)) continue;
+  const spanishPath = `/es${record.route}`;
+  assert(
+    !(await routeExists(spanishPath)),
+    `${spanishPath}: draft/deferred English content must not leak into the public Spanish route set.`,
+  );
 }
 
 if (errors.length) {

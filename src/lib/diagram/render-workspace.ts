@@ -1,5 +1,6 @@
 import { computeScale, mmToPx, labelFontSizePx } from './scale';
 import { formatMeasurement } from '../units';
+import { translateWorkspaceBedroomText } from '../../i18n/es-workspace-bedroom-copy';
 
 export interface WorkspaceDiagramInput {
   diagramId: string;
@@ -14,6 +15,7 @@ export interface WorkspaceDiagramInput {
   monitorCount: number;
   gapMm: number;
   sideMarginMm: number;
+  locale?: 'en' | 'es';
 }
 
 function escapeXml(value: string): string {
@@ -56,6 +58,7 @@ export function renderWorkspaceDiagramMarkup(input: WorkspaceDiagramInput): stri
     monitorCount,
     gapMm,
     sideMarginMm,
+    locale = 'en',
   } = input;
 
   if (!Number.isInteger(monitorCount) || monitorCount < 1 || monitorCount > 4) {
@@ -92,7 +95,7 @@ export function renderWorkspaceDiagramMarkup(input: WorkspaceDiagramInput): stri
     monitorRects.push(`
       <g class="diagram-object">
         <rect x="${x}" y="${y}" width="${w}" height="${h}" class="diagram-object__rect" vector-effect="non-scaling-stroke" />
-        <text x="${x + w / 2}" y="${y + h / 2}" class="diagram-object__label" font-size="${objectFontSize}" text-anchor="middle" dominant-baseline="middle">${escapeXml(`Monitor ${i + 1}`)}</text>
+        <text x="${x + w / 2}" y="${y + h / 2}" class="diagram-object__label" font-size="${objectFontSize}" text-anchor="middle" dominant-baseline="middle">${escapeXml(`${locale === 'es' ? 'Monitor' : 'Monitor'} ${i + 1}`)}</text>
       </g>`);
   }
 
@@ -129,7 +132,7 @@ export function renderWorkspaceDiagramMarkup(input: WorkspaceDiagramInput): stri
   return `
     <g class="diagram-space">
       <rect x="${deskX}" y="${deskY}" width="${deskW}" height="${deskH}" class="diagram-space__rect" vector-effect="non-scaling-stroke" />
-      <text x="${deskX + 6}" y="${deskY + spaceFontSize + 4}" class="diagram-space__label" font-size="${spaceFontSize}">Desk</text>
+      <text x="${deskX + 6}" y="${deskY + spaceFontSize + 4}" class="diagram-space__label" font-size="${spaceFontSize}">${escapeXml(translateWorkspaceBedroomText(locale, 'Desk'))}</text>
     </g>
     ${clearanceZones}
     ${monitorRects.join('')}

@@ -1,7 +1,7 @@
 import {
   evaluateFit,
   toDimensionDisplayRows,
-  FIT_STATE_BADGE_COPY,
+  getFitStateBadgeCopy,
   getFitSummaryCopy,
   getFitSummaryResultLabel,
   renderFitSummaryContentHtml,
@@ -12,6 +12,15 @@ import {
 import { buildObjectFitPlan, type ObjectOrientation } from '../lib/geometry';
 import { renderUniversalDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
+import type { Locale } from '../i18n/locale';
+import { translate, translateTemplate } from '../i18n/text';
+
+const locale: Locale =
+  typeof document === 'undefined'
+    ? 'en'
+    : document.documentElement.lang.startsWith('es')
+      ? 'es'
+      : 'en';
 
 const DIAGRAM_ID = 'universal-fitcheck-diagram';
 
@@ -32,7 +41,7 @@ function setError(id: string, message: string): void {
   const input = document.getElementById(id);
   const error = document.getElementById(`${id}-error`);
   input?.setAttribute('aria-invalid', 'true');
-  if (error) error.textContent = message;
+  if (error) error.textContent = translate(locale, message);
 }
 
 function clearError(id: string): void {
@@ -88,7 +97,8 @@ function readForm() {
   const quantityError = document.getElementById('fit-quantity-error');
   if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1) {
     quantityInput.setAttribute('aria-invalid', 'true');
-    if (quantityError) quantityError.textContent = 'Enter a whole number greater than zero.';
+    if (quantityError)
+      quantityError.textContent = translate(locale, 'Enter a whole number greater than zero.');
     invalid = true;
   } else {
     quantityInput.removeAttribute('aria-invalid');
@@ -105,7 +115,9 @@ function readForm() {
       }
     : {};
   return {
-    itemName: (document.getElementById('fit-item-name') as HTMLInputElement).value.trim() || 'Item',
+    itemName:
+      (document.getElementById('fit-item-name') as HTMLInputElement).value.trim() ||
+      translate(locale, 'Item'),
     objectWidthMm: get('fit-item-width'),
     objectDepthMm: get('fit-item-depth'),
     objectHeightMm: get('fit-item-height'),
@@ -129,17 +141,25 @@ function unitHtml(mm: number, margin = false): string {
 function renderRows(rows: DimensionDisplayRow[]): void {
   const tbody = document.querySelector<HTMLTableSectionElement>('#universal-fit-table tbody');
   if (!tbody) return;
+  const labels = {
+    dimension: translate(locale, 'Dimension'),
+    required: translate(locale, 'Required'),
+    target: translate(locale, 'Target'),
+    available: translate(locale, 'Available'),
+    physical: translate(locale, 'Physical margin'),
+    targetMargin: translate(locale, 'Target margin'),
+  };
   tbody.innerHTML = rows
     .map(
       (
         row,
       ) => `<tr data-dimension="${row.dimension}" data-hard-fit="${row.hardFit}" data-recommended-fit="${row.recommendedFit}">
-        <th scope="row" data-label="Dimension">${row.label}</th>
-        <td data-label="Required">${unitHtml(row.requiredMm)}</td>
-        <td data-label="Target">${unitHtml(row.recommendedMm)}</td>
-        <td data-label="Available">${unitHtml(row.availableMm)}</td>
-        <td data-label="Physical margin"><span>${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.physicalMarginMm), true)}</td>
-        <td data-label="Target margin"><span>${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.targetMarginMm), true)}</td>
+        <th scope="row" data-label="${labels.dimension}">${translate(locale, row.label)}</th>
+        <td data-label="${labels.required}">${unitHtml(row.requiredMm)}</td>
+        <td data-label="${labels.target}">${unitHtml(row.recommendedMm)}</td>
+        <td data-label="${labels.available}">${unitHtml(row.availableMm)}</td>
+        <td data-label="${labels.physical}"><span>${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.physicalMarginMm), true)}</td>
+        <td data-label="${labels.targetMargin}"><span>${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.targetMarginMm), true)}</td>
       </tr>`,
     )
     .join('');
@@ -148,29 +168,36 @@ function renderRows(rows: DimensionDisplayRow[]): void {
 function renderSummary(state: FitState, rows: DimensionDisplayRow[]): void {
   const summary = document.getElementById('universal-fit-summary');
   if (!summary) return;
-  const summaryCopy = getFitSummaryCopy(state, rows);
+  const summaryCopy = getFitSummaryCopy(state, rows, { locale });
   const resultLabel = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
   summary.setAttribute('data-fit-state', state);
   summary.dataset.fitExact = String(summaryCopy.isExactFit);
-  summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent =
-    FIT_STATE_BADGE_COPY[state].icon;
+  summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent = getFitStateBadgeCopy(
+    state,
+    locale,
+  ).icon;
   summary.querySelector<HTMLElement>('[data-field="label"]')!.textContent = resultLabel;
   const content = summary.querySelector<HTMLElement>('[data-fit-summary-content]');
   if (content) content.innerHTML = renderFitSummaryContentHtml(summaryCopy);
   const sticky = summary.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
   if (sticky) {
     sticky.dataset.fitState = state;
-    sticky.setAttribute('aria-label', `Fit result: ${resultLabel}. View calculation details.`);
+    sticky.setAttribute(
+      'aria-label',
+      translateTemplate(locale, 'Fit result: {resultLabel}. View calculation details.', {
+        resultLabel,
+      }),
+    );
     sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent =
-      FIT_STATE_BADGE_COPY[state].icon;
+      getFitStateBadgeCopy(state, locale).icon;
     sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = resultLabel;
     const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
     if (stickyDetail) {
       stickyDetail.innerHTML = summaryCopy.isExactFit
-        ? 'No measurement tolerance remains'
+        ? translate(locale, 'No measurement tolerance remains')
         : summaryCopy.marginMm !== null && summaryCopy.marginLabel
           ? `${unitHtml(summaryCopy.marginMm, true)} ${summaryCopy.marginLabel.toLowerCase()}`
-          : 'Check result details';
+          : translate(locale, 'Check result details');
     }
   }
 }
@@ -199,10 +226,24 @@ function renderDiagram(
   wrapper.innerHTML = markup;
   while (wrapper.firstChild) svg.appendChild(wrapper.firstChild);
 
-  const orientationText = orientation === 'width-depth' ? 'width by depth' : 'depth by width';
+  const orientationText = translate(
+    locale,
+    orientation === 'width-depth' ? 'width by depth' : 'depth by width',
+  );
   const caption = document.getElementById(`${DIAGRAM_ID}-caption`);
   if (caption) {
-    caption.textContent = `Proportional top-down comparison: ${formatMeasurement(values.spaceWidthMm)} by ${formatMeasurement(values.spaceDepthMm)} inside space and ${formatMeasurement(values.objectWidthMm)} by ${formatMeasurement(values.objectDepthMm)} item footprint, arranged ${orientationText}. The optional planning margin is ${formatMeasurement(values.clearanceEachSideMm)} on each side. Height, doorway/corridor and multi-item checks are not drawn here.`;
+    caption.textContent = translateTemplate(
+      locale,
+      'Proportional top-down comparison: {spaceWidth} by {spaceDepth} inside space and {itemWidth} by {itemDepth} item footprint, arranged {orientation}. The optional planning margin is {margin} on each side. Height, doorway/corridor and multi-item checks are not drawn here.',
+      {
+        spaceWidth: formatMeasurement(values.spaceWidthMm),
+        spaceDepth: formatMeasurement(values.spaceDepthMm),
+        itemWidth: formatMeasurement(values.objectWidthMm),
+        itemDepth: formatMeasurement(values.objectDepthMm),
+        orientation: orientationText,
+        margin: formatMeasurement(values.clearanceEachSideMm),
+      },
+    );
   }
 }
 
@@ -215,24 +256,66 @@ function recompute(): void {
   renderDiagram(values, plan.orientation);
   renderSummary(result.state, rows);
   renderRows(rows);
-  const orientation = plan.orientation === 'width-depth' ? 'width by depth' : 'depth by width';
+  const orientation = translate(
+    locale,
+    plan.orientation === 'width-depth' ? 'width by depth' : 'depth by width',
+  );
+  const quantityOrientation = translate(
+    locale,
+    plan.quantityOrientation === 'width-depth' ? 'width by depth' : 'depth by width',
+  );
   const orientationText = document.querySelector<HTMLElement>('[data-fit-orientation]');
   if (orientationText) {
-    orientationText.textContent = `${values.itemName}: best floor orientation is ${orientation}. Estimated maximum: ${plan.quantityCapacity} item(s) in a single layer (${plan.quantityOrientation === 'width-depth' ? 'width by depth' : 'depth by width'} grid).${plan.requestedQuantity && plan.quantityCapacity < plan.requestedQuantity ? ` This is fewer than the ${plan.requestedQuantity} requested.` : ''}`;
+    const quantityText =
+      locale === 'es'
+        ? `${plan.quantityCapacity} ${plan.quantityCapacity === 1 ? 'objeto' : 'objetos'}`
+        : `${plan.quantityCapacity} item(s)`;
+    orientationText.textContent = translateTemplate(
+      locale,
+      '{itemName}: best floor orientation is {orientation}. Estimated maximum: {quantityText} in a single layer ({grid} grid).{requested}',
+      {
+        itemName: values.itemName,
+        orientation,
+        quantityText,
+        grid: quantityOrientation,
+        requested:
+          plan.requestedQuantity && plan.quantityCapacity < plan.requestedQuantity
+            ? ` ${translateTemplate(locale, 'This is fewer than the {quantity} requested.', { quantity: plan.requestedQuantity })}`
+            : '',
+      },
+    );
   }
   const assumptions = document.querySelector<HTMLElement>(
     '#universal-fit-assumptions [data-field="items"]',
   );
   if (assumptions) {
     assumptions.innerHTML = [
-      'All dimensions are user-entered; the calculation does not identify a product or assume a local standard.',
-      `Room placement selected ${orientation} orientation. ${values.clearanceEachSideMm ? `A ${formatMeasurement(values.clearanceEachSideMm, 'metric')} planning margin is requested on each side.` : 'No extra clearance margin was added.'}`,
+      translate(
+        locale,
+        'All dimensions are user-entered; the calculation does not identify a product or assume a local standard.',
+      ),
+      translateTemplate(
+        locale,
+        values.clearanceEachSideMm
+          ? 'Room placement selected {orientation} orientation. A {margin} planning margin is requested on each side.'
+          : 'Room placement selected {orientation} orientation. No extra clearance margin was added.',
+        {
+          orientation,
+          margin: formatMeasurement(values.clearanceEachSideMm, 'metric'),
+        },
+      ),
       ...(values.doorwayWidthMm
         ? [
-            'Access checks use the narrowest upright face and object height; no diagonal or tilted passage is modeled.',
+            translate(
+              locale,
+              'Access checks use the narrowest upright face and object height; no diagonal or tilted passage is modeled.',
+            ),
           ]
         : []),
-      'Quantity is a rectangular single-layer grid estimate. Stacking, irregular geometry, access lanes and obstacles are excluded.',
+      translate(
+        locale,
+        'Quantity is a rectangular single-layer grid estimate. Stacking, irregular geometry, access lanes and obstacles are excluded.',
+      ),
     ]
       .map((item) => `<li>${item}</li>`)
       .join('');
@@ -245,7 +328,7 @@ function createReport(): string {
   const plan = buildObjectFitPlan(values);
   const result = evaluateFit(plan.checks);
   const rows = toDimensionDisplayRows(plan.checks, result);
-  const summary = getFitSummaryCopy(result.state, rows);
+  const summary = getFitSummaryCopy(result.state, rows, { locale });
   return buildFitReviewReport({
     itemName: values.itemName,
     stateLabel: getFitSummaryResultLabel(
@@ -293,9 +376,10 @@ function init(): void {
     if (!report) return;
     try {
       await navigator.clipboard.writeText(report);
-      if (status) status.textContent = 'Fit review copied to clipboard.';
+      if (status) status.textContent = translate(locale, 'Fit review copied to clipboard.');
     } catch {
-      if (status) status.textContent = 'Clipboard access is unavailable in this browser.';
+      if (status)
+        status.textContent = translate(locale, 'Clipboard access is unavailable in this browser.');
     }
   });
   updateRouteVisibility();

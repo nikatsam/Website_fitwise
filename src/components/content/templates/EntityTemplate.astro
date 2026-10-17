@@ -2,6 +2,8 @@
 import PageFamilyLayout from '../PageFamilyLayout.astro';
 import UnitValue from '../../fit/UnitValue.astro';
 import type { BreadcrumbItem } from '../../../lib/content';
+import { localeFromPath } from '../../../i18n/locale';
+import { translateRequired } from '../../../i18n/text';
 
 interface MeasurementRow {
   label: string;
@@ -17,16 +19,18 @@ interface Props {
 }
 
 const { breadcrumb, h1, intro, measurements } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const copy = (value: string) => translateRequired(locale, value);
 ---
 
 <PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
   <p>{intro}</p>
   <table class="entity-measurements">
-    <caption class="visually-hidden">{`${h1} measurements`}</caption>
+    <caption class="visually-hidden">{`${h1} ${copy('measurements')}`}</caption>
     <thead>
       <tr>
-        <th scope="col">Measurement</th>
-        <th scope="col">Value</th>
+        <th scope="col">{copy('Measurement')}</th>
+        <th scope="col">{copy('Value')}</th>
       </tr>
     </thead>
     <tbody>

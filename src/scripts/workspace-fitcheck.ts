@@ -1,7 +1,7 @@
 import {
   evaluateFit,
   toDimensionDisplayRows,
-  FIT_STATE_BADGE_COPY,
+  getFitStateBadgeCopy,
   getFitSummaryCopy,
   getFitSummaryResultLabel,
   renderFitSummaryContentHtml,
@@ -16,6 +16,15 @@ import {
 } from '../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
+import type { Locale } from '../i18n/locale';
+import { translateWorkspaceBedroomText as t } from '../i18n/es-workspace-bedroom-copy';
+
+const locale: Locale =
+  typeof document === 'undefined'
+    ? 'en'
+    : document.documentElement.lang.startsWith('es')
+      ? 'es'
+      : 'en';
 
 interface FormValues {
   deskWidthMm: number;
@@ -100,7 +109,7 @@ function readAndValidateForm(): FormValues | null {
     const raw = readLength(field.id);
     if (raw === null) {
       if (field.required) {
-        setFieldError(field, 'Enter a value.');
+        setFieldError(field, t(locale, 'Enter a value.'));
         hasError = true;
       } else {
         clearFieldError(field);
@@ -109,12 +118,13 @@ function readAndValidateForm(): FormValues | null {
     }
     if (Number.isNaN(raw)) {
       const parsed = input ? parseLength(input.value) : null;
-      setFieldError(field, parsed && !parsed.ok ? parsed.error : 'Enter a valid length.');
+      const message = parsed && !parsed.ok ? parsed.error : 'Enter a valid length.';
+      setFieldError(field, t(locale, message));
       hasError = true;
       continue;
     }
     if (raw < field.min) {
-      setFieldError(field, `Enter a length of at least ${field.min} mm.`);
+      setFieldError(field, t(locale, `Enter a length of at least ${field.min} mm.`));
       hasError = true;
       continue;
     }
@@ -233,12 +243,12 @@ function recompute(): void {
   const result = evaluateFit(checks, assumptions);
   const rows = toDimensionDisplayRows(checks, result);
   if (rows.length === 0) return;
-  const summaryCopy = getFitSummaryCopy(result.state, rows);
+  const summaryCopy = getFitSummaryCopy(result.state, rows, { locale });
   const summaryEl = document.getElementById('workspace-fitcheck-summary');
   if (summaryEl) {
     summaryEl.setAttribute('data-fit-state', result.state);
     summaryEl.dataset.fitExact = String(summaryCopy.isExactFit);
-    const copy = FIT_STATE_BADGE_COPY[result.state];
+    const copy = getFitStateBadgeCopy(result.state, locale);
     const resultLabel = getFitSummaryResultLabel(summaryCopy, summaryEl.dataset.fitOrigin);
     const iconEl = summaryEl.querySelector<HTMLElement>('[data-field="icon"]');
     const labelEl = summaryEl.querySelector<HTMLElement>('[data-field="label"]');
@@ -317,6 +327,7 @@ function recompute(): void {
       monitorCount: values.monitorCount,
       gapMm: values.gapMm,
       sideMarginMm: values.sideMarginMm,
+      locale,
     });
     diagramContainer.innerHTML = '';
     if (defs) diagramContainer.appendChild(defs);

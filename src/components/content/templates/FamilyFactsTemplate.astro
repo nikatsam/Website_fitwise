@@ -6,6 +6,8 @@ import RelatedPageLinks from '../RelatedPageLinks.astro';
 import type { BreadcrumbItem } from '../../../lib/content';
 import type { ContentNavigationLink } from '../../../lib/content/navigation';
 import type { SourceRecord } from '../../../types';
+import { localeFromPath } from '../../../i18n/locale';
+import { translateRequired } from '../../../i18n/text';
 
 interface Fact {
   label: string;
@@ -31,14 +33,27 @@ interface Props {
 }
 
 const { breadcrumb, h1, intro, sections, sources, relatedPages } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const copy = (value: string) => translateRequired(locale, value);
+const fitResultLabel = locale === 'es' ? 'Resultado del ajuste' : 'Fit result';
 const resultFor = (section: Section) =>
-  section.facts.find((fact) => fact.label === 'Fit result')?.valueText ?? 'See measurements';
+  section.facts.find((fact) => fact.label === fitResultLabel)?.valueText ??
+  copy('See measurements');
 const orientationResults = sections.map((section) => {
-  const match = section.title.match(/^(.*?) — (portrait|landscape) orientation$/);
+  const match = section.title.match(
+    locale === 'es'
+      ? /^(.*?) — orientación (vertical|horizontal)$/
+      : /^(.*?) — (portrait|landscape) orientation$/,
+  );
   return match
     ? {
         group: match[1]!,
-        orientation: match[2] as 'portrait' | 'landscape',
+        orientation:
+          locale === 'es'
+            ? match[2] === 'vertical'
+              ? 'portrait'
+              : 'landscape'
+            : (match[2] as 'portrait' | 'landscape'),
         result: resultFor(section),
       }
     : null;
@@ -66,26 +81,27 @@ const genericSummaryRows = sections.map((section) => ({
   <p>{intro}</p>
   {sections.length > 1 && (
     <section class="family-facts__quick" aria-labelledby="family-quick-results">
-      <h2 id="family-quick-results">Quick result matrix</h2>
+      <h2 id="family-quick-results">{copy('Quick result matrix')}</h2>
       {isOrientationMatrix ? (
         <table class="family-facts__matrix" data-family-facts-matrix>
           <caption>
-            Fit result by bed and orientation; expand a result below for full dimensions and
-            assumptions.
+            {copy(
+              'Fit result by bed and orientation; expand a result below for full dimensions and assumptions.',
+            )}
           </caption>
           <thead>
             <tr>
-              <th scope="col">Bed</th>
-              <th scope="col">Portrait</th>
-              <th scope="col">Landscape</th>
+              <th scope="col">{copy('Bed')}</th>
+              <th scope="col">{copy('Portrait')}</th>
+              <th scope="col">{copy('Landscape')}</th>
             </tr>
           </thead>
           <tbody>
             {orientationSummaryRows.map((row) => (
               <tr>
                 <th scope="row">{row.label}</th>
-                <td data-label="Portrait">{row.portrait}</td>
-                <td data-label="Landscape">{row.landscape}</td>
+                <td data-label={copy('Portrait')}>{row.portrait}</td>
+                <td data-label={copy('Landscape')}>{row.landscape}</td>
               </tr>
             ))}
           </tbody>
@@ -93,19 +109,21 @@ const genericSummaryRows = sections.map((section) => ({
       ) : (
         <table class="family-facts__matrix" data-family-facts-matrix>
           <caption>
-            Fit result by configuration; expand an option below for full dimensions and assumptions.
+            {copy(
+              'Fit result by configuration; expand an option below for full dimensions and assumptions.',
+            )}
           </caption>
           <thead>
             <tr>
-              <th scope="col">Configuration</th>
-              <th scope="col">Result</th>
+              <th scope="col">{copy('Configuration')}</th>
+              <th scope="col">{copy('Result')}</th>
             </tr>
           </thead>
           <tbody>
             {genericSummaryRows.map((row) => (
               <tr>
                 <th scope="row">{row.label}</th>
-                <td data-label="Result">{row.result}</td>
+                <td data-label={copy('Result')}>{row.result}</td>
               </tr>
             ))}
           </tbody>
@@ -136,7 +154,11 @@ const genericSummaryRows = sections.map((section) => ({
           </dl>
           {section.assumptions && section.assumptions.length > 0 && (
             <details class="family-facts__assumptions">
-              <summary>Assumptions for {section.title.toLowerCase()}</summary>
+              <summary>
+                {locale === 'es'
+                  ? `Supuestos para ${section.title.toLowerCase()}`
+                  : `Assumptions for ${section.title.toLowerCase()}`}
+              </summary>
               <ul>
                 {section.assumptions.map((assumption) => (
                   <li>{assumption}</li>

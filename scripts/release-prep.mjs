@@ -498,10 +498,7 @@ export async function createDeploymentPlan(
     }),
   );
 
-  const invalidationPaths = objects
-    .filter((object) => object.uploadGroup !== 'fingerprintedAssets')
-    .map((object) => `/${object.path}`)
-    .sort();
+  const invalidationPaths = ['/*'];
   const htmlCacheControl = metadataFor('index.html').cacheControl;
   const assetCacheControl = metadataFor('_astro/example.js').cacheControl;
   const imageCacheControl = metadataFor('assets/images/example.webp').cacheControl;
@@ -535,7 +532,7 @@ export async function createDeploymentPlan(
       'This command only reads the local dist/ tree and prints a JSON plan; it never invokes AWS CLI.',
       'The HTML sync dry-run is filtered to HTML keys so --delete cannot remove assets.',
       'Development-only /dev/ preview routes are excluded from upload. If an older deployment contains them, remove them only as a separately approved cleanup after confirming the target inventory.',
-      'Fingerprint-named _astro assets are not in the invalidation list; HTML, mutable images, and crawl-control files are.',
+      'The production workflow submits one /* invalidation path after all uploads succeed. CloudFront bills by submitted path, not matched objects, but the wildcard also clears immutable _astro cache entries and can cause cache misses while they refill.',
       'Review dry-run output and require explicit owner approval before executing a real sync or invalidation.',
     ],
   };

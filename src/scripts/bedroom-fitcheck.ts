@@ -1,7 +1,7 @@
 import {
   evaluateFit,
   toDimensionDisplayRows,
-  FIT_STATE_BADGE_COPY,
+  getFitStateBadgeCopy,
   getFitSummaryCopy,
   getFitSummaryResultLabel,
   renderFitSummaryContentHtml,
@@ -17,6 +17,15 @@ import type { BedOrientation } from '../lib/geometry';
 import { renderBedroomDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
 import { BEDROOM_FIT_PRESETS, DEFAULT_BEDROOM_FIT_PRESET_KEY } from '../lib/fitcheck/presets';
+import type { Locale } from '../i18n/locale';
+import { translateWorkspaceBedroomText as t } from '../i18n/es-workspace-bedroom-copy';
+
+const locale: Locale =
+  typeof document === 'undefined'
+    ? 'en'
+    : document.documentElement.lang.startsWith('es')
+      ? 'es'
+      : 'en';
 
 interface FormValues {
   roomWidthMm: number;
@@ -142,7 +151,7 @@ function readAndValidateForm(): FormValues | null {
       field.required || (field.id.startsWith('custom-bed-') && bedPresetKey === 'custom-mattress');
     if (raw === null) {
       if (required) {
-        setFieldError(field, 'Enter a value.');
+        setFieldError(field, t(locale, 'Enter a value.'));
         hasError = true;
       } else {
         clearFieldError(field);
@@ -153,8 +162,8 @@ function readAndValidateForm(): FormValues | null {
       setFieldError(
         field,
         field.max === undefined
-          ? `Enter a number of at least ${field.min}.`
-          : `Enter a number from ${field.min} to ${field.max}.`,
+          ? t(locale, `Enter a number of at least ${field.min}.`)
+          : t(locale, `Enter a number from ${field.min} to ${field.max}.`),
       );
       hasError = true;
       continue;
@@ -416,14 +425,14 @@ function recompute(): void {
   const result = evaluateFit(checks, assumptions);
   const rows = toDimensionDisplayRows(checks, result);
   if (rows.length === 0) return;
-  const summaryCopy = getFitSummaryCopy(result.state, rows);
+  const summaryCopy = getFitSummaryCopy(result.state, rows, { locale });
 
   // Patch FitSummary.
   const summaryEl = document.getElementById('bedroom-fitcheck-summary');
   if (summaryEl) {
     summaryEl.setAttribute('data-fit-state', result.state);
     summaryEl.dataset.fitExact = String(summaryCopy.isExactFit);
-    const copy = FIT_STATE_BADGE_COPY[result.state];
+    const copy = getFitStateBadgeCopy(result.state, locale);
     const resultLabel = getFitSummaryResultLabel(summaryCopy, summaryEl.dataset.fitOrigin);
     const iconEl = summaryEl.querySelector<HTMLElement>('[data-field="icon"]');
     const labelEl = summaryEl.querySelector<HTMLElement>('[data-field="label"]');
@@ -499,6 +508,7 @@ function recompute(): void {
       footClearanceMm: values.footClearanceMm,
       nightstandWidthsMm,
       nightstandDepthMm: values.nightstandCount > 0 ? values.nightstandDepthMm : 0,
+      locale,
     });
     diagramContainer.innerHTML = '';
     if (defs) diagramContainer.appendChild(defs);

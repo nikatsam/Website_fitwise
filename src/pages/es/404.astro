@@ -1,0 +1,30 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { pathForLocale } from '../../i18n/locale';
+import { translate } from '../../i18n/text';
+
+const locale = 'es';
+---
+
+<BaseLayout
+  title={translate(locale, 'Page not found — Fitwise.stream')}
+  description={translate(locale, 'This page does not exist.')}
+  noindex
+  language="es"
+  showLanguageSwitcher={false}
+>
+  <section class="wrapper not-found">
+    <h1>{translate(locale, 'Page not found')}</h1>
+    <p>
+      {translate(locale, 'The page you requested does not exist.')}
+      <a href={pathForLocale('/', 'es')}>{translate(locale, 'Return to the homepage')}</a>.
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    min-height: 40vh;
+    padding-block: var(--space-7);
+  }
+</style>

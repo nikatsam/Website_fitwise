@@ -4,6 +4,8 @@ import {
   renderMeasurementSketchContents,
   type MeasurementDiagram,
 } from '../../lib/fit/measurement-guidance';
+import { localeFromPath } from '../../i18n/locale';
+import { translateRequired, translateTemplate } from '../../i18n/text';
 
 interface Props {
   id: string;
@@ -18,35 +20,43 @@ interface Props {
 
 const { id, label, summaryHelp, measureHelp, example, warning, sourceRequirement, diagram } =
   Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
 const diagramCopy = diagram ? MEASUREMENT_DIAGRAM_COPY[diagram] : null;
 ---
 
 <div class="measurement-help" data-measurement-help={id}>
   <details class="measurement-help__details">
-    <summary aria-label={`Show detailed measuring help: ${label}`}>
+    <summary
+      aria-label={translateTemplate(locale, 'Show detailed measuring help: {label}', {
+        label: translateRequired(locale, label),
+      })}
+    >
       <span class="measurement-help__summary" id={id}>
-        {summaryHelp}
+        {translateRequired(locale, summaryHelp)}
       </span>
       <span class="measurement-help__indicator" aria-hidden="true">
         ?
       </span>
     </summary>
     <div class="measurement-help__content">
-      <h3>{label}</h3>
-      <p>{measureHelp}</p>
+      <h3>{translateRequired(locale, label)}</h3>
+      <p>{translateRequired(locale, measureHelp)}</p>
       {example && (
         <p class="measurement-help__example">
-          <strong>Example:</strong> {example}
+          <strong>{translateRequired(locale, 'Example')}:</strong>{' '}
+          {translateRequired(locale, example)}
         </p>
       )}
       {warning && (
         <p class="measurement-help__warning">
-          <strong>Check:</strong> {warning}
+          <strong>{translateRequired(locale, 'Check')}:</strong>{' '}
+          {translateRequired(locale, warning)}
         </p>
       )}
       {sourceRequirement && (
         <p class="measurement-help__source">
-          <strong>Source requirement:</strong> {sourceRequirement}
+          <strong>{translateRequired(locale, 'Source requirement')}:</strong>{' '}
+          {translateRequired(locale, sourceRequirement)}
         </p>
       )}
       <slot />
@@ -58,11 +68,18 @@ const diagramCopy = diagram ? MEASUREMENT_DIAGRAM_COPY[diagram] : null;
           role="img"
           aria-labelledby={`${id}-diagram-title ${id}-diagram-desc`}
         >
-          <title id={`${id}-diagram-title`}>{diagramCopy?.title}</title>
-          <desc id={`${id}-diagram-desc`}>{diagramCopy?.description} Diagram is not to scale.</desc>
-          <g set:html={renderMeasurementSketchContents(diagram)} />
+          <title
+            id={`${id}-diagram-title`}
+          >{diagramCopy && translateRequired(locale, diagramCopy.title)}</title>
+          <desc id={`${id}-diagram-desc`}>
+            {diagramCopy && translateRequired(locale, diagramCopy.description)}{' '}
+            {translateRequired(locale, 'Diagram is not to scale.')}
+          </desc>
+          <g set:html={renderMeasurementSketchContents(diagram, locale)} />
         </svg>
-        <figcaption>Illustrative plan sketch; not to scale.</figcaption>
+        <figcaption>
+          {translateRequired(locale, 'Illustrative plan sketch; not to scale.')}
+        </figcaption>
       </figure>
     )}
   </details>
