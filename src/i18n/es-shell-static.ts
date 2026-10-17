@@ -2,6 +2,11 @@
 export const ES_SHELL_STATIC = {
   'Skip to main content': 'Saltar al contenido principal',
   'Site language': 'Idioma del sitio',
+  'Site language: {language}': 'Idioma del sitio: {language}',
+  Theme: 'Tema',
+  'Theme: {theme}': 'Tema: {theme}',
+  Menu: 'Menú',
+  'Close menu': 'Cerrar menú',
   and: 'y',
   English: 'English',
   Spanish: 'Español',

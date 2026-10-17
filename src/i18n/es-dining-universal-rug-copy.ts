@@ -93,6 +93,15 @@ export const esDiningUniversalRugCopy: Readonly<Record<string, string>> = {
     'La cantidad es una estimación máxima de una cuadrícula rectangular en una sola capa con una separación elegida entre artículos adyacentes; excluye apilamiento, soportes, pasillos de acceso y obstáculos no rectangulares.',
   'Replace the sample room, rug and furniture/use measurements with your own. Sample values are not recommended rug dimensions.':
     'Sustituye las medidas de ejemplo de la habitación, alfombra y mueble/zona de uso por las tuyas. Los valores de ejemplo no son dimensiones recomendadas para alfombras.',
+  'Example values are illustrative placeholders, not recommended rug dimensions or styling advice.':
+    'Los valores de ejemplo son marcadores ilustrativos; no son recomendaciones de tamaño de alfombra ni de decoración.',
+  'Furniture coverage is disabled; only rug-to-room dimensions are checked.':
+    'La comprobación de cobertura del mueble está desactivada; solo se comparan las dimensiones de la alfombra y la habitación.',
+  'Furniture coverage is not checked.': 'No se comprueba la cobertura del mueble.',
+  'Dashed outline/line: measured room or furniture edge. Dotted outline/line: your selected target. Blue fill: rug. Green fill: furniture/use footprint. In front-edge mode, the dashed line marks the furniture front.':
+    'Contorno o línea discontinua: borde medido de la habitación o del mueble. Contorno o línea de puntos: objetivo elegido. Relleno azul: alfombra. Relleno verde: huella del mueble/zona de uso. En el modo de borde frontal, la línea discontinua señala el frente del mueble.',
+  'Centered rectangular comparison only; it does not place furniture in a floor plan or infer styling preferences.':
+    'Solo es una comparación centrada de rectángulos; no coloca muebles en un plano ni deduce preferencias decorativas.',
   'Measure the room and rug': 'Mide la habitación y la alfombra',
   'Enter clear inside room dimensions and the rug’s laid-flat outside dimensions.':
     'Introduce las dimensiones interiores libres de la habitación y las dimensiones exteriores de la alfombra extendida.',
@@ -116,6 +125,15 @@ export const esDiningUniversalRugCopy: Readonly<Record<string, string>> = {
     'Comprobar también la huella del mueble/zona de uso respecto a la alfombra',
   'Furniture/use footprint width': 'Ancho de la huella del mueble/zona de uso',
   'Furniture/use footprint depth': 'Profundidad de la huella del mueble/zona de uso',
+  'rug width against room width': 'ancho de la alfombra respecto al ancho de la habitación',
+  'rug depth against room depth':
+    'profundidad de la alfombra respecto a la profundidad de la habitación',
+  'furniture/use footprint depth on rug':
+    'profundidad de la huella del mueble/zona de uso sobre la alfombra',
+  'furniture front width with selected side margin':
+    'ancho del frente del mueble con el margen lateral elegido',
+  'rug overlap and extension at furniture front edge':
+    'solapamiento y extensión de la alfombra en el borde delantero del mueble',
   'Coverage mode': 'Modo de cobertura',
   'Keep the full footprint on the rug': 'Mantener toda la huella sobre la alfombra',
   'Check a user-selected front-edge overlap': 'Comprobar el solapamiento frontal elegido',
@@ -163,6 +181,7 @@ export const esDiningUniversalRugCopy: Readonly<Record<string, string>> = {
   'The {measurement} circulation target is user-selected on each side of the occupied layout; it is not a universal minimum.':
     'El objetivo de circulación de {measurement} a cada lado de la distribución ocupada lo elige el usuario; no es un mínimo universal.',
   ROOM: 'HABITACIÓN',
+  RUG: 'ALFOMBRA',
   TABLE: 'MESA',
   'Top-down plan': 'Plano desde arriba',
   Space: 'Espacio',
@@ -218,4 +237,6 @@ export const esDiningUniversalRugTemplates: Readonly<Record<string, string>> = {
     'Se comprueba la huella completa de {width} por {depth} del mueble/zona de uso respecto a la alfombra.',
   'Front-edge overlap {overlap} and forward extension {extension} are user-selected.':
     'El solapamiento frontal de {overlap} y la extensión hacia delante de {extension} los elige el usuario.',
+  'Centered rectangular room and rug comparison. Room {roomWidth} by {roomDepth}. Rug {rugWidth} by {rugDepth} in the selected orientation. {relationship} This is not a complete floor-plan placement tool.':
+    'Comparación centrada de una habitación rectangular y una alfombra. Habitación de {roomWidth} por {roomDepth}. Alfombra de {rugWidth} por {rugDepth} según la orientación elegida. {relationship} No es una herramienta completa para distribuir un plano.',
 };

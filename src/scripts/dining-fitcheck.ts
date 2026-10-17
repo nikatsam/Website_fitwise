@@ -16,6 +16,7 @@ import {
   esDiningUniversalRugTemplates as esTemplates,
 } from '../i18n/es-dining-universal-rug-copy';
 import { translate as sharedTranslate, translateTemplate as sharedTemplate } from '../i18n/text';
+import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 const locale: Locale =
   typeof document === 'undefined'
@@ -220,8 +221,10 @@ function recompute(): void {
   const summaryCopy = getFitSummaryCopy(result.state, rows, { locale });
   const summary = document.getElementById('dining-fitcheck-summary');
   if (summary) {
+    const previousState = summary.dataset.fitState ?? result.state;
     const copy = getFitStateBadgeCopy(result.state, locale);
     const resultLabel = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
+    announceFitStateChange(summary, previousState, result.state, resultLabel);
     summary.dataset.fitState = result.state;
     summary.dataset.fitExact = String(summaryCopy.isExactFit);
     summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent = copy.icon;

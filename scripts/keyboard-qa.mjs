@@ -1036,6 +1036,21 @@ async function smokePage(pathname, scope) {
   }
 
   if (pathname === '/workspace/') {
+    const mobileNavToggle = await evaluate(`(() => {
+      const button = document.querySelector('[data-mobile-nav-toggle]');
+      if (!button || button.hidden) return false;
+      button.focus();
+      return true;
+    })()`);
+    if (mobileNavToggle) {
+      await press(' ', 'Space', 32);
+      assert(
+        await evaluate(
+          'document.querySelector("[data-mobile-nav-toggle]")?.getAttribute("aria-expanded") === "true"',
+        ),
+        `${pathname}: mobile navigation did not open before its primary Fit checks menu.`,
+      );
+    }
     await evaluate(
       'document.querySelector("details[data-nav-group=fit-checks] > summary").focus()',
     );
@@ -1058,6 +1073,16 @@ async function smokePage(pathname, scope) {
       'document.querySelector("[data-theme-toggle]").getAttribute("aria-pressed")',
     );
     assert(themeBefore !== themeAfter, `${pathname}: Space did not toggle the theme button.`);
+    if (mobileNavToggle) {
+      await evaluate('document.querySelector("[data-mobile-nav-toggle]").focus()');
+      await press(' ', 'Space', 32);
+      assert(
+        await evaluate(
+          'document.querySelector("[data-mobile-nav-toggle]")?.getAttribute("aria-expanded") === "false"',
+        ),
+        `${pathname}: mobile navigation did not close after keyboard testing.`,
+      );
+    }
   }
 
   if (pathname === '/workspace/') {
@@ -2055,7 +2080,7 @@ async function smokePage(pathname, scope) {
   if (pathname === '/workspace/') {
     assert(
       (await evaluate(
-        'document.querySelector("#workspace-fitcheck-summary [data-field=detail]").getAttribute("aria-live")',
+        'document.querySelector("#workspace-fitcheck-summary [data-fit-state-announcement]").getAttribute("aria-live")',
       )) === 'polite',
       `${pathname}: fit result detail is not announced politely.`,
     );
@@ -2212,6 +2237,14 @@ try {
     if ((await evaluate('document.readyState')) === 'complete') break;
     await delay(50);
   }
+  await evaluate('document.querySelector("[data-mobile-nav-toggle]").focus()');
+  await press(' ', 'Space', 32);
+  assert(
+    await evaluate(
+      'document.querySelector("[data-mobile-nav-toggle]").getAttribute("aria-expanded") === "true"',
+    ),
+    'Mobile navigation did not open before keyboard access to Fit checks.',
+  );
   await evaluate('document.querySelector("details[data-nav-group=fit-checks]").open = false');
   await tabUntil('details[data-nav-group="fit-checks"] > summary', 12);
   await press(' ', 'Space', 32);
@@ -2561,6 +2594,221 @@ try {
     assert(false, `Language preference test timed out loading ${route}.`);
   }
 
+  async function chooseSiteLanguage(language) {
+    await evaluate(`document.querySelector('[data-language-menu] summary')?.focus()`);
+    await press(' ', 'Space', 32);
+    assert(
+      await evaluate('document.querySelector("[data-language-menu]")?.open === true'),
+      'The language menu did not open from the keyboard.',
+    );
+    await evaluate(`document.querySelector('[data-language-choice="${language}"]')?.focus()`);
+    await press('Enter', 'Enter', 13);
+  }
+
+  async function verifyResponsiveHeader() {
+    for (const width of [1280, 900, 390]) {
+      await cdp('Emulation.setDeviceMetricsOverride', {
+        width,
+        height: width <= 640 ? 844 : 900,
+        deviceScaleFactor: 1,
+        mobile: width <= 640,
+      });
+      await navigateAndWait('/');
+      const metrics = await evaluate(`(() => {
+        const rect = (selector) => {
+          const element = document.querySelector(selector);
+          if (!element) return null;
+          const value = element.getBoundingClientRect();
+          return { left: value.left, right: value.right, top: value.top, bottom: value.bottom };
+        };
+        const menu = document.querySelector('[data-language-menu]');
+        const current = menu?.querySelector('summary');
+        const themeLabel = document.querySelector('.theme-control__label')?.textContent.trim() ?? '';
+        const themeButton = document.querySelector('[data-theme-toggle]');
+        return {
+          viewport: innerWidth,
+          documentWidth: document.documentElement.scrollWidth,
+          brand: rect('.brand'),
+          tools: rect('.site-header__tools'),
+          nav: rect('.site-nav'),
+          navDisplay: getComputedStyle(document.querySelector('.site-nav')).display,
+          mobileToggle: rect('[data-mobile-nav-toggle]'),
+          mobileToggleHidden: document.querySelector('[data-mobile-nav-toggle]')?.hidden,
+          mobileToggleLabel: document.querySelector('[data-mobile-nav-toggle]')?.textContent.trim() ?? '',
+          themeLabel,
+          themeButtonText: themeButton?.querySelector('[data-theme-label]')?.textContent.trim() ?? '',
+          themeButtonAria: themeButton?.getAttribute('aria-label') ?? '',
+          languageCode: current?.querySelector('.language-switcher__current')?.textContent.trim() ?? '',
+          languageAria: current?.getAttribute('aria-label') ?? '',
+        };
+      })()`);
+      assert(
+        metrics.documentWidth <= metrics.viewport + 1 &&
+          metrics.themeLabel === 'Theme' &&
+          /^(Light|Dark)$/.test(metrics.themeButtonText) &&
+          metrics.themeButtonAria.startsWith('Theme: ') &&
+          metrics.languageCode === 'EN' &&
+          metrics.languageAria === 'Site language: English' &&
+          metrics.brand &&
+          metrics.tools &&
+          (width <= 640
+            ? metrics.brand.right <= metrics.mobileToggle.left &&
+              metrics.mobileToggle.right <= metrics.viewport - 16
+            : metrics.brand.right <= metrics.tools.left) &&
+          (width > 640
+            ? metrics.mobileToggleHidden && metrics.navDisplay !== 'none'
+            : !metrics.mobileToggleHidden &&
+              Boolean(metrics.mobileToggle) &&
+              metrics.mobileToggleLabel.includes('Menu') &&
+              metrics.navDisplay === 'none'),
+        `Header controls did not fit cleanly at ${width}px: ${JSON.stringify(metrics)}.`,
+      );
+    }
+    await evaluate(`document.querySelector('[data-mobile-nav-toggle]')?.focus()`);
+    await press(' ', 'Space', 32);
+    assert(
+      await evaluate(`(() => {
+        const button = document.querySelector('[data-mobile-nav-toggle]');
+        const nav = document.querySelector('.site-nav');
+        return button?.getAttribute('aria-expanded') === 'true' && getComputedStyle(nav).display !== 'none';
+      })()`),
+      'Mobile navigation did not open with its keyboard menu button.',
+    );
+    await evaluate(`document.querySelector('#site-navigation a')?.focus()`);
+    await press('Escape', 'Escape', 27);
+    assert(
+      await evaluate(`(() => {
+        const button = document.querySelector('[data-mobile-nav-toggle]');
+        const nav = document.querySelector('.site-nav');
+        return button?.getAttribute('aria-expanded') === 'false' && getComputedStyle(nav).display === 'none' && document.activeElement === button;
+      })()`),
+      'Escape did not close mobile navigation and restore focus to its button.',
+    );
+    const themeBefore = await evaluate(`(() => ({
+      theme: document.documentElement.dataset.theme,
+      label: document.querySelector('[data-theme-toggle] [data-theme-label]')?.textContent.trim() ?? '',
+    }))()`);
+    const themeFocused = await evaluate(`(() => {
+      const button = document.querySelector('[data-theme-toggle]');
+      button?.focus();
+      return document.activeElement === button;
+    })()`);
+    await press(' ', 'Space', 32);
+    const themeAfter = await evaluate(`(() => ({
+      theme: document.documentElement.dataset.theme,
+      label: document.querySelector('[data-theme-toggle] [data-theme-label]')?.textContent.trim() ?? '',
+      pressed: document.querySelector('[data-theme-toggle]')?.getAttribute('aria-pressed'),
+    }))()`);
+    assert(
+      themeAfter.theme !== themeBefore.theme &&
+        themeAfter.label === (themeAfter.theme === 'dark' ? 'Dark' : 'Light') &&
+        themeAfter.pressed === String(themeAfter.theme === 'dark') &&
+        themeFocused,
+      `Theme control did not update its labeled state: ${JSON.stringify({ themeBefore, themeAfter, themeFocused })}.`,
+    );
+    await press(' ', 'Space', 32);
+    await cdp('Emulation.setDeviceMetricsOverride', {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true,
+    });
+    await navigateAndWait('/es/');
+    const spanishControls = await evaluate(`(() => ({
+      lang: document.documentElement.lang,
+      themeLabel: document.querySelector('.theme-control__label')?.textContent.trim() ?? '',
+      languageCode: document.querySelector('[data-language-menu] .language-switcher__current')?.textContent.trim() ?? '',
+      languageAria: document.querySelector('[data-language-menu] summary')?.getAttribute('aria-label') ?? '',
+      menuLabel: document.querySelector('[data-mobile-nav-toggle]')?.textContent.trim() ?? '',
+    }))()`);
+    assert(
+      spanishControls.lang.startsWith('es') &&
+        spanishControls.themeLabel === 'Tema' &&
+        spanishControls.languageCode === 'ES' &&
+        spanishControls.languageAria === 'Idioma del sitio: Español' &&
+        spanishControls.menuLabel.includes('Menú'),
+      `Spanish header controls are not localized: ${JSON.stringify(spanishControls)}.`,
+    );
+    await evaluate(`(() => {
+      localStorage.setItem('fitwise-language-preference', 'es');
+      sessionStorage.removeItem('fitwise-language-suggestion-dismissed');
+    })()`);
+    await navigateAndWait('/');
+    const suggestionFits = await evaluate(`({
+      visible: !document.querySelector('[data-language-suggestion]')?.hidden,
+      viewport: innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+    })`);
+    assert(
+      suggestionFits.visible && suggestionFits.documentWidth <= suggestionFits.viewport + 1,
+      `Saved-language suggestion overflowed the mobile header: ${JSON.stringify(suggestionFits)}.`,
+    );
+    await cdp('Emulation.setDeviceMetricsOverride', {
+      width: 1440,
+      height: 1000,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await navigateAndWait('/');
+    console.log('Header utility controls passed desktop, tablet and mobile layout checks.');
+  }
+
+  async function verifySpanishRugInteraction() {
+    await navigateAndWait('/es/rug-fit/');
+    const initial = await evaluate(`(() => ({
+      lang: document.documentElement.lang,
+      hasEnglishFieldLabel: document.body.innerText.includes('Measure the room and rug'),
+      hasSpanishDiagram: document.querySelector('[data-diagram-id="rug-fitcheck-diagram"] .scale-diagram__svg')?.textContent.includes('PLANO DE HABITACIÓN') ?? false,
+      announcementRole: document.querySelector('#rug-fitcheck-summary [data-fit-state-announcement]')?.getAttribute('role') ?? '',
+      announcementLive: document.querySelector('#rug-fitcheck-summary [data-fit-state-announcement]')?.getAttribute('aria-live') ?? '',
+    }))()`);
+    assert(
+      initial.lang.startsWith('es') &&
+        !initial.hasEnglishFieldLabel &&
+        initial.hasSpanishDiagram &&
+        initial.announcementRole === 'status' &&
+        initial.announcementLive === 'polite',
+      `Spanish rug calculator initial markup is not localized or has no persistent status region: ${JSON.stringify(initial)}.`,
+    );
+
+    await evaluate(`(() => {
+      const orientation = document.getElementById('rug-orientation');
+      orientation.value = 'depth-width';
+      orientation.dispatchEvent(new Event('change', { bubbles: true }));
+      const roomWidth = document.getElementById('rug-room-width');
+      roomWidth.value = '2000';
+      roomWidth.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    })()`);
+    await delay(600);
+    const updated = await evaluate(`(() => ({
+      state: document.querySelector('#rug-fitcheck-summary')?.dataset.fitState,
+      orientation: document.querySelector('[data-rug-orientation]')?.textContent.trim() ?? '',
+      assumptions: document.querySelector('#rug-fitcheck-assumptions')?.textContent ?? '',
+      diagram: document.querySelector('[data-diagram-id="rug-fitcheck-diagram"] .scale-diagram__svg')?.textContent ?? '',
+      caption: document.getElementById('rug-fitcheck-diagram-caption')?.textContent ?? '',
+      table: document.getElementById('rug-fitcheck-table')?.textContent ?? '',
+      announcement: document.querySelector('#rug-fitcheck-summary [data-fit-state-announcement]')?.textContent.trim() ?? '',
+      stickyLabel: document.querySelector('#rug-fitcheck-summary [data-fit-sticky]')?.getAttribute('aria-label') ?? '',
+    }))()`);
+    assert(
+      updated.state === 'does_not_fit' &&
+        updated.orientation &&
+        !updated.orientation.includes('Rug is rotated') &&
+        !updated.assumptions.includes('The room and rug are treated') &&
+        !updated.diagram.includes('ROOM PLAN') &&
+        !updated.diagram.includes('FURNITURE RELATIONSHIP') &&
+        !updated.caption.includes('Centered rectangular room') &&
+        !updated.table.includes('rug width against room width') &&
+        updated.announcement &&
+        !updated.announcement.includes('Does not fit') &&
+        updated.stickyLabel.includes('Resultado') &&
+        !updated.stickyLabel.includes('Fit result:'),
+      `Spanish rug recalculation regressed to English or failed to announce the state change: ${JSON.stringify(updated)}.`,
+    );
+    console.log('Spanish rug calculator copy and changed-state announcement passed.');
+  }
+
   async function waitForPath(expectedPath) {
     for (let attempt = 0; attempt < 120; attempt += 1) {
       if ((await evaluate('location.pathname')) === expectedPath) return;
@@ -2569,6 +2817,7 @@ try {
     assert(false, `Language choice did not navigate to ${expectedPath}.`);
   }
 
+  await verifyResponsiveHeader();
   await navigateAndWait('/');
   await evaluate(`(() => {
     localStorage.removeItem('fitwise-language-preference');
@@ -2578,8 +2827,7 @@ try {
     (await evaluate('location.pathname')) === '/',
     'English home should remain the default with no saved preference.',
   );
-  await evaluate(`document.querySelector('[data-language-choice="es"]')?.focus()`);
-  await press('Enter', 'Enter', 13);
+  await chooseSiteLanguage('es');
   await waitForPath('/es/');
   assert(
     (await evaluate("localStorage.getItem('fitwise-language-preference')")) === 'es',
@@ -2594,15 +2842,13 @@ try {
     !(await evaluate('document.documentElement.lang')).startsWith('es'),
     'The directly requested English page must remain English.',
   );
-  await evaluate(`document.querySelector('[data-language-choice="es"]')?.focus()`);
-  await press('Enter', 'Enter', 13);
+  await chooseSiteLanguage('es');
   await waitForPath('/es/workspace/');
   assert(
     (await evaluate("localStorage.getItem('fitwise-language-preference')")) === 'es',
     'The preference should remain Spanish after switching to its equivalent route.',
   );
-  await evaluate(`document.querySelector('[data-language-choice="en"]')?.focus()`);
-  await press('Enter', 'Enter', 13);
+  await chooseSiteLanguage('en');
   await waitForPath('/workspace/');
   assert(
     (await evaluate("localStorage.getItem('fitwise-language-preference')")) === 'en',
@@ -2611,6 +2857,7 @@ try {
   console.log(
     'Manual language choice persists in-browser without redirecting or locking direct URLs.',
   );
+  await verifySpanishRugInteraction();
 
   if (process.env.FITWISE_QA_BLOG_PREVIEW === '1') {
     const blogPreviewRoutes = [
@@ -2823,6 +3070,9 @@ try {
   console.log('Storage exact-zero and sub-display-positive margins passed shared result copy.');
 
   if (screenshotDirectory) {
+    await captureRouteScreenshot('/', 'header-layout-desktop-903', 903, 700, false);
+    await captureRouteScreenshot('/', 'header-layout-mobile-390', 390, 844, true);
+    await captureRouteScreenshot('/', 'header-layout-mobile-320', 320, 740, true);
     await captureRouteScreenshot(
       '/will-it-fit/',
       '00-universal-footprint-desktop',

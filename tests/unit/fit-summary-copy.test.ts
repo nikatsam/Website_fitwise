@@ -66,6 +66,11 @@ describe('shared result summary copy', () => {
     expect(getFitSummaryResultLabel(summary)).toBe('Fits');
   });
 
+  it('keeps regenerated summary content out of transient live regions', () => {
+    const summary = getFitSummaryCopy('fits', [fitRow]);
+    expect(renderFitSummaryContentHtml(summary)).not.toContain('aria-live');
+  });
+
   it('names the short selected target and physical shortfall separately', () => {
     const tightRow = {
       ...fitRow,

@@ -1,8 +1,11 @@
 import type { RugCoverageMode, RugPlacedOrientation } from '../geometry';
 import { formatMeasurement } from '../units';
+import type { Locale } from '../../i18n/locale';
+import { translate } from '../../i18n/text';
 
 export interface RugDiagramInput {
   diagramId: string;
+  locale?: Locale;
   roomWidthMm: number;
   roomDepthMm: number;
   rugWidthMm: number;
@@ -43,11 +46,13 @@ function escapeXml(value: string): string {
 }
 
 function unitText(label: string, widthMm: number, depthMm: number, y: number): string {
-  return `<text x="28" y="${y}" class="diagram-space__label" font-size="14">${label}: <tspan data-unit="metric">${escapeXml(formatMeasurement(widthMm, 'metric'))} × ${escapeXml(formatMeasurement(depthMm, 'metric'))}</tspan><tspan data-unit="separator" aria-hidden="true"> / </tspan><tspan data-unit="imperial">${escapeXml(formatMeasurement(widthMm, 'imperial'))} × ${escapeXml(formatMeasurement(depthMm, 'imperial'))}</tspan></text>`;
+  return `<text x="28" y="${y}" class="diagram-space__label" font-size="14">${escapeXml(label)}: <tspan data-unit="metric">${escapeXml(formatMeasurement(widthMm, 'metric'))} × ${escapeXml(formatMeasurement(depthMm, 'metric'))}</tspan><tspan data-unit="separator" aria-hidden="true"> / </tspan><tspan data-unit="imperial">${escapeXml(formatMeasurement(widthMm, 'imperial'))} × ${escapeXml(formatMeasurement(depthMm, 'imperial'))}</tspan></text>`;
 }
 
 /** Draws a centered room/rug comparison and a separate furniture coverage relationship sketch. */
 export function renderRugDiagramMarkup(input: RugDiagramInput): string {
+  const locale = input.locale ?? 'en';
+  const copy = (source: string) => translate(locale, source);
   const requiredPositive = [
     input.roomWidthMm,
     input.roomDepthMm,
@@ -104,22 +109,22 @@ export function renderRugDiagramMarkup(input: RugDiagramInput): string {
   };
 
   const roomMarkup = `
-    <text x="28" y="20" class="diagram-space__label" font-size="14">ROOM PLAN | centered dimensional comparison</text>
+    <text x="28" y="20" class="diagram-space__label" font-size="14">${escapeXml(copy('ROOM PLAN | centered dimensional comparison'))}</text>
     <rect class="diagram-space__rect" x="${roomRect.x}" y="${roomRect.y}" width="${roomRect.width}" height="${roomRect.height}" />
     ${input.wallGapEachSideMm > 0 ? `<rect class="diagram-clearance__rect" x="${wallTargetRect.x}" y="${wallTargetRect.y}" width="${wallTargetRect.width}" height="${wallTargetRect.height}" />` : ''}
     <rect class="diagram-object__rect" x="${rugRect.x}" y="${rugRect.y}" width="${rugRect.width}" height="${rugRect.height}" />
-    <text x="${roomRect.x + 7}" y="${roomRect.y + 18}" class="diagram-space__label" font-size="13">ROOM</text>
-    <text x="${roomCenterX}" y="${roomCenterY}" class="diagram-object__label" text-anchor="middle" dominant-baseline="middle" font-size="16">RUG</text>
-    ${unitText('Room', input.roomWidthMm, input.roomDepthMm, 302)}
-    ${unitText('Rug on room axes', rugWidthMm, rugDepthMm, 326)}
-    ${input.wallGapEachSideMm > 0 ? `<text x="28" y="348" class="diagram-clearance__label" font-size="13">Dotted outline adds the user-selected wall border on each side.</text>` : ''}
+    <text x="${roomRect.x + 7}" y="${roomRect.y + 18}" class="diagram-space__label" font-size="13">${escapeXml(copy('ROOM'))}</text>
+    <text x="${roomCenterX}" y="${roomCenterY}" class="diagram-object__label" text-anchor="middle" dominant-baseline="middle" font-size="16">${escapeXml(copy('RUG'))}</text>
+    ${unitText(copy('Room'), input.roomWidthMm, input.roomDepthMm, 302)}
+    ${unitText(copy('Rug on room axes'), rugWidthMm, rugDepthMm, 326)}
+    ${input.wallGapEachSideMm > 0 ? `<text x="28" y="348" class="diagram-clearance__label" font-size="13">${escapeXml(copy('Dotted outline adds the user-selected wall border on each side.'))}</text>` : ''}
   `;
 
   let relationshipMarkup: string;
   if (!input.checkFurniture) {
     relationshipMarkup = `
-      <text x="28" y="382" class="diagram-space__label" font-size="14">FURNITURE COVERAGE | not checked</text>
-      <text x="28" y="420" class="diagram-clearance__label" font-size="14">Enable the measured footprint check to compare furniture and rug dimensions.</text>
+      <text x="28" y="382" class="diagram-space__label" font-size="14">${escapeXml(copy('FURNITURE COVERAGE | not checked'))}</text>
+      <text x="28" y="420" class="diagram-clearance__label" font-size="14">${escapeXml(copy('Enable the measured footprint check to compare furniture and rug dimensions.'))}</text>
     `;
   } else {
     const furnitureWidthMm = input.furnitureWidthMm!;
@@ -195,12 +200,12 @@ export function renderRugDiagramMarkup(input: RugDiagramInput): string {
         };
       }
       relationshipMarkup = `
-        <text x="28" y="382" class="diagram-space__label" font-size="14">FURNITURE RELATIONSHIP | full footprint on rug</text>
+        <text x="28" y="382" class="diagram-space__label" font-size="14">${escapeXml(copy('FURNITURE RELATIONSHIP | full footprint on rug'))}</text>
         ${targetRect ? `<rect class="diagram-clearance__rect" x="${targetRect.x}" y="${targetRect.y}" width="${targetRect.width}" height="${targetRect.height}" />` : ''}
         <rect class="diagram-object__rect" x="${relationRugRect.x}" y="${relationRugRect.y}" width="${relationRugRect.width}" height="${relationRugRect.height}" />
         <rect class="diagram-chair__rect" x="${furnitureRect.x}" y="${furnitureRect.y}" width="${furnitureRect.width}" height="${furnitureRect.height}" />
-        ${furnitureRect.width > 95 && furnitureRect.height > 28 ? `<text x="${relationCenterX}" y="${furnitureRect.y + furnitureRect.height / 2}" class="diagram-object__label" text-anchor="middle" dominant-baseline="middle" font-size="13">USE ZONE</text>` : ''}
-        ${unitText('Furniture/use zone', furnitureWidthMm, furnitureDepthMm, 584)}
+        ${furnitureRect.width > 95 && furnitureRect.height > 28 ? `<text x="${relationCenterX}" y="${furnitureRect.y + furnitureRect.height / 2}" class="diagram-object__label" text-anchor="middle" dominant-baseline="middle" font-size="13">${escapeXml(copy('USE ZONE'))}</text>` : ''}
+        ${unitText(copy('Furniture/use zone'), furnitureWidthMm, furnitureDepthMm, 584)}
       `;
     } else {
       const overlap = input.frontOverlapMm!;
@@ -232,14 +237,14 @@ export function renderRugDiagramMarkup(input: RugDiagramInput): string {
         };
       }
       relationshipMarkup = `
-        <text x="28" y="382" class="diagram-space__label" font-size="14">FURNITURE RELATIONSHIP | front-edge overlap</text>
+        <text x="28" y="382" class="diagram-space__label" font-size="14">${escapeXml(copy('FURNITURE RELATIONSHIP | front-edge overlap'))}</text>
         <rect class="diagram-object__rect" x="${relationRugRect.x}" y="${relationRugRect.y}" width="${relationRugRect.width}" height="${relationRugRect.height}" />
         ${targetRect ? `<rect class="diagram-clearance__rect" x="${targetRect.x}" y="${targetRect.y}" width="${targetRect.width}" height="${targetRect.height}" />` : ''}
         <rect class="diagram-chair__rect" x="${furnitureRect.x}" y="${furnitureRect.y}" width="${furnitureRect.width}" height="${furnitureRect.height}" />
         <line x1="${relationPadding}" y1="${frontEdgeY}" x2="${viewWidth - relationPadding}" y2="${frontEdgeY}" class="diagram-arrow__line" stroke-dasharray="4 3" />
         <line x1="${relationPadding}" y1="${frontEdgeY + extensionPx}" x2="${viewWidth - relationPadding}" y2="${frontEdgeY + extensionPx}" class="diagram-arrow__line" stroke-dasharray="1 4" />
-        ${furnitureRect.width > 95 && furnitureRect.height > 28 ? `<text x="${relationCenterX}" y="${furnitureRect.y + furnitureRect.height / 2}" class="diagram-object__label" text-anchor="middle" dominant-baseline="middle" font-size="13">FURNITURE</text>` : ''}
-        <text x="28" y="584" class="diagram-clearance__label" font-size="13">Dashed line marks the furniture front; dotted line marks the selected rug extension target.</text>
+        ${furnitureRect.width > 95 && furnitureRect.height > 28 ? `<text x="${relationCenterX}" y="${furnitureRect.y + furnitureRect.height / 2}" class="diagram-object__label" text-anchor="middle" dominant-baseline="middle" font-size="13">${escapeXml(copy('FURNITURE'))}</text>` : ''}
+        <text x="28" y="584" class="diagram-clearance__label" font-size="13">${escapeXml(copy('Dashed line marks the furniture front; dotted line marks the selected rug extension target.'))}</text>
       `;
     }
   }

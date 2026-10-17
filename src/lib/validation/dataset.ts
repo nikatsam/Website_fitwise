@@ -36,6 +36,7 @@ export type ValidationRule =
   | 'missing-source-id'
   | 'invalid-source-reference'
   | 'non-positive-dimension'
+  | 'non-finite-measurement'
   | 'missing-derivation'
   | 'missing-bed-market'
   | 'missing-door-leaf-measurement'
@@ -105,12 +106,12 @@ function validateMeasurement(
 
   const { valueMm, kind, sourceId, derivationId } = value;
 
-  if (typeof valueMm !== 'number' || Number.isNaN(valueMm)) {
+  if (typeof valueMm !== 'number' || !Number.isFinite(valueMm)) {
     errors.push({
       level: 'error',
-      rule: 'non-positive-dimension',
+      rule: 'non-finite-measurement',
       recordId,
-      message: `${context}: valueMm must be a number, got ${JSON.stringify(valueMm)}.`,
+      message: `${context}: valueMm must be a finite number, got ${JSON.stringify(valueMm)}.`,
     });
   } else if (!options.allowNonPositive && valueMm <= 0) {
     errors.push({

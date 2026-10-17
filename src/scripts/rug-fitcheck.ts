@@ -13,6 +13,7 @@ import { renderRugDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
 import type { Locale } from '../i18n/locale';
 import { translate, translateTemplate } from '../i18n/text';
+import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 const locale: Locale =
   typeof document === 'undefined'
@@ -192,12 +193,12 @@ function renderRows(rows: DimensionDisplayRow[]): void {
       (
         row,
       ) => `<tr data-dimension="${row.dimension}" data-hard-fit="${row.hardFit}" data-recommended-fit="${row.recommendedFit}">
-        <th scope="row" data-label="Dimension">${row.label}</th>
-        <td data-label="Required">${unitHtml(row.requiredMm)}</td>
-        <td data-label="Target">${unitHtml(row.recommendedMm)}</td>
-        <td data-label="Available">${unitHtml(row.availableMm)}</td>
-        <td data-label="Physical margin"><span>${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.physicalMarginMm), true)}</td>
-        <td data-label="Target margin"><span>${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.targetMarginMm), true)}</td>
+        <th scope="row" data-label="${translate(locale, 'Dimension')}">${escapeHtml(row.label)}</th>
+        <td data-label="${translate(locale, 'Required')}">${unitHtml(row.requiredMm)}</td>
+        <td data-label="${translate(locale, 'Target')}">${unitHtml(row.recommendedMm)}</td>
+        <td data-label="${translate(locale, 'Available')}">${unitHtml(row.availableMm)}</td>
+        <td data-label="${translate(locale, 'Physical margin')}"><span>${row.physicalMarginMm > 0 ? '+' : row.physicalMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.physicalMarginMm), true)}</td>
+        <td data-label="${translate(locale, 'Target margin')}"><span>${row.targetMarginMm > 0 ? '+' : row.targetMarginMm < 0 ? '−' : ''}</span>${unitHtml(Math.abs(row.targetMarginMm), true)}</td>
       </tr>`,
     )
     .join('');
@@ -208,6 +209,8 @@ function renderSummary(state: FitState, rows: DimensionDisplayRow[]): void {
   if (!summary) return;
   const summaryCopy = getFitSummaryCopy(state, rows, { locale });
   const label = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
+  const previousState = summary.dataset.fitState ?? state;
+  announceFitStateChange(summary, previousState, state, label);
   summary.setAttribute('data-fit-state', state);
   summary.dataset.fitExact = String(summaryCopy.isExactFit);
   summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent = getFitStateBadgeCopy(
@@ -244,15 +247,76 @@ function renderSummary(state: FitState, rows: DimensionDisplayRow[]): void {
 
 function makeAssumptions(values: RugFormValues): string[] {
   return [
-    'The room and rug are treated as axis-aligned rectangles; the orientation control tests the rug rotated 90 degrees.',
-    `The ${formatMeasurement(values.wallGapEachSideMm)} room border is an extra user-selected target on every rug edge, not a universal design rule.`,
+    translate(
+      locale,
+      'The room and rug are treated as axis-aligned rectangles; the orientation control tests the rug rotated 90 degrees.',
+    ),
+    translateTemplate(
+      locale,
+      'The {measurement} room border is an extra user-selected target on every rug edge, not a universal design rule.',
+      { measurement: formatMeasurement(values.wallGapEachSideMm) },
+    ),
     values.checkFurniture
       ? values.coverageMode === 'full-footprint'
-        ? `The complete ${formatMeasurement(values.furnitureWidthMm!)} by ${formatMeasurement(values.furnitureDepthMm!)} furniture/use footprint is compared with the rug, plus the user-selected ${formatMeasurement(values.furnitureMarginEachSideMm)} border.`
-        : `The front-edge check compares the entered ${formatMeasurement(values.frontOverlapMm!)} overlap and ${formatMeasurement(values.frontExtensionMm ?? 0)} extension. It does not infer actual furniture leg positions.`
-      : 'Furniture coverage is disabled; only rug-to-room dimensions are checked.',
-    'The diagram centers the rug in the room for a proportional comparison. It does not choose furniture placement, style, colors, irregular shapes or diagonal orientations.',
+        ? translateTemplate(
+            locale,
+            'The complete {width} by {depth} furniture/use footprint is compared with the rug, plus the user-selected {margin} border.',
+            {
+              width: formatMeasurement(values.furnitureWidthMm!),
+              depth: formatMeasurement(values.furnitureDepthMm!),
+              margin: formatMeasurement(values.furnitureMarginEachSideMm),
+            },
+          )
+        : translateTemplate(
+            locale,
+            'The front-edge check compares the entered {overlap} overlap and {extension} extension. It does not infer actual furniture leg positions.',
+            {
+              overlap: formatMeasurement(values.frontOverlapMm!),
+              extension: formatMeasurement(values.frontExtensionMm ?? 0),
+            },
+          )
+      : translate(
+          locale,
+          'Furniture coverage is disabled; only rug-to-room dimensions are checked.',
+        ),
+    translate(
+      locale,
+      'The diagram centers the rug in the room for a proportional comparison. It does not choose furniture placement, style, colors, irregular shapes or diagonal orientations.',
+    ),
   ];
+}
+
+function getDiagramSummary(values: RugFormValues, rugWidthMm: number, rugDepthMm: number): string {
+  const relationship = !values.checkFurniture
+    ? translate(locale, 'Furniture coverage is not checked.')
+    : values.coverageMode === 'full-footprint'
+      ? translateTemplate(
+          locale,
+          'Full furniture/use footprint {width} by {depth} is checked against the rug.',
+          {
+            width: formatMeasurement(values.furnitureWidthMm!),
+            depth: formatMeasurement(values.furnitureDepthMm!),
+          },
+        )
+      : translateTemplate(
+          locale,
+          'Front-edge overlap {overlap} and forward extension {extension} are user-selected.',
+          {
+            overlap: formatMeasurement(values.frontOverlapMm!),
+            extension: formatMeasurement(values.frontExtensionMm ?? 0),
+          },
+        );
+  return translateTemplate(
+    locale,
+    'Centered rectangular room and rug comparison. Room {roomWidth} by {roomDepth}. Rug {rugWidth} by {rugDepth} in the selected orientation. {relationship} This is not a complete floor-plan placement tool.',
+    {
+      roomWidth: formatMeasurement(values.roomWidthMm),
+      roomDepth: formatMeasurement(values.roomDepthMm),
+      rugWidth: formatMeasurement(rugWidthMm),
+      rugDepth: formatMeasurement(rugDepthMm),
+      relationship,
+    },
+  );
 }
 
 function renderDiagram(values: RugFormValues, orientation: 'width-depth' | 'depth-width'): void {
@@ -263,6 +327,7 @@ function renderDiagram(values: RugFormValues, orientation: 'width-depth' | 'dept
   const defs = svg.querySelector('defs');
   const markup = renderRugDiagramMarkup({
     diagramId: DIAGRAM_ID,
+    locale,
     ...values,
     orientation,
   });
@@ -278,12 +343,7 @@ function renderDiagram(values: RugFormValues, orientation: 'width-depth' | 'dept
       orientation === 'width-depth' ? values.rugWidthMm : values.rugDepthMm;
     const rugDepthOnRoomDepthMm =
       orientation === 'width-depth' ? values.rugDepthMm : values.rugWidthMm;
-    const relationship = !values.checkFurniture
-      ? 'Furniture coverage is not checked.'
-      : values.coverageMode === 'full-footprint'
-        ? `Full furniture/use footprint ${formatMeasurement(values.furnitureWidthMm!)} by ${formatMeasurement(values.furnitureDepthMm!)} is checked against the rug.`
-        : `Front-edge overlap ${formatMeasurement(values.frontOverlapMm!)} and forward extension ${formatMeasurement(values.frontExtensionMm ?? 0)} are user-selected.`;
-    summary.textContent = `Centered rectangular room and rug comparison. Room ${formatMeasurement(values.roomWidthMm)} by ${formatMeasurement(values.roomDepthMm)}. Rug ${formatMeasurement(rugWidthOnRoomWidthMm)} by ${formatMeasurement(rugDepthOnRoomDepthMm)} in the selected orientation. ${relationship} This is not a complete floor-plan placement tool.`;
+    summary.textContent = getDiagramSummary(values, rugWidthOnRoomWidthMm, rugDepthOnRoomDepthMm);
   }
 }
 
@@ -292,17 +352,21 @@ function recompute(): void {
   if (!values) return;
   const plan = buildRugFitPlan(values);
   const result = evaluateFit(plan.checks, makeAssumptions(values));
-  const rows = toDimensionDisplayRows(plan.checks, result);
+  const rows = toDimensionDisplayRows(plan.checks, result).map((row) => ({
+    ...row,
+    label: translate(locale, row.label),
+  }));
   const orientation = document.querySelector<HTMLElement>('[data-rug-orientation]');
   if (orientation) {
     orientation.textContent =
       plan.orientation === 'width-depth'
-        ? 'Rug width runs along the room width.'
-        : 'Rug is rotated 90 degrees against the room axes.';
+        ? translate(locale, 'Rug width runs along the room width.')
+        : translate(locale, 'Rug is rotated 90 degrees against the room axes.');
   }
   const assumptions = document.querySelector('#rug-fitcheck-assumptions [data-field="items"]');
   if (assumptions) {
     assumptions.innerHTML = result.assumptions
+      .map((item) => translate(locale, item))
       .map((item) => `<li>${escapeHtml(item)}</li>`)
       .join('');
   }

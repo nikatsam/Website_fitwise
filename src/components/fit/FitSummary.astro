@@ -14,7 +14,7 @@ import {
 } from '../../lib/fit';
 import UnitValue from './UnitValue.astro';
 import { localeFromPath } from '../../i18n/locale';
-import { translateRequired } from '../../i18n/text';
+import { translateRequired, translateTemplate } from '../../i18n/text';
 
 interface Props {
   state: FitState;
@@ -71,6 +71,13 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
     data-fit-summary-content
     set:html={renderFitSummaryContentHtml(summaryCopy)}
   />
+  <p
+    class="visually-hidden"
+    data-fit-state-announcement
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+  ></p>
   <details class="fit-summary__legend" data-fit-state-legend>
     <summary>{translateRequired(locale, 'What these results mean')}</summary>
     <ul>
@@ -96,7 +103,11 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
       data-fit-sticky
       data-fit-state={state}
       href={`#${resultId}-details`}
-      aria-label={`Fit result: ${label}. View calculation details.`}
+      aria-label={translateTemplate(
+        locale,
+        'Fit result: {resultLabel}. View calculation details.',
+        { resultLabel: label },
+      )}
     >
       <span class="fit-summary__mobile-status">
         <span aria-hidden="true" data-field="sticky-icon">
@@ -106,19 +117,21 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
       </span>
       <span class="fit-summary__mobile-detail" data-field="sticky-detail">
         {summaryCopy.isExactFit ? (
-          'No tolerance remains'
+          translateRequired(locale, 'No tolerance remains')
         ) : summaryCopy.marginMm !== null && summaryCopy.marginLabel ? (
           <>
             <UnitValue mm={summaryCopy.marginMm} margin /> {summaryCopy.marginLabel.toLowerCase()}
           </>
         ) : null}
-        {state === 'does_not_fit' && summaryCopy.physicalStatus === 'No' && 'Physical fit failed'}
+        {state === 'does_not_fit' &&
+          summaryCopy.physicalStatus === 'No' &&
+          translateRequired(locale, 'Physical fit failed')}
         {state === 'does_not_fit' &&
           summaryCopy.compatibilityStatus === 'Incompatible' &&
-          'Compatibility check failed'}
-        {state === 'needs_information' && 'Manual data needed'}
+          translateRequired(locale, 'Compatibility check failed')}
+        {state === 'needs_information' && translateRequired(locale, 'Manual data needed')}
       </span>
-      <span>View details ↑</span>
+      <span>{translateRequired(locale, 'View details ↑')}</span>
     </a>
   )}
 </div>

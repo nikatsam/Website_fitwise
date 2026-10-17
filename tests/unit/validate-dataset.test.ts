@@ -131,6 +131,18 @@ describe('validateDataset — known invalid fixtures', () => {
     expect(result.errors.some((e) => e.rule === 'non-positive-dimension')).toBe(true);
   });
 
+  it.each([Infinity, -Infinity, NaN])('rejects non-finite measurement %s', (valueMm) => {
+    const dataset: Dataset = {
+      ...emptyDataset,
+      sources,
+      entities: [{ ...deskEntities[0]!, widthMm: { ...deskEntities[0]!.widthMm, valueMm } }],
+    };
+
+    const result = validateDataset(dataset);
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((issue) => issue.rule === 'non-finite-measurement')).toBe(true);
+  });
+
   it('rejects a derived measurement with no derivationId', () => {
     const dataset: Dataset = {
       ...emptyDataset,

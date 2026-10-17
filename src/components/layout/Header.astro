@@ -10,7 +10,7 @@ import {
 import type { NavigationLink } from '../../data/navigation';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 import { localeFromPath, pathForLocale, type Locale } from '../../i18n/locale';
-import { translateRequired } from '../../i18n/text';
+import { translateRequired, translateTemplate } from '../../i18n/text';
 
 interface Props {
   showLanguageSwitcher?: boolean;
@@ -54,6 +54,8 @@ const activeFitCheck =
 const homePath = pathForLocale('/', locale);
 const darkLabel = translateRequired(locale, 'Dark');
 const lightLabel = translateRequired(locale, 'Light');
+const themeLabel = translateRequired(locale, 'Theme');
+const themeAriaLabel = translateTemplate(locale, 'Theme: {theme}', { theme: lightLabel });
 ---
 
 <header class="site-header">
@@ -80,7 +82,36 @@ const lightLabel = translateRequired(locale, 'Light');
       />
     </a>
 
-    <nav class="site-nav" aria-label={translateRequired(locale, 'Primary')} data-global-navigation>
+    <button
+      type="button"
+      class="mobile-nav-toggle"
+      data-mobile-nav-toggle
+      data-mobile-nav-open-label={translateRequired(locale, 'Menu')}
+      data-mobile-nav-close-label={translateRequired(locale, 'Close menu')}
+      aria-controls="site-navigation"
+      aria-expanded="false"
+      hidden
+    >
+      <svg
+        viewBox="0 0 20 20"
+        width="20"
+        height="20"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        aria-hidden="true"
+      >
+        <path d="M3 5h14M3 10h14M3 15h14" />
+      </svg>
+      <span data-mobile-nav-label>{translateRequired(locale, 'Menu')}</span>
+    </button>
+
+    <nav
+      id="site-navigation"
+      class="site-nav"
+      aria-label={translateRequired(locale, 'Primary')}
+      data-global-navigation
+    >
       <ul class="site-nav__list">
         <li>
           <a
@@ -169,22 +200,88 @@ const lightLabel = translateRequired(locale, 'Light');
       </ul>
     </nav>
 
-    {shouldShowLanguageSwitcher && <LanguageSwitcher currentPath={currentPath} language={locale} />}
-    <button
-      type="button"
-      class="theme-toggle"
-      data-theme-toggle
-      data-theme-dark-label={darkLabel}
-      data-theme-light-label={lightLabel}
-      aria-pressed="false"
-    >
-      🌙 {darkLabel}
-    </button>
+    <div class="site-header__tools">
+      {shouldShowLanguageSwitcher && (
+        <LanguageSwitcher currentPath={currentPath} language={locale} />
+      )}
+      <div class="theme-control">
+        <span class="theme-control__label">{themeLabel}</span>
+        <button
+          type="button"
+          class="theme-toggle"
+          data-theme-toggle
+          data-theme-dark-label={darkLabel}
+          data-theme-light-label={lightLabel}
+          data-theme-aria-label-template={translateRequired(locale, 'Theme: {theme}')}
+          aria-label={themeAriaLabel}
+          aria-pressed="false"
+        >
+          <span data-theme-icon aria-hidden="true">
+            ☀️
+          </span>
+          <span data-theme-label>{lightLabel}</span>
+        </button>
+      </div>
+    </div>
   </div>
 </header>
 
 <script>
   import '../../scripts/theme';
+
+  const header = document.querySelector<HTMLElement>('.site-header');
+  const navigation = document.getElementById('site-navigation');
+  const mobileToggle = document.querySelector<HTMLButtonElement>('[data-mobile-nav-toggle]');
+  const mobileQuery = window.matchMedia('(max-width: 40rem)');
+  let mobileNavigationOpen = false;
+
+  const syncMobileNavigation = () => {
+    if (!header || !navigation || !mobileToggle) return;
+    if (mobileQuery.matches) {
+      mobileToggle.hidden = false;
+      header.dataset.mobileNavEnhanced = 'true';
+      navigation.dataset.mobileOpen = String(mobileNavigationOpen);
+    } else {
+      mobileToggle.hidden = true;
+      delete header.dataset.mobileNavEnhanced;
+      delete navigation.dataset.mobileOpen;
+      mobileNavigationOpen = false;
+    }
+    mobileToggle.setAttribute('aria-expanded', String(mobileQuery.matches && mobileNavigationOpen));
+    const label = mobileNavigationOpen
+      ? mobileToggle.dataset.mobileNavCloseLabel
+      : mobileToggle.dataset.mobileNavOpenLabel;
+    const labelNode = mobileToggle.querySelector<HTMLElement>('[data-mobile-nav-label]');
+    if (labelNode && label) labelNode.textContent = label;
+  };
+
+  mobileToggle?.addEventListener('click', () => {
+    mobileNavigationOpen = !mobileNavigationOpen;
+    syncMobileNavigation();
+  });
+
+  navigation?.addEventListener('click', (event) => {
+    if (!mobileQuery.matches || !(event.target instanceof Element)) return;
+    if (!event.target.closest('a')) return;
+    mobileNavigationOpen = false;
+    syncMobileNavigation();
+  });
+
+  navigation?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !mobileNavigationOpen) return;
+    const openGroup = navigation.querySelector<HTMLDetailsElement>('details[open]');
+    if (openGroup) {
+      openGroup.open = false;
+      openGroup.querySelector('summary')?.focus();
+      return;
+    }
+    mobileNavigationOpen = false;
+    syncMobileNavigation();
+    mobileToggle?.focus();
+  });
+
+  mobileQuery.addEventListener('change', syncMobileNavigation);
+  syncMobileNavigation();
 </script>
 
 <style>
@@ -198,14 +295,36 @@ const lightLabel = translateRequired(locale, 'Light');
   }
 
   .site-header__inner {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--space-5);
     padding-block: var(--space-3);
   }
 
-  .language-control {
+  .site-header__tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+
+  .mobile-nav-toggle {
+    display: none;
+  }
+
+  .theme-control {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
     flex: 0 0 auto;
+  }
+
+  .theme-control__label {
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    font-weight: 700;
   }
 
   .brand {
@@ -232,19 +351,22 @@ const lightLabel = translateRequired(locale, 'Light');
   }
 
   .site-nav {
-    flex: 1;
     min-width: 0;
   }
 
   .site-nav__list {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-end;
     gap: var(--space-4) var(--space-5);
     list-style: none;
     margin: 0;
     padding: 0;
+  }
+
+  .site-nav__list > li {
+    flex: 0 0 auto;
   }
 
   .site-nav a,
@@ -373,6 +495,11 @@ const lightLabel = translateRequired(locale, 'Light');
   }
 
   .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
     border: 1px solid var(--color-border);
     background: var(--color-surface-raised);
     color: var(--color-text-primary);
@@ -391,25 +518,114 @@ const lightLabel = translateRequired(locale, 'Light');
     transform: translateY(-1px);
   }
 
-  @media (max-width: 40rem) {
+  @media (max-width: 72rem) {
     .site-header__inner {
-      flex-wrap: wrap;
+      grid-template-columns: minmax(0, 1fr) auto;
+      column-gap: var(--space-4);
+      row-gap: var(--space-2);
     }
+
+    .site-header__tools {
+      grid-column: 2;
+      grid-row: 1;
+      gap: var(--space-3);
+    }
+
     .site-nav {
-      order: 3;
-      flex-basis: 100%;
+      grid-column: 1 / -1;
+      grid-row: 2;
+      width: 100%;
     }
-    .language-control {
-      order: 2;
-      margin-inline-start: auto;
-    }
-    .theme-toggle {
-      order: 1;
-    }
+
     .site-nav__list {
       justify-content: flex-start;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .site-header__inner {
+      column-gap: var(--space-2);
+      row-gap: var(--space-2);
+      padding-block: var(--space-2);
+    }
+
+    .brand__logo {
+      height: 1.5rem;
+    }
+
+    .mobile-nav-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      min-height: 2.75rem;
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-pill);
+      background: var(--color-surface-raised);
+      color: var(--color-text-primary);
+      font-size: var(--fs-sm);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .mobile-nav-toggle:focus-visible {
+      outline: 3px solid var(--color-accent-1);
+      outline-offset: 3px;
+    }
+
+    .site-header__tools {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-self: end;
+      gap: var(--space-2);
+    }
+
+    .theme-control {
+      gap: var(--space-1);
+    }
+
+    .theme-control__label {
+      font-size: var(--fs-xs);
+    }
+
+    .site-nav {
+      grid-column: 1 / -1;
+      grid-row: 3;
+    }
+
+    .site-header[data-mobile-nav-enhanced='true'] .site-nav {
+      display: none;
+    }
+
+    .site-header[data-mobile-nav-enhanced='true'] .site-nav[data-mobile-open='true'] {
+      display: block;
+    }
+
+    .site-nav__list {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      overflow: visible;
       gap: var(--space-2) var(--space-4);
     }
+
+    .site-nav__list > li {
+      flex: 0 0 auto;
+    }
+
+    .site-nav__list > .site-nav__group {
+      flex: 0 0 100%;
+    }
+
+    .theme-toggle {
+      min-height: 2.75rem;
+      gap: var(--space-1);
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--fs-xs);
+    }
+
     .site-nav__submenu {
       position: static;
       max-width: 100%;

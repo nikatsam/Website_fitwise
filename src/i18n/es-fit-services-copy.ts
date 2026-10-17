@@ -461,6 +461,8 @@ export const esFitServicesCopy: Readonly<Record<string, string>> = {
 };
 
 export const esFitServicesTemplates: Readonly<Record<string, string>> = {
+  'Fit services result: {resultLabel}. View calculation details.':
+    'Resultado del cálculo de ajuste: {resultLabel}. Ver detalles del cálculo.',
   'Step {n} of {total}: {title}': 'Paso {n} de {total}: {title}',
   'Estimated single-layer capacity: {capacity}; requested {requested}.':
     'Capacidad estimada en una sola capa: {capacity}; solicitada: {requested}.',

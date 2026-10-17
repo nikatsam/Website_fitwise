@@ -18,8 +18,16 @@ function initThemeToggle(): void {
     const theme = currentTheme();
     const lightLabel = button.dataset.themeLightLabel ?? 'Light';
     const darkLabel = button.dataset.themeDarkLabel ?? 'Dark';
+    const label = theme === 'dark' ? darkLabel : lightLabel;
+    const icon = button.querySelector<HTMLElement>('[data-theme-icon]');
+    const text = button.querySelector<HTMLElement>('[data-theme-label]');
     button.setAttribute('aria-pressed', String(theme === 'dark'));
-    button.textContent = theme === 'dark' ? `☀️ ${lightLabel}` : `🌙 ${darkLabel}`;
+    button.setAttribute(
+      'aria-label',
+      (button.dataset.themeAriaLabelTemplate ?? 'Theme: {theme}').replace('{theme}', label),
+    );
+    if (icon) icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+    if (text) text.textContent = label;
   };
 
   sync();

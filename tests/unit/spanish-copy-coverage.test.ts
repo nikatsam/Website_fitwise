@@ -13,11 +13,11 @@ import {
   MEASUREMENT_DIAGRAM_COPY,
   getFitServiceMeasurementGuidance,
 } from '../../src/lib/fit/measurement-guidance';
-import { translateRequired } from '../../src/i18n/text';
 import { translateWorkspaceBedroomText } from '../../src/i18n/es-workspace-bedroom-copy';
 import { fitServicesCopy, fitServicesTemplate } from '../../src/i18n/es-fit-services-copy';
 import { renderFitServiceAsciiPreview } from '../../src/lib/diagram/render-fit-service-ascii';
 import { getFitServiceSteps } from '../../src/lib/geometry/fit-service-steps';
+import { translate, translateRequired, translateTemplate } from '../../src/i18n/text';
 
 function expectSpanish(value: string | undefined, context: string) {
   if (!value) return;
@@ -120,6 +120,103 @@ describe('Spanish measurement-help copy coverage', () => {
         expect(fitServicesCopy(text, 'es'), text).not.toBe(text);
       }
     }
+  });
+
+  it('covers Spanish Rug calculator copy used by the static and dynamic UI', () => {
+    const visible = [
+      'Example values are illustrative placeholders, not recommended rug dimensions or styling advice.',
+      'Measure the room and rug',
+      'Enter clear inside room dimensions and the rug’s laid-flat outside dimensions.',
+      'Inside room width',
+      'Rug outside depth',
+      'Advanced options · Optional',
+      'Room-axis alignment',
+      'Try both 90-degree orientations',
+      'The border is your chosen layout target, not a universal rug-sizing rule.',
+      'Choose what the rug should cover',
+      'Also check a furniture/use footprint against the rug',
+      'Coverage mode',
+      'Keep the full footprint on the rug',
+      'Rug fit result',
+      'Rug and furniture footprint visualization',
+      'Rug-to-room dimensions and selected rug-to-furniture coverage dimensions',
+      'Rug width runs along the room width.',
+      'Rug is rotated 90 degrees against the room axes.',
+      'Furniture coverage is disabled; only rug-to-room dimensions are checked.',
+      'Centered rectangular comparison only; it does not place furniture in a floor plan or infer styling preferences.',
+      'rug width against room width',
+      'rug depth against room depth',
+      'furniture/use footprint depth on rug',
+      'furniture front width with selected side margin',
+      'rug overlap and extension at furniture front edge',
+    ];
+    for (const source of visible) {
+      expect(translateRequired('es', source), source).not.toBe(source);
+    }
+
+    expect(
+      translateTemplate(
+        'es',
+        'The {measurement} room border is an extra user-selected target on every rug edge, not a universal design rule.',
+        { measurement: '10 cm' },
+      ),
+    ).toContain('10 cm');
+    expect(
+      translateTemplate(
+        'es',
+        'Centered rectangular room and rug comparison. Room {roomWidth} by {roomDepth}. Rug {rugWidth} by {rugDepth} in the selected orientation. {relationship} This is not a complete floor-plan placement tool.',
+        {
+          roomWidth: '400 cm',
+          roomDepth: '500 cm',
+          rugWidth: '240 cm',
+          rugDepth: '300 cm',
+          relationship: translate('es', 'Furniture coverage is not checked.'),
+        },
+      ),
+    ).toContain('No se comprueba');
+  });
+
+  it('localizes sticky calculator labels and result-state announcements', () => {
+    const resultLabel = 'Tu resultado — No cabe físicamente';
+    const sharedLabel = translateTemplate(
+      'es',
+      'Fit result: {resultLabel}. View calculation details.',
+      { resultLabel },
+    );
+    const workspaceLabel = translateWorkspaceBedroomText(
+      'es',
+      `Fit result: ${resultLabel}. View calculation details.`,
+    );
+    const servicesLabel = fitServicesTemplate(
+      'Fit services result: {resultLabel}. View calculation details.',
+      'es',
+      { resultLabel },
+    );
+
+    for (const label of [sharedLabel, workspaceLabel, servicesLabel]) {
+      expect(label).toContain(resultLabel);
+      expect(label).not.toMatch(/Fit result|Fit services result|View calculation details/);
+    }
+    for (const phrase of [
+      'No measurement tolerance remains',
+      'Compatibility failed',
+      'Verification needed',
+      'Physical fit failed',
+    ]) {
+      expect(fitServicesCopy(phrase, 'es'), phrase).not.toBe(phrase);
+    }
+  });
+
+  it('localizes the new header theme and language control labels', () => {
+    expect(translateRequired('es', 'Theme')).toBe('Tema');
+    expect(
+      translateTemplate('es', 'Theme: {theme}', { theme: translateRequired('es', 'Dark') }),
+    ).toBe('Tema: Oscuro');
+    expect(
+      translateTemplate('es', 'Site language: {language}', {
+        language: translateRequired('es', 'Spanish'),
+      }),
+    ).toBe('Idioma del sitio: Español');
   });
 
   it('preserves measured values when translating workspace templates', () => {

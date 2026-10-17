@@ -35,6 +35,7 @@ import { getFitServiceStartGuidance } from '../lib/fit/start-guidance';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
 import type { Locale } from '../i18n/locale';
 import { fitServicesCopy, fitServicesTemplate } from '../i18n/es-fit-services-copy';
+import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 const locale: Locale =
   typeof document === 'undefined'
@@ -454,16 +455,18 @@ function updateSummary(
 ): void {
   const summary = document.getElementById('fit-services-summary');
   if (!summary) return;
-  const copy = getFitStateBadgeCopy(state, locale);
+  const badge = getFitStateBadgeCopy(state, locale);
   const summaryCopy = getFitSummaryCopy(state, rows, {
     missingRequirements,
     compatibilityChecks: compatibility,
     locale,
   });
   const resultLabel = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
+  const previousState = summary.dataset.fitState ?? state;
+  announceFitStateChange(summary, previousState, state, resultLabel);
   summary.dataset.fitState = state;
   summary.dataset.fitExact = String(summaryCopy.isExactFit);
-  summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent = copy.icon;
+  summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent = badge.icon;
   summary.querySelector<HTMLElement>('[data-field="label"]')!.textContent = resultLabel;
   const content = summary.querySelector<HTMLElement>('[data-fit-summary-content]');
   if (content) content.innerHTML = renderFitSummaryContentHtml(summaryCopy);
@@ -472,21 +475,21 @@ function updateSummary(
     sticky.dataset.fitState = state;
     sticky.setAttribute(
       'aria-label',
-      `Fit services result: ${resultLabel}. View calculation details.`,
+      template('Fit services result: {resultLabel}. View calculation details.', { resultLabel }),
     );
-    sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = copy.icon;
+    sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = badge.icon;
     sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = resultLabel;
     const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
     if (stickyDetail) {
       stickyDetail.innerHTML = summaryCopy.isExactFit
-        ? 'No measurement tolerance remains'
+        ? copy('No measurement tolerance remains')
         : summaryCopy.marginMm !== null && summaryCopy.marginLabel
           ? `${formatDualUnit(summaryCopy.marginMm, true)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
           : summaryCopy.compatibilityStatus === 'Incompatible'
-            ? 'Compatibility failed'
+            ? copy('Compatibility failed')
             : state === 'needs_information'
-              ? 'Verification needed'
-              : 'Physical fit failed';
+              ? copy('Verification needed')
+              : copy('Physical fit failed');
     }
   }
 }

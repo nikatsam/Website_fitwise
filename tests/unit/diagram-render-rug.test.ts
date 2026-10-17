@@ -59,6 +59,16 @@ describe('renderRugDiagramMarkup', () => {
     expect(markup).toContain('data-unit="separator"');
   });
 
+  it('localizes the generated rug diagram for Spanish pages', () => {
+    const markup = renderRugDiagramMarkup({ ...fullFootprintInput, locale: 'es' });
+    expect(markup).toContain('PLANO DE HABITACIÓN | comparación dimensional centrada');
+    expect(markup).toContain('HABITACIÓN');
+    expect(markup).toContain('ALFOMBRA');
+    expect(markup).toContain('RELACIÓN CON EL MUEBLE | huella completa sobre la alfombra');
+    expect(markup).not.toContain('ROOM PLAN');
+    expect(markup).not.toContain('FURNITURE RELATIONSHIP');
+  });
+
   it('rejects invalid dimensions and unsupported front-edge relationships', () => {
     expect(() => renderRugDiagramMarkup({ ...fullFootprintInput, rugWidthMm: 0 })).toThrow(
       RangeError,

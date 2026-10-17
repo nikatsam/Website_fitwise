@@ -19,6 +19,7 @@ import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/
 import { BEDROOM_FIT_PRESETS, DEFAULT_BEDROOM_FIT_PRESET_KEY } from '../lib/fitcheck/presets';
 import type { Locale } from '../i18n/locale';
 import { translateWorkspaceBedroomText as t } from '../i18n/es-workspace-bedroom-copy';
+import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 const locale: Locale =
   typeof document === 'undefined'
@@ -430,10 +431,12 @@ function recompute(): void {
   // Patch FitSummary.
   const summaryEl = document.getElementById('bedroom-fitcheck-summary');
   if (summaryEl) {
-    summaryEl.setAttribute('data-fit-state', result.state);
-    summaryEl.dataset.fitExact = String(summaryCopy.isExactFit);
+    const previousState = summaryEl.dataset.fitState ?? result.state;
     const copy = getFitStateBadgeCopy(result.state, locale);
     const resultLabel = getFitSummaryResultLabel(summaryCopy, summaryEl.dataset.fitOrigin);
+    announceFitStateChange(summaryEl, previousState, result.state, resultLabel);
+    summaryEl.setAttribute('data-fit-state', result.state);
+    summaryEl.dataset.fitExact = String(summaryCopy.isExactFit);
     const iconEl = summaryEl.querySelector<HTMLElement>('[data-field="icon"]');
     const labelEl = summaryEl.querySelector<HTMLElement>('[data-field="label"]');
     if (iconEl) iconEl.textContent = copy.icon;
@@ -443,16 +446,19 @@ function recompute(): void {
     const sticky = summaryEl.querySelector<HTMLAnchorElement>('[data-fit-sticky]');
     if (sticky) {
       sticky.dataset.fitState = result.state;
-      sticky.setAttribute('aria-label', `Fit result: ${resultLabel}. View calculation details.`);
+      sticky.setAttribute(
+        'aria-label',
+        t(locale, `Fit result: ${resultLabel}. View calculation details.`),
+      );
       sticky.querySelector<HTMLElement>('[data-field="sticky-icon"]')!.textContent = copy.icon;
       sticky.querySelector<HTMLElement>('[data-field="sticky-label"]')!.textContent = resultLabel;
       const stickyDetail = sticky.querySelector<HTMLElement>('[data-field="sticky-detail"]');
       if (stickyDetail) {
         stickyDetail.innerHTML = summaryCopy.isExactFit
-          ? 'No measurement tolerance remains'
+          ? t(locale, 'No measurement tolerance remains')
           : summaryCopy.marginMm !== null && summaryCopy.marginLabel
             ? `${unitValueHtml(summaryCopy.marginMm, true)} ${escapeHtml(summaryCopy.marginLabel.toLowerCase())}`
-            : 'Check result details';
+            : t(locale, 'Check result details');
       }
     }
   }

@@ -14,6 +14,7 @@ import { renderUniversalDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
 import type { Locale } from '../i18n/locale';
 import { translate, translateTemplate } from '../i18n/text';
+import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 const locale: Locale =
   typeof document === 'undefined'
@@ -170,6 +171,8 @@ function renderSummary(state: FitState, rows: DimensionDisplayRow[]): void {
   if (!summary) return;
   const summaryCopy = getFitSummaryCopy(state, rows, { locale });
   const resultLabel = getFitSummaryResultLabel(summaryCopy, summary.dataset.fitOrigin);
+  const previousState = summary.dataset.fitState ?? state;
+  announceFitStateChange(summary, previousState, state, resultLabel);
   summary.setAttribute('data-fit-state', state);
   summary.dataset.fitExact = String(summaryCopy.isExactFit);
   summary.querySelector<HTMLElement>('[data-field="icon"]')!.textContent = getFitStateBadgeCopy(

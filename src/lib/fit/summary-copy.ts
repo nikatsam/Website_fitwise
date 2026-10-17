@@ -310,7 +310,7 @@ export function renderFitSummaryContentHtml(copy: FitSummaryCopy): string {
     : '';
   const missingRequirements =
     copy.missingRequirements.length > 0
-      ? `<section class="fit-summary__missing" aria-label="${escapeHtml(t('Missing or unverified requirements'))}" aria-live="polite" aria-atomic="true"><h3>${escapeHtml(t('What is missing'))}</h3><ul>${copy.missingRequirements
+      ? `<section class="fit-summary__missing" aria-label="${escapeHtml(t('Missing or unverified requirements'))}"><h3>${escapeHtml(t('What is missing'))}</h3><ul>${copy.missingRequirements
           .map(
             (requirement) =>
               `<li><strong>${escapeHtml(requirement.label)}</strong><p>${escapeHtml(requirement.explanation)}</p><p><strong>${escapeHtml(t('Action'))}:</strong> ${escapeHtml(requirement.action)}</p></li>`,
@@ -320,5 +320,5 @@ export function renderFitSummaryContentHtml(copy: FitSummaryCopy): string {
   const compatibility = copy.compatibilityStatus
     ? `<div><dt>${escapeHtml(t('Compatibility'))}</dt><dd>${escapeHtml(copy.compatibilityStatus)}</dd></div>`
     : '';
-  return `<div class="fit-summary__content"><dl class="fit-summary__facts"><div><dt>${escapeHtml(t('Physical fit'))}</dt><dd data-field="physical-status">${escapeHtml(copy.physicalStatus)}</dd></div><div><dt>${escapeHtml(t('Selected clearance'))}</dt><dd data-field="clearance-status">${escapeHtml(copy.clearanceStatus)}</dd></div>${compatibility}</dl>${binding}${margin}${exactFitWarning}${missingRequirements}<h3>${escapeHtml(t('What this means'))}</h3><p class="fit-summary__detail" data-field="detail" aria-live="polite" aria-atomic="true">${escapeHtml(copy.explanation)}</p><p class="fit-summary__next"><strong>${escapeHtml(t('Next'))}:</strong> <span data-field="next-action">${escapeHtml(copy.nextAction)}</span></p></div>`;
+  return `<div class="fit-summary__content"><dl class="fit-summary__facts"><div><dt>${escapeHtml(t('Physical fit'))}</dt><dd data-field="physical-status">${escapeHtml(copy.physicalStatus)}</dd></div><div><dt>${escapeHtml(t('Selected clearance'))}</dt><dd data-field="clearance-status">${escapeHtml(copy.clearanceStatus)}</dd></div>${compatibility}</dl>${binding}${margin}${exactFitWarning}${missingRequirements}<h3>${escapeHtml(t('What this means'))}</h3><p class="fit-summary__detail" data-field="detail">${escapeHtml(copy.explanation)}</p><p class="fit-summary__next"><strong>${escapeHtml(t('Next'))}:</strong> <span data-field="next-action">${escapeHtml(copy.nextAction)}</span></p></div>`;
 }

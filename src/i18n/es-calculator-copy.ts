@@ -1240,6 +1240,13 @@ export const esCalculatorCopy: Readonly<Record<string, string>> = {
   'table plus cue-length clearance across room':
     'mesa más holgura para el taco a lo ancho de la habitación',
   'Check result details': 'Consulte los detalles del resultado',
+  'No tolerance remains': 'No queda tolerancia',
+  'Compatibility check failed': 'La comprobación de compatibilidad no se cumple',
+  'Physical fit failed': 'No cabe físicamente',
+  'Manual data needed': 'Se necesitan datos del manual',
+  'View details ↑': 'Ver detalles ↑',
+  'Fit result: {label}. View calculation details.':
+    'Resultado del ajuste: {label}. Ver los detalles del cálculo.',
   Dimension: 'Dimensión',
   Target: 'Objetivo',
   Available: 'Disponible',

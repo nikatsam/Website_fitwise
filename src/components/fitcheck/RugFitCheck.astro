@@ -11,10 +11,16 @@ import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
 import { buildRugFitPlan } from '../../lib/geometry';
 import { renderRugDiagramMarkup } from '../../lib/diagram';
 import { formatMeasurement } from '../../lib/units';
+import { localeFromPath } from '../../i18n/locale';
+import { translateRequired, translateTemplate } from '../../i18n/text';
 
 const DIAGRAM_ID = 'rug-fitcheck-diagram';
 const DIAGRAM_WIDTH = 480;
 const DIAGRAM_HEIGHT = 620;
+const locale = localeFromPath(Astro.url.pathname);
+const copy = (source: string) => translateRequired(locale, source);
+const template = (source: string, values: Record<string, string | number>) =>
+  translateTemplate(locale, source, values);
 const DEFAULTS = {
   roomWidthMm: 4000,
   roomDepthMm: 5000,
@@ -33,28 +39,91 @@ const DEFAULTS = {
 
 function makeAssumptions(values: typeof DEFAULTS): string[] {
   return [
-    'Example values are illustrative placeholders, not rug-size or styling recommendations.',
-    'The room and rug are rectangular. Automatic orientation tests only two axis-aligned positions: width-depth and a 90-degree rotation.',
-    `The extra ${formatMeasurement(values.wallGapEachSideMm)} wall border is user-selected and is not a universal interior-design standard.`,
+    copy(
+      'Example values are illustrative placeholders, not recommended rug dimensions or styling advice.',
+    ),
+    copy(
+      'The room and rug are treated as axis-aligned rectangles; the orientation control tests the rug rotated 90 degrees.',
+    ),
+    template(
+      'The {measurement} room border is an extra user-selected target on every rug edge, not a universal design rule.',
+      {
+        measurement: formatMeasurement(values.wallGapEachSideMm),
+      },
+    ),
     values.checkFurniture
       ? values.coverageMode === 'full-footprint'
-        ? `The full ${formatMeasurement(values.furnitureWidthMm)} by ${formatMeasurement(values.furnitureDepthMm)} furniture/use footprint should sit on the rug, with your selected ${formatMeasurement(values.furnitureMarginEachSideMm)} border.`
-        : `The rug front-edge relationship uses your ${formatMeasurement(values.frontOverlapMm)} overlap and ${formatMeasurement(values.frontExtensionMm ?? 0)} forward extension; these are your choices, not prescribed values.`
-      : 'Furniture coverage is disabled; only rug-to-room dimensions are checked.',
-    'The centered room view is a dimensional comparison, not a complete floor plan. The relationship view does not locate furniture, actual legs, angled rugs or irregular room shapes.',
+        ? template(
+            'The complete {width} by {depth} furniture/use footprint is compared with the rug, plus the user-selected {margin} border.',
+            {
+              width: formatMeasurement(values.furnitureWidthMm),
+              depth: formatMeasurement(values.furnitureDepthMm),
+              margin: formatMeasurement(values.furnitureMarginEachSideMm),
+            },
+          )
+        : template(
+            'The front-edge check compares the entered {overlap} overlap and {extension} extension. It does not infer actual furniture leg positions.',
+            {
+              overlap: formatMeasurement(values.frontOverlapMm),
+              extension: formatMeasurement(values.frontExtensionMm ?? 0),
+            },
+          )
+      : copy('Furniture coverage is disabled; only rug-to-room dimensions are checked.'),
+    copy(
+      'The diagram centers the rug in the room for a proportional comparison. It does not choose furniture placement, style, colors, irregular shapes or diagonal orientations.',
+    ),
   ];
+}
+
+function getDiagramSummary(
+  values: typeof DEFAULTS,
+  rugWidthMm: number,
+  rugDepthMm: number,
+): string {
+  const relationship = !values.checkFurniture
+    ? copy('Furniture coverage is not checked.')
+    : values.coverageMode === 'full-footprint'
+      ? template('Full furniture/use footprint {width} by {depth} is checked against the rug.', {
+          width: formatMeasurement(values.furnitureWidthMm),
+          depth: formatMeasurement(values.furnitureDepthMm),
+        })
+      : template(
+          'Front-edge overlap {overlap} and forward extension {extension} are user-selected.',
+          {
+            overlap: formatMeasurement(values.frontOverlapMm),
+            extension: formatMeasurement(values.frontExtensionMm),
+          },
+        );
+  return template(
+    'Centered rectangular room and rug comparison. Room {roomWidth} by {roomDepth}. Rug {rugWidth} by {rugDepth} in the selected orientation. {relationship} This is not a complete floor-plan placement tool.',
+    {
+      roomWidth: formatMeasurement(values.roomWidthMm),
+      roomDepth: formatMeasurement(values.roomDepthMm),
+      rugWidth: formatMeasurement(rugWidthMm),
+      rugDepth: formatMeasurement(rugDepthMm),
+      relationship,
+    },
+  );
 }
 
 const initialPlan = buildRugFitPlan(DEFAULTS);
 const initialAssumptions = makeAssumptions(DEFAULTS);
 const initialResult = evaluateFit(initialPlan.checks, initialAssumptions);
-const initialRows = toDimensionDisplayRows(initialPlan.checks, initialResult);
+const initialRows = toDimensionDisplayRows(initialPlan.checks, initialResult).map((row) => ({
+  ...row,
+  label: copy(row.label),
+}));
 const initialDiagram = renderRugDiagramMarkup({
   diagramId: DIAGRAM_ID,
+  locale,
   ...DEFAULTS,
   orientation: initialPlan.orientation,
 });
-const initialDiagramSummary = `Centered rectangular room and rug comparison. Room ${formatMeasurement(DEFAULTS.roomWidthMm)} by ${formatMeasurement(DEFAULTS.roomDepthMm)}. Rug ${formatMeasurement(initialPlan.rugWidthOnRoomWidthMm)} by ${formatMeasurement(initialPlan.rugDepthOnRoomDepthMm)} in the selected orientation. Full furniture/use footprint ${formatMeasurement(DEFAULTS.furnitureWidthMm)} by ${formatMeasurement(DEFAULTS.furnitureDepthMm)} is compared with the rug. The view is not a complete placement plan.`;
+const initialDiagramSummary = getDiagramSummary(
+  DEFAULTS,
+  initialPlan.rugWidthOnRoomWidthMm,
+  initialPlan.rugDepthOnRoomDepthMm,
+);
 ---
 
 <div
@@ -64,16 +133,22 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
   data-diagram-id={DIAGRAM_ID}
 >
   <form class="rug-fitcheck__form" data-rug-fitcheck-form data-core-progressive-form novalidate>
-    <ExampleDataNotice note="Replace the sample room, rug and furniture/use measurements with your own. Sample values are not recommended rug dimensions." />
+    <ExampleDataNotice
+      note={copy(
+        'Replace the sample room, rug and furniture/use measurements with your own. Sample values are not recommended rug dimensions.',
+      )}
+    />
 
     <CalculatorStep
       step={1}
-      title="Measure the room and rug"
-      description="Enter clear inside room dimensions and the rug’s laid-flat outside dimensions."
+      title={copy('Measure the room and rug')}
+      description={copy(
+        'Enter clear inside room dimensions and the rug’s laid-flat outside dimensions.',
+      )}
     >
       <div class="field-grid">
         <div class="field">
-          <label for="rug-room-width">Inside room width</label>
+          <label for="rug-room-width">{copy('Inside room width')}</label>
           <input
             id="rug-room-width"
             name="roomWidthMm"
@@ -90,7 +165,7 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
           />
         </div>
         <div class="field">
-          <label for="rug-room-depth">Inside room depth</label>
+          <label for="rug-room-depth">{copy('Inside room depth')}</label>
           <input
             id="rug-room-depth"
             name="roomDepthMm"
@@ -107,7 +182,7 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
           />
         </div>
         <div class="field">
-          <label for="rug-width">Rug outside width</label>
+          <label for="rug-width">{copy('Rug outside width')}</label>
           <input
             id="rug-width"
             name="rugWidthMm"
@@ -120,7 +195,7 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
           <MeasurementFieldHelp calculator="rug" fieldId="rug-width" id="rug-width-help" />
         </div>
         <div class="field">
-          <label for="rug-depth">Rug outside depth</label>
+          <label for="rug-depth">{copy('Rug outside depth')}</label>
           <input
             id="rug-depth"
             name="rugDepthMm"
@@ -134,17 +209,17 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
         </div>
       </div>
       <details class="rug-fitcheck__advanced">
-        <summary>Advanced options · Optional</summary>
+        <summary>{copy('Advanced options · Optional')}</summary>
         <section data-advanced-options-group aria-labelledby="rug-orientation-heading">
-          <h3 id="rug-orientation-heading">Rug orientation</h3>
+          <h3 id="rug-orientation-heading">{copy('Rug orientation')}</h3>
           <div class="field">
-            <label for="rug-orientation">Room-axis alignment</label>
+            <label for="rug-orientation">{copy('Room-axis alignment')}</label>
             <select id="rug-orientation" name="orientation" aria-describedby="rug-orientation-help">
               <option value="auto" selected>
-                Try both 90-degree orientations
+                {copy('Try both 90-degree orientations')}
               </option>
-              <option value="width-depth">Keep rug width along room width</option>
-              <option value="depth-width">Rotate rug 90 degrees</option>
+              <option value="width-depth">{copy('Keep rug width along room width')}</option>
+              <option value="depth-width">{copy('Rotate rug 90 degrees')}</option>
             </select>
             <MeasurementFieldHelp
               calculator="rug"
@@ -154,9 +229,11 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
           </div>
         </section>
         <section data-advanced-options-group aria-labelledby="rug-wall-border-heading">
-          <h3 id="rug-wall-border-heading">Room-edge target</h3>
+          <h3 id="rug-wall-border-heading">{copy('Room-edge target')}</h3>
           <div class="field">
-            <label for="rug-wall-gap">Extra rug-to-wall border on each side (optional)</label>
+            <label for="rug-wall-gap">
+              {copy('Extra rug-to-wall border on each side (optional)')}
+            </label>
             <input
               id="rug-wall-gap"
               name="wallGapEachSideMm"
@@ -169,7 +246,7 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
             <MeasurementFieldHelp calculator="rug" fieldId="rug-wall-gap" id="rug-wall-gap-help" />
           </div>
           <p class="field__note">
-            The border is your chosen layout target, not a universal rug-sizing rule.
+            {copy('The border is your chosen layout target, not a universal rug-sizing rule.')}
           </p>
         </section>
       </details>
@@ -177,17 +254,19 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
 
     <CalculatorStep
       step={2}
-      title="Choose what the rug should cover"
-      description="You can check the rug alone or compare a measured furniture/use footprint."
+      title={copy('Choose what the rug should cover')}
+      description={copy(
+        'You can check the rug alone or compare a measured furniture/use footprint.',
+      )}
     >
       <label class="rug-fitcheck__check-option">
         <input id="rug-check-furniture" name="checkFurniture" type="checkbox" checked />
-        Also check a furniture/use footprint against the rug
+        {copy('Also check a furniture/use footprint against the rug')}
       </label>
       <div data-rug-furniture-controls>
         <div class="field-grid">
           <div class="field">
-            <label for="rug-furniture-width">Furniture/use footprint width</label>
+            <label for="rug-furniture-width">{copy('Furniture/use footprint width')}</label>
             <input
               id="rug-furniture-width"
               name="furnitureWidthMm"
@@ -204,7 +283,7 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
             />
           </div>
           <div class="field">
-            <label for="rug-furniture-depth">Furniture/use footprint depth</label>
+            <label for="rug-furniture-depth">{copy('Furniture/use footprint depth')}</label>
             <input
               id="rug-furniture-depth"
               name="furnitureDepthMm"
@@ -222,33 +301,34 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
           </div>
         </div>
         <div class="field">
-          <label for="rug-coverage-mode">Coverage mode</label>
+          <label for="rug-coverage-mode">{copy('Coverage mode')}</label>
           <select
             id="rug-coverage-mode"
             name="coverageMode"
             aria-describedby="rug-coverage-mode-note"
           >
             <option value="full-footprint" selected>
-              Keep the full footprint on the rug
+              {copy('Keep the full footprint on the rug')}
             </option>
-            <option value="front-edge">Check a user-selected front-edge overlap</option>
+            <option value="front-edge">{copy('Check a user-selected front-edge overlap')}</option>
           </select>
           <p id="rug-coverage-mode-note" class="field__note">
-            For a dining setup, enter the rectangular table/chair-use zone you want covered. For a
-            bed or sofa, enter the footprint you want on the rug.
+            {copy(
+              'For a dining setup, enter the rectangular table/chair-use zone you want covered. For a bed or sofa, enter the footprint you want on the rug.',
+            )}
           </p>
         </div>
         <details class="rug-fitcheck__advanced">
-          <summary>Advanced options · Optional</summary>
+          <summary>{copy('Advanced options · Optional')}</summary>
           <section data-advanced-options-group aria-labelledby="rug-furniture-border-heading">
-            <h3 id="rug-furniture-border-heading">Furniture-edge target</h3>
+            <h3 id="rug-furniture-border-heading">{copy('Furniture-edge target')}</h3>
             <div class="field">
               <label
                 for="rug-furniture-margin"
                 id="rug-furniture-margin-label"
                 data-rug-furniture-margin-label
               >
-                Extra rug border around the full footprint (optional)
+                {copy('Extra rug border around the full footprint (optional)')}
               </label>
               <input
                 id="rug-furniture-margin"
@@ -268,13 +348,17 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
           </section>
         </details>
         <section data-rug-front-fields hidden aria-labelledby="rug-front-options-heading">
-          <h3 id="rug-front-options-heading">Choose the front-edge relationship</h3>
+          <h3 id="rug-front-options-heading">{copy('Choose the front-edge relationship')}</h3>
           <p class="field__note">
-            Enter the overlap and projection you want. No universal front-leg placement is assumed.
+            {copy(
+              'Enter the overlap and projection you want. No universal front-leg placement is assumed.',
+            )}
           </p>
           <div class="field-grid">
             <div class="field">
-              <label for="rug-front-overlap">Rug overlap beneath the furniture front edge</label>
+              <label for="rug-front-overlap">
+                {copy('Rug overlap beneath the furniture front edge')}
+              </label>
               <input
                 id="rug-front-overlap"
                 name="frontOverlapMm"
@@ -291,7 +375,9 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
               />
             </div>
             <div class="field">
-              <label for="rug-front-extension">Rug extension in front of the furniture</label>
+              <label for="rug-front-extension">
+                {copy('Rug extension in front of the furniture')}
+              </label>
               <input
                 id="rug-front-extension"
                 name="frontExtensionMm"
@@ -311,15 +397,19 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
         </section>
       </div>
       <p class="field__note">
-        For an incomplete furniture measurement, uncheck the footprint test. Any front-edge overlap
-        is checked as a user-entered dimension, not inferred from actual leg locations.
+        {copy(
+          'For an incomplete furniture measurement, uncheck the footprint test. Any front-edge overlap is checked as a user-entered dimension, not inferred from actual leg locations.',
+        )}
       </p>
     </CalculatorStep>
 
     <UnitToggle />
   </form>
 
-  <section class="rug-fitcheck__result calculator-split__result" aria-label="Rug fit result">
+  <section
+    class="rug-fitcheck__result calculator-split__result"
+    aria-label={copy('Rug fit result')}
+  >
     <FitSummary
       id="rug-fitcheck-summary"
       resultId="rug-fitcheck-table"
@@ -329,10 +419,13 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
     />
     <p class="rug-fitcheck__orientation" data-rug-orientation>
       {initialPlan.orientation === 'width-depth'
-        ? 'Rug width runs along the room width.'
-        : 'Rug is rotated 90 degrees against the room axes.'}
+        ? copy('Rug width runs along the room width.')
+        : copy('Rug is rotated 90 degrees against the room axes.')}
     </p>
-    <div class="rug-fitcheck__visual" aria-label="Rug and furniture footprint visualization">
+    <div
+      class="rug-fitcheck__visual"
+      aria-label={copy('Rug and furniture footprint visualization')}
+    >
       <ScaleDiagram
         id={DIAGRAM_ID}
         widthPx={DIAGRAM_WIDTH}
@@ -342,13 +435,14 @@ const initialDiagramSummary = `Centered rectangular room and rug comparison. Roo
         <Fragment set:html={initialDiagram} />
       </ScaleDiagram>
       <p class="rug-fitcheck__diagram-key">
-        Dashed outline/line: measured room or furniture edge. Dotted outline/line: your selected
-        target. Blue fill: rug. Green fill: furniture/use footprint. In front-edge mode, the dashed
-        line marks the furniture front.
+        {copy(
+          'Dashed outline/line: measured room or furniture edge. Dotted outline/line: your selected target. Blue fill: rug. Green fill: furniture/use footprint. In front-edge mode, the dashed line marks the furniture front.',
+        )}
       </p>
       <p class="rug-fitcheck__diagram-note">
-        Centered rectangular comparison only; it does not place furniture in a floor plan or infer
-        styling preferences.
+        {copy(
+          'Centered rectangular comparison only; it does not place furniture in a floor plan or infer styling preferences.',
+        )}
       </p>
     </div>
     <DimensionTable
