@@ -9,4 +9,6 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'always',
   integrations: [datasetValidation(), seoStaticOutputs()],
+  // Per-locale UI catalogs load with top-level await (src/i18n/text.ts).
+  vite: { build: { target: 'es2022' } },
 });

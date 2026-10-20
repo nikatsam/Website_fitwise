@@ -2,3 +2,4 @@ dist/
 node_modules/
 .astro/
 .kilo/
+src/i18n/catalogs/generated/

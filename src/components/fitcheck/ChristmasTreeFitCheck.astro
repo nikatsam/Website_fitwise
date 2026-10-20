@@ -29,7 +29,7 @@ interface Props {
 const DIAGRAM_ID = 'tree-fitcheck-diagram';
 const locale = localeFromPath(Astro.url.pathname);
 const copy = (source: string) => translateRequired(locale, source);
-const inputDisplay = locale === 'es' ? 'cm' : 'imperial';
+const inputDisplay = locale === 'en' ? 'imperial' : 'cm';
 const ceilingHeightMm = Astro.props.ceilingHeightMm ?? Math.round(feetToMm(9));
 // Start from the tallest common size that fits the ceiling so every variant shows a real answer.
 const startFt = suggestedStandardTreeHeightFt(maxTreeHeightForCeiling(ceilingHeightMm)) ?? 6;

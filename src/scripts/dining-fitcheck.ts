@@ -10,29 +10,15 @@ import {
 import { buildDiningFitPlan, type DiningOrientation } from '../lib/geometry';
 import { renderDiningDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
-import type { Locale } from '../i18n/locale';
-import {
-  esDiningUniversalRugCopy as esCopy,
-  esDiningUniversalRugTemplates as esTemplates,
-} from '../i18n/es-dining-universal-rug-copy';
+import { localeFromLanguage, type Locale } from '../i18n/locale';
 import { translate as sharedTranslate, translateTemplate as sharedTemplate } from '../i18n/text';
 import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 const locale: Locale =
-  typeof document === 'undefined'
-    ? 'en'
-    : document.documentElement.lang.startsWith('es')
-      ? 'es'
-      : 'en';
-const t = (source: string) =>
-  locale === 'es' ? (esCopy[source] ?? sharedTranslate(locale, source)) : source;
+  typeof document === 'undefined' ? 'en' : localeFromLanguage(document.documentElement.lang);
+const t = (source: string) => sharedTranslate(locale, source);
 const tt = (source: string, values: Record<string, string | number>) =>
-  locale === 'es'
-    ? (esTemplates[source] ?? sharedTemplate(locale, source, values)).replace(
-        /\{(\w+)\}/g,
-        (_, key: string) => String(values[key] ?? `{${key}}`),
-      )
-    : sharedTemplate(locale, source, values);
+  sharedTemplate(locale, source, values);
 
 type LengthField =
   | 'dining-room-width'

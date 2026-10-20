@@ -46,7 +46,8 @@ describe('validateDataset — hreflang publication contracts', () => {
       (publication) => publication.pageIntentId === 'pi-p040-uk-bed-size-dimensions',
     );
     if (!ukBeds) throw new Error('Missing UK bed-size publication fixture.');
-    ukBeds.alternatePageIds = [];
+    // A one-sided alternate (UK → US without US → UK) must be rejected.
+    ukBeds.alternatePageIds = ['pi-p039-us-bed-size-dimensions'];
 
     expect(
       validateDataset(invalid).errors.some((error) => error.rule === 'invalid-hreflang-reference'),

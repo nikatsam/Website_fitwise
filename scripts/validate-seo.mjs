@@ -4,6 +4,12 @@ import { Console } from 'node:console';
 import path from 'node:path';
 import process from 'node:process';
 import { URL } from 'node:url';
+import {
+  englishPathname,
+  LOCALE_META,
+  localeFromLanguage,
+  TRANSLATED_LOCALES,
+} from '../src/i18n/locale.ts';
 
 const root = process.cwd();
 const console = new Console(process.stdout, process.stderr);
@@ -150,9 +156,7 @@ for (const file of files) {
       selfAlternates.length === 1 && selfAlternates[0]?.language === documentLanguage,
       `${route}: hreflang set must include one self-reference matching html lang and canonical.`,
     );
-    const expectedOgLocale = documentLanguage?.includes('-')
-      ? documentLanguage.replace('-', '_')
-      : undefined;
+    const expectedOgLocale = LOCALE_META[localeFromLanguage(documentLanguage)].ogLocale;
     const ogLocale = html.match(
       /<meta\b[^>]*property="og:locale"[^>]*content="([^"]+)"[^>]*>/i,
     )?.[1];
@@ -163,24 +167,25 @@ for (const file of files) {
     const ogAlternateLocales = [
       ...html.matchAll(/<meta\b[^>]*property="og:locale:alternate"[^>]*content="([^"]+)"[^>]*>/gi),
     ].map((match) => match[1]);
-    const expectedOgAlternateLocales = alternateLinks
-      .filter((link) => link.href !== canonical && link.language.includes('-'))
-      .map((link) => link.language.replace('-', '_'))
+    const expectedOgAlternateLocales = [
+      ...new Set(
+        alternateLinks
+          .filter((link) => link.href !== canonical)
+          .map((link) => LOCALE_META[localeFromLanguage(link.language)].ogLocale),
+      ),
+    ]
+      .filter((locale) => locale !== expectedOgLocale)
       .sort();
     assert(
       ogAlternateLocales.sort().join(',') === expectedOgAlternateLocales.join(','),
       `${route}: Open Graph alternate locales must match hreflang alternates.`,
     );
-    const hasSpanishAlternate = alternateLinks.some(
-      (link) => link.language === 'es' || link.language.startsWith('es-'),
-    );
-    if (hasSpanishAlternate) {
+    const hasLanguageAlternates = alternateLinks.some((link) => link.href !== canonical);
+    if (hasLanguageAlternates) {
       const englishAlternates = alternateLinks.filter(
         (link) => link.language === 'en' || link.language.startsWith('en-'),
       );
-      const expectedFallback = documentLanguage?.startsWith('es')
-        ? `${siteOrigin}${route.startsWith('/es/') ? route.slice(3) : '/'}`
-        : canonical;
+      const expectedFallback = `${siteOrigin}${englishPathname(route)}`;
       assert(
         xDefaultLinks.length === 1 &&
           xDefaultLinks[0]?.href === expectedFallback &&
@@ -242,7 +247,7 @@ for (const file of files) {
     }
   }
 
-  if (route === '/' || route === '/es/') {
+  if (route === '/' || TRANSLATED_LOCALES.some((locale) => route === `/${locale}/`)) {
     assert(
       structuredData.some((item) => item['@type'] === 'WebSite'),
       `${route}: missing WebSite JSON-LD.`,
@@ -269,9 +274,8 @@ for (const file of files) {
   if (!breadcrumb) continue;
 
   const itemList = breadcrumb.itemListElement ?? [];
-  const isSpanishPage = documentLanguage?.startsWith('es') ?? false;
-  const visibleBreadcrumbLabel = isSpanishPage ? 'Ruta de navegación' : 'Breadcrumb';
-  const homeBreadcrumbLabel = isSpanishPage ? 'Inicio' : 'Home';
+  const visibleBreadcrumbLabel = 'breadcrumb';
+  const homeBreadcrumbLabel = 'Home';
   assert(
     itemList.length >= 2,
     `${route}: breadcrumb must contain ${homeBreadcrumbLabel} and current page.`,
@@ -286,9 +290,7 @@ for (const file of files) {
       `${route}: breadcrumb item ${index + 1} needs name and URL.`,
     );
   });
-  const visibleNav = html.match(
-    new RegExp(`<nav\\b[^>]*aria-label="${visibleBreadcrumbLabel}"[^>]*>([\\s\\S]*?)<\\/nav>`, 'i'),
-  )?.[1];
+  const visibleNav = html.match(/<nav\b[^>]*data-breadcrumb[^>]*>([\s\S]*?)<\/nav>/i)?.[1];
   assert(visibleNav, `${route}: missing visible ${visibleBreadcrumbLabel} navigation.`);
   const visibleItems = visibleNav
     ? [...visibleNav.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].map((item) => ({

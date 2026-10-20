@@ -27,17 +27,31 @@ describe('locale route helpers', () => {
     );
     expect(pathForLocale('/', 'es')).toBe('/es/');
     expect(englishPathname('/es/')).toBe('/');
-    expect(languageAlternates('/workspace/', 'en-US')).toEqual([
+    expect(languageAlternates('/workspace/', 'en')).toEqual([
       { language: 'es', href: '/es/workspace/' },
+      { language: 'ja', href: '/ja/workspace/' },
+      { language: 'de', href: '/de/workspace/' },
+      { language: 'fr', href: '/fr/workspace/' },
+      { language: 'zh-Hans', href: '/zh/workspace/' },
+      { language: 'pt-BR', href: '/pt/workspace/' },
     ]);
-    expect(languageAlternates('/es/workspace/', 'es')).toEqual([
-      { language: 'en', href: '/workspace/' },
-    ]);
-    expect(languageAlternates('/es/bedroom/us-bed-size-dimensions/', 'es-US')).toEqual([
+    expect(languageAlternates('/es/workspace/', 'es')[0]).toEqual({
+      language: 'en',
+      href: '/workspace/',
+    });
+    expect(languageAlternates('/ja/bedroom/us-bed-size-dimensions/', 'ja')).toEqual([
       { language: 'en-US', href: '/bedroom/us-bed-size-dimensions/' },
-      { language: 'en-GB', href: '/bedroom/uk-bed-size-dimensions/' },
-      { language: 'es-GB', href: '/es/bedroom/uk-bed-size-dimensions/' },
+      { language: 'es-US', href: '/es/bedroom/us-bed-size-dimensions/' },
+      { language: 'de', href: '/de/bedroom/us-bed-size-dimensions/' },
+      { language: 'fr', href: '/fr/bedroom/us-bed-size-dimensions/' },
+      { language: 'zh-Hans', href: '/zh/bedroom/us-bed-size-dimensions/' },
+      { language: 'pt-BR', href: '/pt/bedroom/us-bed-size-dimensions/' },
     ]);
+    expect(localeFromPath('/zh/')).toBe('zh');
+    expect(localeFromPath('/pt/workspace/')).toBe('pt');
+    expect(localeFromPath('/des/')).toBe('en');
+    expect(pathForLocale('/fr/workspace/', 'de')).toBe('/de/workspace/');
+    expect(englishPathname('/ja/')).toBe('/');
   });
 
   it('maps every released public PageIntent route to one stable Spanish URL', () => {

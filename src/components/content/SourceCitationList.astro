@@ -1,7 +1,7 @@
 ---
 import type { SourceRecord } from '../../types';
 import { localeFromPath } from '../../i18n/locale';
-import { translateRequired } from '../../i18n/text';
+import { translateRequired, translateTemplate } from '../../i18n/text';
 
 interface Props {
   sources: SourceRecord[];
@@ -20,9 +20,10 @@ const locale = localeFromPath(Astro.url.pathname);
           {source.url ? <a href={source.url}>{source.title}</a> : <span>{source.title}</span>}
           <span class="source-citations__publisher">
             {' '}
-            {locale === 'es'
-              ? `${source.publisher}; consultado el ${source.accessedOn}`
-              : `${source.publisher}; accessed ${source.accessedOn}`}
+            {translateTemplate(locale, '{publisher}; accessed {date}', {
+              publisher: source.publisher,
+              date: source.accessedOn,
+            })}
           </span>
           {source.notes && <p>{source.notes}</p>}
         </li>

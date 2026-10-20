@@ -1,8 +1,8 @@
 import type { Dataset } from '../lib/validation/dataset';
 import type { FamilyAnswer, FamilyFact } from '../lib/content/build-family-answer';
 import { formatMeasurement } from '../lib/units';
-import { familyEntityNameEs, familyMarketEs } from './es-family-copy';
-import { ES_PLANNING_COPY } from './es-planning';
+import { contentCatalog } from './content';
+import type { TranslatedLocale } from './locale';
 import { translate } from './text';
 
 function factText(fact: FamilyFact | undefined): string {
@@ -39,9 +39,11 @@ export function localizeFurniturePlanningAnswer(
   pageIntentId: string,
   answer: FamilyAnswer,
   dataset: Dataset,
+  locale: TranslatedLocale = 'es',
 ): FamilyAnswer {
-  const copy = ES_PLANNING_COPY[pageIntentId];
-  if (!copy) throw new Error(`Missing Spanish sourced-planning copy for '${pageIntentId}'.`);
+  const content = contentCatalog(locale);
+  const copy = content.planning[pageIntentId];
+  if (!copy) throw new Error(`Missing ${locale} sourced-planning copy for '${pageIntentId}'.`);
   const facts = answer.sections.flatMap((section) => section.facts);
   const valueFor = (label: string) => factText(facts.find((fact) => fact.label === label));
   const intent = dataset.pageIntents.find((item) => item.id === pageIntentId);
@@ -51,8 +53,8 @@ export function localizeFurniturePlanningAnswer(
       .filter((entity): entity is NonNullable<typeof entity> => entity !== undefined) ?? [];
   const bed = entities.find((entity) => entity.category === 'bed');
   const furniture = entities.find((entity) => entity.category === 'furniture');
-  const bedName = bed ? (familyEntityNameEs[bed.id] ?? bed.name) : '';
-  const furnitureName = furniture ? (familyEntityNameEs[furniture.id] ?? furniture.name) : '';
+  const bedName = bed ? (content.entityNames[bed.id] ?? bed.name) : '';
+  const furnitureName = furniture ? (content.entityNames[furniture.id] ?? furniture.name) : '';
 
   const valuesById: Record<string, Record<string, string>> = {
     'pi-p015-desk-depth-for-monitor': {
@@ -102,12 +104,12 @@ export function localizeFurniturePlanningAnswer(
       }
       if (!label)
         throw new Error(
-          `Missing Spanish label for sourced planning fact '${fact.label}' (${pageIntentId}).`,
+          `Missing ${locale} label for sourced planning fact '${fact.label}' (${pageIntentId}).`,
         );
-      const note = fact.note ? translate('es', fact.note) : undefined;
+      const note = fact.note ? translate(locale, fact.note) : undefined;
       if (fact.note && note === fact.note) {
         throw new Error(
-          `Missing Spanish fact-note translation for '${fact.label}' (${pageIntentId}).`,
+          `Missing ${locale} fact-note translation for '${fact.label}' (${pageIntentId}).`,
         );
       }
       return {
@@ -115,7 +117,7 @@ export function localizeFurniturePlanningAnswer(
         label,
         ...(note ? { note } : {}),
         ...(fact.label === 'Market' && fact.valueText
-          ? { valueText: familyMarketEs[fact.valueText] ?? fact.valueText }
+          ? { valueText: content.markets[fact.valueText] ?? fact.valueText }
           : {}),
       };
     }),

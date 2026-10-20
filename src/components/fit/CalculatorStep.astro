@@ -79,10 +79,11 @@ const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0
 </style>
 
 <script>
+  import { localeFromLanguage } from '../../i18n/locale';
   import { translateRequired, translateTemplate } from '../../i18n/text';
 
   const mobileCalculatorQuery = '(max-width: 62rem)';
-  const locale = document.documentElement.lang.startsWith('es') ? 'es' : 'en';
+  const locale = localeFromLanguage(document.documentElement.lang);
 
   function initCoreProgressiveForms(): void {
     const media = window.matchMedia(mobileCalculatorQuery);
@@ -256,11 +257,7 @@ const headingId = `calculator-step-${step}-${title.toLowerCase().replace(/[^a-z0
               step: activeStep + 1,
               total: steps.length,
               title: titles[activeStep] ?? '',
-              entered: isReady
-                ? locale === 'es'
-                  ? ', medidas introducidas'
-                  : ', measurements entered'
-                : '',
+              entered: isReady ? translateRequired(locale, ', measurements entered') : '',
             },
           );
 

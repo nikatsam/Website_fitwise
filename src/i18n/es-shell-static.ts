@@ -10,6 +10,8 @@ export const ES_SHELL_STATIC = {
   and: 'y',
   English: 'English',
   Spanish: 'Español',
+  'English language': 'inglés',
+  'Spanish language': 'español',
   'Your saved language preference is {language}.':
     'Tu preferencia de idioma guardada es {language}.',
   'Continue to {language}': 'Continuar en {language}',

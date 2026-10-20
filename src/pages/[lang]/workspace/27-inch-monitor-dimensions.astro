@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import EntityTemplate from '../../../components/content/templates/EntityTemplate.astro';
+import { buildBreadcrumb } from '../../../lib/content';
+import { deriveScreenDimensions } from '../../../lib/geometry';
+import {
+  LOCALE_META,
+  pathForLocale,
+  TRANSLATED_LOCALES,
+  type TranslatedLocale,
+} from '../../../i18n/locale';
+import { translateRequired } from '../../../i18n/text';
+
+export function getStaticPaths() {
+  return TRANSLATED_LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const locale = Astro.params.lang as TranslatedLocale;
+const derived = deriveScreenDimensions(27, { width: 16, height: 9 });
+const h1 = translateRequired(locale, '27-inch monitor dimensions');
+const breadcrumb = buildBreadcrumb('/workspace/27-inch-monitor-dimensions/', 'workspace').map(
+  (item) => ({
+    ...item,
+    label: translateRequired(locale, item.label),
+    href: pathForLocale(item.href, locale),
+  }),
+);
+---
+
+<BaseLayout
+  title={`${h1} — Fitwise.stream`}
+  description={translateRequired(
+    locale,
+    'Screen width and height of a 27-inch 16:9 monitor, derived from its diagonal.',
+  )}
+  noindex
+  language={LOCALE_META[locale].hreflang}
+>
+  <div class="wrapper">
+    <EntityTemplate
+      breadcrumb={breadcrumb}
+      h1={h1}
+      intro={translateRequired(
+        locale,
+        'Screen dimensions of a 27-inch monitor, derived from the diagonal and the 16:9 aspect ratio. Screen only: the full device is wider because of the bezel and deeper with the stand.',
+      )}
+      measurements={[
+        {
+          label: translateRequired(locale, 'Screen width'),
+          valueMm: derived.screenWidthMm.valueMm,
+          note: translateRequired(locale, 'derived from diagonal, screen only'),
+        },
+        {
+          label: translateRequired(locale, 'Screen height'),
+          valueMm: derived.screenHeightMm.valueMm,
+          note: translateRequired(locale, 'derived from diagonal, screen only'),
+        },
+      ]}
+    />
+  </div>
+</BaseLayout>
+
+<style>
+  .wrapper {
+    width: min(100%, var(--content-max-width));
+    margin-inline: auto;
+    padding-inline: var(--space-5);
+  }
+  @media (max-width: 40rem) {
+    .wrapper {
+      padding-inline: var(--space-4);
+    }
+  }
+</style>

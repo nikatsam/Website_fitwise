@@ -1,6 +1,7 @@
 import type { FitServiceMode, FitServiceValues } from '../geometry/fit-services';
 import { formatMeasurement, type MeasurementDisplay } from '../units';
 import type { Locale } from '../../i18n/locale';
+import { translate, translateTemplate } from '../../i18n/text';
 
 interface FitServiceScene {
   spaceLabel: string;
@@ -278,91 +279,60 @@ function sceneFor(
         throw new RangeError(`No ASCII preview is defined for fit-service mode '${mode}'.`);
     }
   })();
-  if (locale === 'es') {
-    const labels: Record<string, string> = {
-      OPENING: 'ABERTURA',
-      APPLIANCE: 'ELECTRODOMÉSTICO',
-      'INSTALL SPACE': 'ESPACIO DE INSTALACIÓN',
-      DESK: 'ESCRITORIO',
-      MONITOR: 'MONITOR',
-      'MONITOR + ARM BASE': 'MONITOR + BASE DEL BRAZO',
-      'WALL AREA': 'ZONA DE PARED',
-      TV: 'TELEVISOR',
-      'FRONT ELEVATION': 'VISTA FRONTAL',
-      'TV FOOTPRINT': 'HUELLA DEL TELEVISOR',
-      CONSOLE: 'CONSOLA',
-      'STAND + TV': 'SOPORTE + TELEVISOR',
-      ROOM: 'HABITACIÓN',
-      EQUIPMENT: 'EQUIPO',
-      'OPERATING ZONE': 'ZONA DE FUNCIONAMIENTO',
-      STORAGE: 'ALMACENAMIENTO',
-      OBJECT: 'OBJETO',
-      'EDGE ALLOWANCE': 'HOLGURA DEL BORDE',
-      'GAME ROOM': 'SALA DE JUEGOS',
-      'POOL TABLE': 'MESA DE BILLAR',
-      GARAGE: 'GARAJE',
-      VEHICLE: 'VEHÍCULO',
-      'GARDEN PLOT': 'PARCELA DEL JARDÍN',
-      CANDIDATE: 'OPCIÓN',
-      STRUCTURE: 'ESTRUCTURA',
-      'ROOF / ACCESS ENVELOPE': 'CONTORNO DE TECHO / ACCESO',
-      'PATIO / GAZEBO': 'PATIO / GAZEBO',
-      TABLE: 'MESA',
-      'CHAIR / CIRCULATION ZONE': 'ZONA DE SILLAS / CIRCULACIÓN',
-      'SHED INTERIOR': 'INTERIOR DEL COBERTIZO',
-      'STORED ITEM': 'ARTÍCULO ALMACENADO',
-      'ITEM FOOTPRINT': 'HUELLA DEL ARTÍCULO',
-      GREENHOUSE: 'INVERNADERO',
-      PATIO: 'PATIO',
-      'HOT TUB': 'BAÑERA DE HIDROMASAJE',
-      'SERVICE ACCESS ZONE': 'ZONA DE ACCESO DE SERVICIO',
-      'KITCHEN RUN': 'MÓDULO DE COCINA',
-      'WORK / SERVICE ZONE': 'ZONA DE TRABAJO / SERVICIO',
-      'PLAY EQUIPMENT': 'EQUIPO DE JUEGO',
-      'MANUFACTURER USE ZONE': 'ZONA DE USO DEL FABRICANTE',
-    };
-    scene.spaceLabel = labels[scene.spaceLabel] ?? scene.spaceLabel;
-    scene.objectLabel = labels[scene.objectLabel] ?? scene.objectLabel;
-    scene.zoneLabel = labels[scene.zoneLabel] ?? scene.zoneLabel;
-    if (scene.viewLabel) scene.viewLabel = labels[scene.viewLabel] ?? scene.viewLabel;
-    scene.note = scene.note
-      ?.replace('Aisle target:', 'Objetivo de pasillo:')
-      .replace('Inside aisle target:', 'Objetivo del pasillo interior:')
-      .replace(
-        'Grid capacity is listed in the results.',
-        'La capacidad de la cuadrícula aparece en los resultados.',
-      )
-      .replace(
-        'Single-layer capacity is listed in the results.',
-        'La capacidad en una sola capa aparece en los resultados.',
-      )
-      .replace(
-        'Staging layout is summarized in the results.',
-        'La distribución de bancales se resume en los resultados.',
-      )
-      .replace('Door opening:', 'Abertura de la puerta:')
-      .replace(
-        'wide. Approach and turning path are not shown.',
-        'de ancho. No se muestran el recorrido de aproximación ni el giro.',
-      )
-      .replace(
-        'Candidate rectangles are listed in the results; this sketch is illustrative.',
-        'Las opciones rectangulares aparecen en los resultados; este esquema es ilustrativo.',
-      )
-      .replace(
-        'Cover-lift height is checked separately in the dimensions table.',
-        'La altura necesaria para abrir la cubierta se comprueba por separado en la tabla de dimensiones.',
-      )
-      .replace(
-        'Overhead clearance is checked separately in the dimensions table.',
-        'La holgura superior se comprueba por separado en la tabla de dimensiones.',
-      )
-      .replace(
-        'Use-zone values must come from the exact manufacturer instructions.',
-        'Los valores de la zona de uso deben proceder de las instrucciones exactas del fabricante.',
-      );
+  if (locale !== 'en') {
+    const t = (label: string) => translate(locale, label);
+    scene.spaceLabel = t(scene.spaceLabel);
+    scene.objectLabel = t(scene.objectLabel);
+    scene.zoneLabel = t(scene.zoneLabel);
+    if (scene.viewLabel) scene.viewLabel = t(scene.viewLabel);
+    scene.note = NOTE_FRAGMENTS.reduce(
+      (note, fragment) => note?.replace(fragment, t(fragment)),
+      scene.note,
+    );
   }
   return scene;
+}
+
+/** English sentence fragments inside scene notes that are translated in place. */
+const NOTE_FRAGMENTS = [
+  'Aisle target:',
+  'Inside aisle target:',
+  'Grid capacity is listed in the results.',
+  'Single-layer capacity is listed in the results.',
+  'Staging layout is summarized in the results.',
+  'Door opening:',
+  'wide. Approach and turning path are not shown.',
+  'Candidate rectangles are listed in the results; this sketch is illustrative.',
+  'Cover-lift height is checked separately in the dimensions table.',
+  'Overhead clearance is checked separately in the dimensions table.',
+  'Use-zone values must come from the exact manufacturer instructions.',
+];
+
+/** Monospace display width: East Asian wide/full-width characters take two columns. */
+function displayWidth(text: string): number {
+  return [...text].reduce(
+    (width, char) => width + (/[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦]/.test(char) ? 2 : 1),
+    0,
+  );
+}
+
+function boxRow(labels: string[]): { lines: string[]; starts: number[]; widths: number[] } {
+  const top: string[] = [];
+  const mid: string[] = [];
+  const starts: number[] = [];
+  const widths: number[] = [];
+  let column = 0;
+  labels.forEach((label, index) => {
+    const inner = displayWidth(label) + 2;
+    const edge = `+${'-'.repeat(inner)}+`;
+    starts.push(column);
+    widths.push(inner + 2);
+    const gap = index < labels.length - 1 ? 3 : 0;
+    top.push(edge + ' '.repeat(gap));
+    mid.push(`| ${label} |` + (gap ? '-->' : ''));
+    column += inner + 2 + gap;
+  });
+  return { lines: [top.join(''), mid.join(''), top.join('')], starts, widths };
 }
 
 function renderRoutePreview(
@@ -370,40 +340,38 @@ function renderRoutePreview(
   display: MeasurementDisplay,
   locale: Locale,
 ): FitServiceAsciiPreview {
+  const t = (label: string) => translate(locale, label);
   const points = [
-    [locale === 'es' ? 'PUERTA' : 'FRONT DOOR', 'frontDoorWidth'],
-    [locale === 'es' ? 'PASILLO' : 'HALL', 'hallWidth'],
-    [locale === 'es' ? 'GIRO' : 'TURN', 'turnWidth'],
-    [locale === 'es' ? 'ESCALERA' : 'STAIRS', 'stairWidth'],
-    [locale === 'es' ? 'DESTINO' : 'DEST. DOOR', 'destinationDoorWidth'],
+    [t('FRONT DOOR'), 'frontDoorWidth'],
+    [t('HALL'), 'hallWidth'],
+    [t('TURN'), 'turnWidth'],
+    [t('STAIRS'), 'stairWidth'],
+    [t('DEST. DOOR'), 'destinationDoorWidth'],
   ] as const;
   const segments = points.map(([label, key]) => {
     const width = formatMeasurement(numberValue(values, key), display);
     return `${label}: ${width}`;
   });
+  const first = boxRow(points.slice(0, 3).map(([label]) => label));
+  const turnStart = first.starts[2]!;
+  const turnCenter = turnStart + Math.floor(first.widths[2]! / 2);
+  const second = boxRow(points.slice(3).map(([label]) => label));
+  const indent = ' '.repeat(turnStart);
   const art = [
-    locale === 'es' ? 'RECORRIDO DE ANCHO LIBRE (ESQUEMA)' : 'CLEAR-WIDTH ROUTE (SCHEMATIC)',
-    '+----------+   +------+   +------+',
-    locale === 'es' ? '| PUERTA   |-->|PASILLO|-->| GIRO |' : '| FRONT    |-->| HALL |-->| TURN |',
-    locale === 'es' ? '|          |   |       |   |      |' : '| DOOR     |   |      |   |      |',
-    '+----------+   +------+   +--+---+',
-    '                              |',
-    '                         +----v---+   +----------+',
-    locale === 'es'
-      ? '                         |ESCALERA|-->|DESTINO  |'
-      : '                         | STAIRS |-->| DEST.    |',
-    locale === 'es'
-      ? '                         |        |   |         |'
-      : '                         |        |   | DOOR     |',
-    '                         +--------+   +----------+',
+    t('CLEAR-WIDTH ROUTE (SCHEMATIC)'),
+    ...first.lines,
+    `${' '.repeat(turnCenter)}|`,
+    `${' '.repeat(turnCenter)}v`,
+    ...second.lines.map((line) => indent + line),
   ].join('\n');
   return {
     art,
-    description:
-      locale === 'es'
-        ? `Esquema de la ruta de entrega. ${segments.join('; ')}. Las alturas y la profundidad de giro se comprueban en los resultados.`
-        : `Delivery route schematic. ${segments.join('; ')}. Heights and turn depth are checked in the results.`,
-    summary: `${segments.join(' | ')}. ${locale === 'es' ? 'Las alturas, la profundidad del descansillo y la altura libre de la escalera aparecen en los resultados.' : 'Heights, landing depth and stair headroom are in the results.'}`,
+    description: translateTemplate(
+      locale,
+      'Delivery route schematic. {segments}. Heights and turn depth are checked in the results.',
+      { segments: segments.join('; ') },
+    ),
+    summary: `${segments.join(' | ')}. ${t('Heights, landing depth and stair headroom are in the results.')}`,
   };
 }
 
@@ -448,13 +416,13 @@ export function renderFitServiceAsciiPreview(
     '-',
   );
 
-  const viewLabel = scene.viewLabel ?? (locale === 'es' ? 'PLANO DESDE ARRIBA' : 'TOP-DOWN PLAN');
+  const viewLabel = scene.viewLabel ?? translate(locale, 'TOP-DOWN PLAN');
   const art = [
-    `${viewLabel} (${locale === 'es' ? 'ESQUEMA, NO A ESCALA' : 'SCHEMATIC, NOT TO SCALE'})`,
-    `${locale === 'es' ? 'ESPACIO' : 'SPACE'}: ${scene.spaceLabel}`,
+    `${viewLabel} (${translate(locale, 'SCHEMATIC, NOT TO SCALE')})`,
+    `${translate(locale, 'SPACE')}: ${scene.spaceLabel}`,
     ...grid.map((row) => row.join('').replace(/\s+$/, '')),
-    `${locale === 'es' ? 'OBJETO' : 'OBJECT'}: ${scene.objectLabel} (${dimension(scene.objectWidth, scene.objectDepth, display)})`,
-    `${locale === 'es' ? 'ZONA' : 'ZONE'}: . . . ${scene.zoneLabel}`,
+    `${translate(locale, 'OBJECT')}: ${scene.objectLabel} (${dimension(scene.objectWidth, scene.objectDepth, display)})`,
+    `${translate(locale, 'ZONE')}: . . . ${scene.zoneLabel}`,
   ].join('\n');
   const summary = [
     `${scene.spaceLabel}: ${dimension(scene.spaceWidth, scene.spaceDepth, display)}`,
@@ -467,10 +435,10 @@ export function renderFitServiceAsciiPreview(
 
   return {
     art,
-    description:
-      locale === 'es'
-        ? `Esquema ${viewLabel.toLowerCase()}, no a escala. ${summary}`
-        : `${viewLabel.toLowerCase()} schematic, not to scale. ${summary}`,
+    description: translateTemplate(locale, '{view} schematic, not to scale. {summary}', {
+      view: viewLabel.toLowerCase(),
+      summary,
+    }),
     summary,
   };
 }

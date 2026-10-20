@@ -12,17 +12,28 @@ import { buildBedRoomChecks, computeBedFootprint } from '../geometry/bedroom';
 import { buildWorkspaceConfigurationCheck, resolveMonitorWidth } from '../geometry/workspace';
 import { evaluateFit, FIT_STATE_BADGE_COPY } from '../fit';
 import { formatMeasurement } from '../units';
-import {
-  familyEntityNameEs,
-  familyMarketEs,
-  familyOrientationEs,
-  familyText,
-  fitStateBadgeEs,
-  translateFamilyText,
-  type FamilyTextKey,
-  type FamilyTextVars,
-} from '../../i18n/es-family-copy';
+import { contentCatalog, translateFamilyText } from '../../i18n/content';
 import type { Locale } from '../../i18n/locale';
+import { getFitStateBadgeCopy } from '../fit/summary-copy';
+
+type FamilyTextKey = string;
+type FamilyTextVars = Record<string, string | number>;
+
+const ENGLISH_MARKETS: Readonly<Record<string, string>> = { US: 'US', UK: 'UK', global: 'Global' };
+
+function marketName(market: string, locale: Locale): string {
+  return locale === 'en'
+    ? (ENGLISH_MARKETS[market] ?? market)
+    : (contentCatalog(locale).markets[market] ?? market);
+}
+
+/** Localized bed names may carry a leading “mattress” noun that answer headings drop. */
+function localizedBedName(name: string, locale: Locale): string {
+  const prefix = contentCatalog(locale).familyText.templates.mattressNamePrefix ?? '';
+  return prefix && name.toLowerCase().startsWith(prefix.toLowerCase())
+    ? name.slice(prefix.length)
+    : name;
+}
 
 export interface FamilyFact {
   label: string;
@@ -147,11 +158,10 @@ function collectSources(
 }
 
 function fixedText(locale: Locale, key: string, fallback: string): string {
-  if (locale !== 'es') return fallback;
-  const localized =
-    familyText.fixed[key as keyof typeof familyText.fixed] ??
-    familyText.templates[key as FamilyTextKey];
-  if (!localized) throw new Error(`Missing Spanish family label '${key}'.`);
+  if (locale === 'en') return fallback;
+  const { familyText } = contentCatalog(locale);
+  const localized = familyText.fixed[key] ?? familyText.templates[key];
+  if (!localized) throw new Error(`Missing ${locale} family label '${key}'.`);
   return localized;
 }
 
@@ -161,18 +171,22 @@ function familyTemplate(
   fallback: string,
   values: FamilyTextVars,
 ): string {
-  return locale === 'es' ? translateFamilyText(key, values) : fallback;
+  return locale === 'en' ? fallback : translateFamilyText(locale, key, values);
 }
 
 function entityName(entity: Entity, locale: Locale): string {
-  return locale === 'es' ? (familyEntityNameEs[entity.id] ?? entity.name) : entity.name;
+  return locale === 'en'
+    ? entity.name
+    : (contentCatalog(locale).entityNames[entity.id] ?? entity.name);
 }
 
 function widthBasisNote(display: DisplayEntity, locale: Locale): string {
   const width = resolveMonitorWidth(display);
   if (width.basis === 'screen_only_approximation') {
-    if (locale === 'es') {
-      return [familyText.fixed.derivedScreenOnly, width.note].filter(Boolean).join(' ');
+    if (locale !== 'en') {
+      return [contentCatalog(locale).familyText.fixed.derivedScreenOnly, width.note]
+        .filter(Boolean)
+        .join(' ');
     }
     return [
       'Screen-only width derived from diagonal and aspect ratio, rounded to the nearest millimetre for fit calculations; bezel and stand are not included.',
@@ -197,8 +211,7 @@ function ruleAssumption(rule: ClearanceRule, _locale: Locale): string {
 }
 
 function fitLabel(state: ReturnType<typeof evaluateFit>['state'], locale: Locale): string {
-  if (locale === 'es') return `${fitStateBadgeEs[state].icon} ${fitStateBadgeEs[state].label}`;
-  const copy = FIT_STATE_BADGE_COPY[state];
+  const copy = locale === 'en' ? FIT_STATE_BADGE_COPY[state] : getFitStateBadgeCopy(state, locale);
   return `${copy.icon} ${copy.label}`;
 }
 
@@ -496,7 +509,7 @@ function bedObjectAnswer(intent: PageIntent, dataset: Dataset, locale: Locale): 
   const rules = bedSourceRules(dataset);
   const bedPlans = beds.map((bed) => ({ bed, plan: bedRoomPlan(bed, dataset) }));
   const planningAnswers = bedPlans.map(({ bed, plan }) => {
-    const name = locale === 'es' ? bed.name.replace(/^colchón /i, '') : bedDisplayName(bed.name);
+    const name = locale === 'en' ? bedDisplayName(bed.name) : localizedBedName(bed.name, locale);
     const model = bed.frameModelName
       ? familyTemplate(locale, 'modelWithFrame', `${name} in ${bed.frameModelName}`, {
           bed: name,
@@ -533,7 +546,7 @@ function bedObjectAnswer(intent: PageIntent, dataset: Dataset, locale: Locale): 
         facts: [
           {
             label: fixedText(locale, 'market', 'Market'),
-            valueText: familyMarketEs[bed.market] ?? bed.market,
+            valueText: marketName(bed.market, locale),
           },
           {
             label: fixedText(locale, 'mattressWidth', 'Mattress width'),
@@ -656,13 +669,14 @@ function bedroomSpaceAnswer(intent: PageIntent, dataset: Dataset, locale: Locale
           `${bed.name} — ${orientation} orientation`,
           {
             bed: bed.name,
-            orientation: locale === 'es' ? familyOrientationEs[orientation] : orientation,
+            orientation:
+              locale === 'en' ? orientation : contentCatalog(locale).orientations[orientation],
           },
         ),
         facts: [
           {
             label: fixedText(locale, 'market', 'Market'),
-            valueText: familyMarketEs[bed.market] ?? bed.market,
+            valueText: marketName(bed.market, locale),
           },
           {
             label: fixedText(locale, 'mattressFootprint', 'Mattress footprint'),
@@ -807,7 +821,7 @@ function comparisonAnswer(intent: PageIntent, dataset: Dataset, locale: Locale):
         facts: [
           {
             label: fixedText(locale, 'market', 'Market'),
-            valueText: familyMarketEs[entity.market] ?? entity.market,
+            valueText: marketName(entity.market, locale),
           },
           {
             label: fixedText(locale, 'mattressWidth', 'Mattress width'),
@@ -865,7 +879,7 @@ function comparisonAnswer(intent: PageIntent, dataset: Dataset, locale: Locale):
     .map((bed) => {
       const plan = bedRoomPlan(bed, dataset);
       const bedName =
-        locale === 'es' ? bed.name.replace(/^colchón /i, '') : bedDisplayName(bed.name);
+        locale === 'en' ? bedDisplayName(bed.name) : localizedBedName(bed.name, locale);
       const marketName = bed.frameModelName
         ? familyTemplate(locale, 'modelWithFrame', `${bedName} in ${bed.frameModelName}`, {
             bed: bedName,

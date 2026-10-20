@@ -121,20 +121,9 @@ export const familyText = {
     none: 'Ninguna',
     count: '{{count}}',
     dimensionsBy: '{{width}} × {{length}}',
+    mattressNamePrefix: 'colchón ',
   },
 } as const;
-
-export type FamilyTextKey = keyof typeof familyText.templates;
-export type FamilyTextVars = Record<string, string | number>;
-
-export function translateFamilyText(key: FamilyTextKey, vars: FamilyTextVars = {}): string {
-  return familyText.templates[key].replace(/\{\{(\w+)\}\}/g, (_, name: string) => {
-    const value = vars[name];
-    if (value === undefined)
-      throw new Error(`Missing Spanish family-copy variable '${name}' for '${key}'.`);
-    return String(value);
-  });
-}
 
 export const fitStateBadgeEs: Record<FitState, { icon: string; label: string; meaning: string }> = {
   fits: {

@@ -159,9 +159,10 @@ describe('SEO static outputs', () => {
       (publication) => publication.pageIntentId === 'pi-p040-uk-bed-size-dimensions',
     );
     expect(usBeds?.language).toBe('en-US');
-    expect(usBeds?.alternatePageIds).toEqual(['pi-p040-uk-bed-size-dimensions']);
+    // US and UK pages are separate hreflang clusters (one per page across languages).
+    expect(usBeds?.alternatePageIds).toBeUndefined();
     expect(ukBeds?.language).toBe('en-GB');
-    expect(ukBeds?.alternatePageIds).toEqual(['pi-p039-us-bed-size-dimensions']);
+    expect(ukBeds?.alternatePageIds).toBeUndefined();
   });
 
   it('escapes XML values and writes only editorial lastmod values', () => {

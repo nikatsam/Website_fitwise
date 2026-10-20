@@ -137,9 +137,10 @@ const label = getFitSummaryResultLabel(summaryCopy, resultOrigin);
 </div>
 
 <script>
+  import { localeFromLanguage } from '../../i18n/locale';
   import { translateRequired, translateTemplate } from '../../i18n/text';
 
-  const locale = document.documentElement.lang.startsWith('es') ? 'es' : 'en';
+  const locale = localeFromLanguage(document.documentElement.lang);
 
   function markEditedExampleAsUserResult(event: Event): void {
     const target = event.target;

@@ -26,7 +26,11 @@ const hasRelated = Astro.slots.has('related');
 
 <article class="page-family calculator-page-shell" data-calculator-shell>
   {breadcrumb && (
-    <nav class="page-family__breadcrumb" aria-label={translateRequired(locale, 'Breadcrumb')}>
+    <nav
+      class="page-family__breadcrumb"
+      data-breadcrumb
+      aria-label={translateRequired(locale, 'Breadcrumb')}
+    >
       <ol>
         {breadcrumb.map((item, index) => (
           <li>

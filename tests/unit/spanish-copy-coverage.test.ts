@@ -13,8 +13,8 @@ import {
   MEASUREMENT_DIAGRAM_COPY,
   getFitServiceMeasurementGuidance,
 } from '../../src/lib/fit/measurement-guidance';
-import { translateWorkspaceBedroomText } from '../../src/i18n/es-workspace-bedroom-copy';
-import { fitServicesCopy, fitServicesTemplate } from '../../src/i18n/es-fit-services-copy';
+import { translateWorkspaceBedroomText } from '../../src/i18n/workspace-bedroom-text';
+import { fitServicesCopy, fitServicesTemplate } from '../../src/i18n/fit-services-text';
 import { renderFitServiceAsciiPreview } from '../../src/lib/diagram/render-fit-service-ascii';
 import { getFitServiceSteps } from '../../src/lib/geometry/fit-service-steps';
 import { translate, translateRequired, translateTemplate } from '../../src/i18n/text';

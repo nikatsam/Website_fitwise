@@ -3,9 +3,8 @@ import { FIT_STATE_BADGE_COPY } from './copy';
 import { selectSummaryDimension, type DimensionDisplayRow } from './display';
 import { formatMarginMeasurement, formatMeasurement } from '../units';
 import type { MissingRequirement } from './missing-requirement';
-import { fitStateBadgeEs } from '../../i18n/es-family-copy';
-import type { Locale } from '../../i18n/locale';
-import { translate, translateRequired, translateTemplate } from '../../i18n/text';
+import { LOCALE_META, type Locale } from '../../i18n/locale';
+import { translate, translateRequired, translateTemplate, uiCatalog } from '../../i18n/text';
 
 export interface CompatibilitySummaryCheck {
   label: string;
@@ -52,8 +51,11 @@ function listNames(values: string[], fallback: string, locale: Locale): string {
   const names = values.map(cleanName).filter(Boolean);
   if (names.length === 0) return translateRequired(locale, fallback);
   if (names.length === 1) return names[0];
-  if (names.length === 2) return `${names[0]} ${locale === 'es' ? 'y' : 'and'} ${names[1]}`;
-  return `${names.slice(0, -1).join(', ')} ${locale === 'es' ? 'y' : 'and'} ${names.at(-1)}`;
+  if (locale !== 'en') {
+    return new Intl.ListFormat(LOCALE_META[locale].hreflang, { type: 'conjunction' }).format(names);
+  }
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 }
 
 function finishSentence(value: string): string {
@@ -123,7 +125,7 @@ export function getFitSummaryCopy(
           : null;
   const primary = rows.length > 0 ? selectSummaryDimension(rows) : undefined;
   const isExactFit = state === 'fits' && primary?.targetMarginMm === 0;
-  const badge = locale === 'es' ? fitStateBadgeEs[state] : FIT_STATE_BADGE_COPY[state];
+  const badge = getFitStateBadgeCopy(state, locale);
   const resultLabel = isExactFit ? translateRequired(locale, 'Fits exactly') : badge.label;
   const bindingLabel =
     incompatibleChecks.length > 0 && hardFailures.length === 0
@@ -271,7 +273,7 @@ export function getFitSummaryCopy(
 }
 
 export function getFitStateBadgeCopy(state: FitState, locale: Locale = 'en') {
-  return locale === 'es' ? fitStateBadgeEs[state] : FIT_STATE_BADGE_COPY[state];
+  return uiCatalog(locale)?.badges[state] ?? FIT_STATE_BADGE_COPY[state];
 }
 
 export function getFitSummaryResultLabel(copy: FitSummaryCopy, origin?: string): string {

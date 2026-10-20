@@ -1,0 +1,372 @@
+---
+import PageFamilyLayout from './PageFamilyLayout.astro';
+import type { BreadcrumbItem } from '../../lib/content';
+import type { SourceRecord } from '../../types';
+import { localeFromPath, pathForLocale } from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
+import { contentCatalog } from '../../i18n/content';
+import { FIT_STATE_BADGE_COPY, getFitStateBadgeCopy } from '../../lib/fit';
+
+interface Props {
+  kind: 'about' | 'methodology' | 'reference' | 'blog';
+  breadcrumb: BreadcrumbItem[];
+  h1: string;
+  sources?: SourceRecord[];
+}
+
+const { kind, breadcrumb, h1, sources = [] } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const copy = (source: string) => translateRequired(locale, source);
+const sourceNote = (source: SourceRecord) =>
+  (locale === 'en' ? undefined : contentCatalog(locale).sourceNotes[source.id]) ?? source.notes;
+const fitStates = Object.keys(FIT_STATE_BADGE_COPY).map((state) => ({
+  id: state as keyof typeof FIT_STATE_BADGE_COPY,
+  source: FIT_STATE_BADGE_COPY[state as keyof typeof FIT_STATE_BADGE_COPY],
+  localized: getFitStateBadgeCopy(state as keyof typeof FIT_STATE_BADGE_COPY, locale),
+}));
+---
+
+<PageFamilyLayout breadcrumb={breadcrumb} h1={h1}>
+  {kind === 'about' && (
+    <>
+      <section class="page-heading wrapper">
+        <p class="eyebrow">{copy('About Fitwise')}</p>
+        <p>
+          {copy(
+            'Fitwise helps people compare measured objects with rooms, work surfaces and openings before they buy, arrange or move items. Tools accept metric and imperial measurements; internal geometry uses millimetres.',
+          )}
+        </p>
+      </section>
+      <section class="wrapper section" aria-labelledby="editorial-approach">
+        <h2 id="editorial-approach">{copy('How the information is handled')}</h2>
+        <ul>
+          <li>
+            {copy(
+              'Product dimensions are tied to a named model and source where those measurements are available.',
+            )}
+          </li>
+          <li>
+            {copy(
+              'Derived geometry is identified as calculated, and display-panel estimates are not presented as full device dimensions.',
+            )}
+          </li>
+          <li>
+            {copy(
+              'User-entered measurements and clearance preferences are separate from sourced product facts.',
+            )}
+          </li>
+          <li>
+            {copy(
+              'Results are dimensional screening estimates, not delivery guarantees, building-code interpretations, safety reviews or ergonomic recommendations.',
+            )}
+          </li>
+        </ul>
+        <p>
+          <a href={pathForLocale('/methodology/', locale)}>
+            {copy('Read the calculation methodology')}
+          </a>
+          .
+        </p>
+      </section>
+      <section class="wrapper section" aria-labelledby="data-sources">
+        <h2 id="data-sources">{copy('Data sources')}</h2>
+        <p>
+          {copy(
+            'The registry currently contains {count} references. Source confidence is editorial metadata about the record, not a statistical confidence interval. Product-specific dimensions can vary by model, configuration, market and revision; verify the exact model before relying on a measurement.',
+          ).replace('{count}', String(sources.length))}
+        </p>
+        <div class="source-list">
+          {sources.map((source) => (
+            <article class="source-card" id={`source-${source.id}`}>
+              <h3>{source.url ? <a href={source.url}>{source.title}</a> : source.title}</h3>
+              <dl>
+                <div>
+                  <dt>{copy('Publisher')}</dt>
+                  <dd>{source.publisher}</dd>
+                </div>
+                <div>
+                  <dt>{copy('Accessed')}</dt>
+                  <dd>
+                    <time datetime={source.accessedOn}>{source.accessedOn}</time>
+                  </dd>
+                </div>
+                {source.geography && (
+                  <div>
+                    <dt>{copy('Geography')}</dt>
+                    <dd>{source.geography}</dd>
+                  </div>
+                )}
+                {source.standard && (
+                  <div>
+                    <dt>{copy('Standard')}</dt>
+                    <dd>{source.standard}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>{copy('Record confidence')}</dt>
+                  <dd>{copy(source.confidence[0]?.toUpperCase() + source.confidence.slice(1))}</dd>
+                </div>
+              </dl>
+              {sourceNote(source) && <p>{sourceNote(source)}</p>}
+              {source.id === 'src-fitwise-internal-convention' && (
+                <p>
+                  <a href={pathForLocale('/methodology/reference-conventions/', locale)}>
+                    {copy('Public reference-size and clearance conventions')}
+                  </a>
+                </p>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
+      <section class="wrapper section" id="corrections" aria-labelledby="corrections-heading">
+        <h2 id="corrections-heading">{copy('Corrections')}</h2>
+        <p>
+          {copy(
+            'A verified source change should update the associated source record and measurements; a calculation defect should update the shared geometry and gain a regression test. Where product dimensions differ, the current manufacturer documentation for the exact model takes precedence over a representative Fitwise example. Assumptions that are not directly sourced should remain labeled as assumptions.',
+          )}
+        </p>
+        <p>
+          <a href="https://github.com/nikatsam/Website_fitwise/issues/new?template=correction.yml">
+            {copy('Report a measurement or calculation correction on GitHub')}
+          </a>
+          .{' '}
+          {copy(
+            'Include the page URL, exact model, current source or manual and a reproducible description. Do not include private addresses or personal information. Reports are public issues; no response-time commitment is implied.',
+          )}
+        </p>
+      </section>
+    </>
+  )}
+
+  {kind === 'methodology' && (
+    <section class="wrapper section">
+      <p>
+        {copy(
+          'Fitwise uses millimetres as its internal calculation unit. Inputs may be typed as mm, cm, m, inches or feet and inches; display units can be switched independently. Sourced product measurements, geometry derived from explicit formulas and user-selected assumptions are kept distinct.',
+        )}
+      </p>
+      <h2>{copy('Fit states')}</h2>
+      <p>
+        {copy(
+          'In dimension tables, physical margin is available space minus hard footprint. Target margin is available space minus the selected or sourced target. A positive physical margin does not mean a clearance target is met.',
+        )}
+      </p>
+      <ul class="fit-state-list">
+        {fitStates.map((state) => (
+          <li>
+            <strong>
+              <span aria-hidden="true">{state.localized.icon}</span> {state.localized.label}:
+            </strong>{' '}
+            {state.localized.meaning}
+          </li>
+        ))}
+      </ul>
+      <h2>{copy('Generic item and access review')}</h2>
+      <p>
+        {copy(
+          "The universal calculator compares a rectangular item's width, depth and height with a room's inside dimensions, testing the two axis-aligned floor orientations. Optional door and corridor checks use an upright narrow face and item height. The model does not simulate tilting, diagonal passage, turns, stairs, handles, packaging bulges, thresholds, sloping ceilings or irregular room geometry. Measure the narrowest clear point along the full route.",
+        )}
+      </p>
+      <p>
+        {copy(
+          'Quantity output is a maximum single-layer rectangular grid estimate with the entered gap. It does not model stacking, load limits, access lanes, supports or obstacles. Mattress and workspace planners have their own explicit orientation and clearance assumptions.',
+        )}
+      </p>
+      <h2>{copy('What a result does not mean')}</h2>
+      <p>
+        {copy(
+          "A calculation is not a delivery guarantee, building-code determination, accessibility check, safety assessment or ergonomic recommendation. Manufacturer dimensions can vary by model and revision; verify the exact item's external dimensions and the site's clear openings before buying, moving or installing it. Any clearance target not attributed to a specific source is a user-selected planning preference, not a universal minimum.",
+        )}
+      </p>
+      <p>
+        <a href={pathForLocale('/methodology/reference-conventions/', locale)}>
+          {copy('See public measurement and reference conventions')}
+        </a>{' '}
+        {copy('and')}{' '}
+        <a href={pathForLocale('/about/#data-sources', locale)}>{copy('the source registry')}</a>.
+      </p>
+    </section>
+  )}
+
+  {kind === 'reference' && (
+    <section class="wrapper section">
+      <p>
+        {copy(
+          'This page explains how to read Fitwise dimensions and where internal reference values differ from product measurements or published standards.',
+        )}
+      </p>
+      <h2>{copy('Measurement types')}</h2>
+      <dl class="conventions">
+        <div>
+          <dt>{copy('Exact')}</dt>
+          <dd>{copy('A value transcribed from the cited source or exact model documentation.')}</dd>
+        </div>
+        <div>
+          <dt>{copy('Nominal')}</dt>
+          <dd>
+            {copy(
+              "A marketed or conventional size label. It may not equal the item's outside dimensions.",
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>{copy('Typical')}</dt>
+          <dd>
+            {copy('A representative example, not a guarantee for every model or configuration.')}
+          </dd>
+        </div>
+        <div>
+          <dt>{copy('Recommended')}</dt>
+          <dd>
+            {copy(
+              'A sourced recommendation or an explicitly labeled Fitwise planning target. Check the accompanying note to distinguish them.',
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>{copy('Derived')}</dt>
+          <dd>
+            {copy('A calculation from named source dimensions or a stated geometric formula.')}
+          </dd>
+        </div>
+      </dl>
+      <h2>{copy('Internal reference values')}</h2>
+      <p>
+        {copy(
+          'Some examples use round-number reference dimensions or comfort targets when no single external standard applies. These are Fitwise modeling conventions, not product specifications, laws, building-code values or universal ergonomic minimums. When the UI asks for a user-selected clearance, the result uses that input and does not claim it is a standard.',
+        )}
+      </p>
+      <h2>{copy('Units, precision and rounding')}</h2>
+      <p>
+        {copy(
+          'Geometry is calculated internally in millimetres. Inputs may use mm, cm, m, inches or feet; visible dimensions pass through the shared measurement formatter. Rounding is for display only and does not change intermediate geometry. Screen-panel dimensions derived from diagonal and aspect ratio are estimates rounded to the nearest millimetre and are not overall device widths.',
+        )}
+      </p>
+      <h2>{copy('How to interpret results')}</h2>
+      <p>
+        {copy(
+          '“Physical margin” is available space minus the hard footprint. “Target margin” is available space minus the selected or sourced recommended envelope. A positive physical margin does not mean a clearance target is met; compare both columns. Planning permission, installation requirements, structural suitability and safety are not evaluated unless a tool explicitly says otherwise—and no generic local regulation is inferred.',
+        )}
+      </p>
+      <p>
+        <a href={pathForLocale('/methodology/', locale)}>
+          {copy('Return to calculation methodology')}
+        </a>
+        .
+      </p>
+    </section>
+  )}
+
+  {kind === 'blog' && (
+    <section class="wrapper section blog-placeholder">
+      <h2>{copy('Blog articles are not released')}</h2>
+      <p>
+        {copy(
+          'The FitWise blog articles are available only on the local development server and are not released.',
+        )}
+      </p>
+      <p>
+        {copy(
+          'This noindex placeholder contains no articles. Production publication requires a separate editorial and SEO approval.',
+        )}
+      </p>
+    </section>
+  )}
+</PageFamilyLayout>
+
+<style>
+  .wrapper {
+    width: min(100%, var(--content-max-width));
+    margin-inline: auto;
+    padding-inline: var(--space-5);
+  }
+  .section {
+    padding-block: var(--space-6);
+    border-top: 1px solid var(--color-border);
+    line-height: 1.65;
+  }
+  .section > p {
+    max-width: 78ch;
+    color: var(--color-text-secondary);
+  }
+  .section h2 {
+    margin-top: var(--space-5);
+  }
+  .source-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+  }
+  .source-card {
+    min-width: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+  .source-card h3 {
+    margin: 0 0 var(--space-3);
+    font-size: var(--fs-md);
+    line-height: 1.4;
+  }
+  .source-card h3 a {
+    color: inherit;
+  }
+  .source-card dl {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--fs-sm);
+  }
+  .source-card dl div {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 0.4fr) minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+  .source-card dt {
+    color: var(--color-text-secondary);
+    font-weight: 600;
+  }
+  .source-card dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .source-card > p {
+    margin: var(--space-3) 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    line-height: 1.55;
+  }
+  .fit-state-list {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .conventions {
+    display: grid;
+    gap: var(--space-2);
+    max-width: 78ch;
+  }
+  .conventions div {
+    display: grid;
+    grid-template-columns: minmax(6rem, 0.3fr) minmax(0, 1fr);
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .conventions dt {
+    font-weight: 700;
+  }
+  .conventions dd {
+    margin: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+  @media (max-width: 40rem) {
+    .wrapper {
+      padding-inline: var(--space-4);
+    }
+  }
+</style>

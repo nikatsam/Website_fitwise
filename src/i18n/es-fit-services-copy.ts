@@ -1,6 +1,3 @@
-import type { Locale } from './locale';
-import { translate } from './text';
-
 export const esFitServicesCopy: Readonly<Record<string, string>> = {
   Step: 'Paso',
   'Choose a fit relationship': 'Elige una relación de ajuste',
@@ -468,7 +465,7 @@ export const esFitServicesTemplates: Readonly<Record<string, string>> = {
     'Capacidad estimada en una sola capa: {capacity}; solicitada: {requested}.',
 };
 
-const fitServicesResultTemplates: Readonly<Record<string, string>> = {
+export const fitServicesResultTemplates: Readonly<Record<string, string>> = {
   '{weight} kg monitor versus {rating} kg arm rating.':
     'Monitor de {weight} kg frente a una carga nominal del brazo de {rating} kg.',
   '{pattern} required; checked against the comma-separated arm pattern list.':
@@ -490,60 +487,3 @@ const fitServicesResultTemplates: Readonly<Record<string, string>> = {
   'Clear aisle after the entered staging depth: {aisle}.':
     'Pasillo libre después de aplicar la profundidad de bancal indicada: {aisle}.',
 };
-
-function matchTemplate(template: string, actual: string): Record<string, string> | undefined {
-  const names: string[] = [];
-  const pattern = template
-    .split(/(\{\w+\})/g)
-    .map((part) => {
-      const placeholder = part.match(/^\{(\w+)\}$/);
-      if (placeholder) {
-        names.push(placeholder[1]!);
-        return '(.+?)';
-      }
-      return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    })
-    .join('');
-  const match = actual.match(new RegExp(`^${pattern}$`, 's'));
-  if (!match) return undefined;
-  return Object.fromEntries(names.map((name, index) => [name, match[index + 1] ?? '']));
-}
-
-function interpolate(template: string, values: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (_, name: string) => values[name] ?? `{${name}}`);
-}
-
-export function fitServicesCopy(text: string, locale: Locale): string {
-  if (locale !== 'es') return text;
-  const exact = esFitServicesCopy[text];
-  if (exact) return exact;
-  for (const [source, target] of Object.entries(fitServicesResultTemplates)) {
-    const values = matchTemplate(source, text);
-    if (values) {
-      if (values.structureType)
-        values.structureType = fitServicesCopy(values.structureType, locale);
-      return interpolate(target, values);
-    }
-  }
-  return translate(locale, text);
-}
-
-export function fitServicesTemplate(
-  text: string,
-  locale: Locale,
-  values: Record<string, string | number>,
-): string {
-  if (locale !== 'es')
-    return text.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ''));
-  const step = text.match(/^Step (\d+) of (\d+): (.+)$/);
-  if (step) {
-    return `Paso ${step[1]} de ${step[2]}: ${fitServicesCopy(step[3], locale)}`;
-  }
-  const translatedTemplate = esFitServicesTemplates[text] ?? text;
-  return translatedTemplate.replace(/\{(\w+)\}/g, (_, key: string) => {
-    const value = values[key];
-    return key === 'title' && typeof value === 'string'
-      ? fitServicesCopy(value, locale)
-      : String(value ?? '');
-  });
-}

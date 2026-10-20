@@ -11,16 +11,12 @@ import {
   type FitState,
 } from '../lib/fit';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
-import type { Locale } from '../i18n/locale';
+import { localeFromLanguage, type Locale } from '../i18n/locale';
 import { translate, translateTemplate } from '../i18n/text';
 import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 export const pageLocale: Locale =
-  typeof document === 'undefined'
-    ? 'en'
-    : document.documentElement.lang.startsWith('es')
-      ? 'es'
-      : 'en';
+  typeof document === 'undefined' ? 'en' : localeFromLanguage(document.documentElement.lang);
 
 export function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

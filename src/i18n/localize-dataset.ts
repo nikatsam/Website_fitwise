@@ -1,46 +1,68 @@
 import type { Dataset } from '../lib/validation/dataset';
-import { familyEntityNameEs, ES_CLEARANCE_RULE_COPY } from './es-family-copy';
-import { ES_PUBLICATIONS } from './es-publications';
-import { ES_SOURCE_NOTES } from './es-source-notes';
-import { pathForLocale, publishedSpanishRoutes } from './locale';
+import { contentCatalog } from './content';
+import {
+  hreflangFor,
+  pathForLocale,
+  publishedLocalizedRoutes,
+  type TranslatedLocale,
+} from './locale';
 import { translate } from './text';
 
-function translateEntityNotes<T>(value: T, entityId: string): T {
+function translateEntityNotes<T>(value: T, entityId: string, locale: TranslatedLocale): T {
   if (Array.isArray(value)) {
-    return value.map((item) => translateEntityNotes(item, entityId)) as T;
+    return value.map((item) => translateEntityNotes(item, entityId, locale)) as T;
   }
   if (!value || typeof value !== 'object') return value;
   const localized = Object.fromEntries(
     Object.entries(value).map(([key, item]) => {
       if (key === 'note' && typeof item === 'string') {
-        const note = translate('es', item);
+        const note = translate(locale, item);
         if (note === item)
-          throw new Error(`Missing Spanish measurement note for '${entityId}': ${item}`);
+          throw new Error(`Missing ${locale} measurement note for '${entityId}': ${item}`);
         return [key, note];
       }
-      return [key, translateEntityNotes(item, entityId)];
+      return [key, translateEntityNotes(item, entityId, locale)];
     }),
   );
   return localized as T;
 }
 
+const cache = new WeakMap<Dataset, Map<TranslatedLocale, Dataset>>();
+
+/** Localizes page metadata, routes, sources, entity names and rule copy into one locale. */
+export function localizeDataset(dataset: Dataset, locale: TranslatedLocale): Dataset {
+  let byLocale = cache.get(dataset);
+  if (!byLocale) cache.set(dataset, (byLocale = new Map()));
+  const cached = byLocale.get(locale);
+  if (cached) return cached;
+  const localized = buildLocalizedDataset(dataset, locale);
+  byLocale.set(locale, localized);
+  return localized;
+}
+
+/** @deprecated Use localizeDataset(dataset, 'es'). */
 export function localizeDatasetToSpanish(dataset: Dataset): Dataset {
-  const localizedRoutes = publishedSpanishRoutes(dataset);
+  return localizeDataset(dataset, 'es');
+}
+
+function buildLocalizedDataset(dataset: Dataset, locale: TranslatedLocale): Dataset {
+  const content = contentCatalog(locale);
+  const localizedRoutes = publishedLocalizedRoutes(dataset, locale);
   const localizedRouteIds = new Set(localizedRoutes.map((route) => route.pageIntentId));
 
   for (const route of localizedRoutes) {
-    if (!ES_PUBLICATIONS[route.pageIntentId]) {
-      throw new Error(`Missing Spanish publication copy for '${route.pageIntentId}'.`);
+    if (!content.publications[route.pageIntentId]) {
+      throw new Error(`Missing ${locale} publication copy for '${route.pageIntentId}'.`);
     }
   }
 
-  const publicationCopyById = ES_PUBLICATIONS;
+  const publicationCopyById = content.publications;
   const localizedPageIntents = dataset.pageIntents.map((intent) => {
     if (!localizedRouteIds.has(intent.id)) return intent;
     const copy = publicationCopyById[intent.id]!;
     return {
       ...intent,
-      route: pathForLocale(intent.route, 'es'),
+      route: pathForLocale(intent.route, locale),
       primaryQuery: copy.primaryQuery,
     };
   });
@@ -54,40 +76,35 @@ export function localizeDatasetToSpanish(dataset: Dataset): Dataset {
       description: copy.description,
       h1: copy.h1,
       breadcrumbLabel: copy.breadcrumbLabel ?? copy.h1,
-      language:
-        publication.pageIntentId === 'pi-p039-us-bed-size-dimensions'
-          ? 'es-US'
-          : publication.pageIntentId === 'pi-p040-uk-bed-size-dimensions'
-            ? 'es-GB'
-            : 'es',
+      language: hreflangFor(publication.canonicalPath ?? '/', locale),
       alternatePageIds: [],
       ...(publication.canonicalPath
-        ? { canonicalPath: pathForLocale(publication.canonicalPath, 'es') }
+        ? { canonicalPath: pathForLocale(publication.canonicalPath, locale) }
         : {}),
     };
   });
 
   const localizedSources = dataset.sources.map((source) => {
     if (!source.notes) return source;
-    const note = ES_SOURCE_NOTES[source.id];
-    if (!note) throw new Error(`Missing Spanish source-note copy for '${source.id}'.`);
+    const note = content.sourceNotes[source.id];
+    if (!note) throw new Error(`Missing ${locale} source-note copy for '${source.id}'.`);
     return { ...source, notes: note };
   });
 
   const localizedEntities = dataset.entities.map((entity) => {
-    const name = familyEntityNameEs[entity.id];
+    const name = content.entityNames[entity.id];
     if (entity.status === 'published' && !name) {
-      throw new Error(`Missing Spanish entity name for '${entity.id}' (${entity.name}).`);
+      throw new Error(`Missing ${locale} entity name for '${entity.id}' (${entity.name}).`);
     }
     return {
-      ...translateEntityNotes(entity, entity.id),
+      ...translateEntityNotes(entity, entity.id, locale),
       ...(name ? { name } : {}),
     };
   });
 
   const localizedClearanceRules = dataset.clearanceRules.map((rule) => {
-    const copy = ES_CLEARANCE_RULE_COPY[rule.id];
-    if (!copy) throw new Error(`Missing Spanish clearance-rule copy for '${rule.id}'.`);
+    const copy = content.clearanceRules[rule.id];
+    if (!copy) throw new Error(`Missing ${locale} clearance-rule copy for '${rule.id}'.`);
     return {
       ...rule,
       context: copy.context ?? rule.context,
@@ -113,7 +130,7 @@ export function localizeDatasetToSpanish(dataset: Dataset): Dataset {
 
   const localizedDispositions = dataset.routeDispositions.map((disposition) =>
     localizedRouteIds.has(disposition.pageIntentId)
-      ? { ...disposition, route: pathForLocale(disposition.route, 'es') }
+      ? { ...disposition, route: pathForLocale(disposition.route, locale) }
       : disposition,
   );
 

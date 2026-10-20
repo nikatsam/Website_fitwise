@@ -30,7 +30,7 @@ interface Props {
 const DIAGRAM_ID = 'fan-fitcheck-diagram';
 const locale = localeFromPath(Astro.url.pathname);
 const copy = (source: string) => translateRequired(locale, source);
-const inputDisplay = locale === 'es' ? 'cm' : 'imperial';
+const inputDisplay = locale === 'en' ? 'imperial' : 'cm';
 const values = {
   roomWidthMm: Math.round(feetToMm(12)),
   roomLengthMm: Math.round(feetToMm(12)),

@@ -121,29 +121,3 @@ export const esWorkspaceBedroomCopy: Readonly<Record<string, string>> = {
   'Fit result: {result}. View calculation details.':
     'Resultado de ajuste: {result}. Ver detalles del cálculo.',
 };
-
-export function translateWorkspaceBedroomText(locale: 'en' | 'es', source: string): string {
-  if (locale === 'en') return source;
-  const exact = esWorkspaceBedroomCopy[source];
-  if (exact) return exact;
-  for (const [template, translated] of Object.entries(esWorkspaceBedroomCopy)) {
-    const names: string[] = [];
-    const pattern = template
-      .split(/(\{\w+\})/g)
-      .map((part) => {
-        const placeholder = part.match(/^\{(\w+)\}$/);
-        if (!placeholder) return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const [, name] = placeholder;
-        names.push(name);
-        return '(.+?)';
-      })
-      .join('');
-    const match = source.match(new RegExp(`^${pattern}$`, 's'));
-    if (match)
-      return translated.replace(
-        /\{(\w+)\}/g,
-        (_match, name: string) => match[names.indexOf(name) + 1] ?? `{${name}}`,
-      );
-  }
-  return source;
-}

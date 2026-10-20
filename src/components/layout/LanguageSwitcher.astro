@@ -1,5 +1,12 @@
 ---
-import { localeFromPath, pathForLocale, type Locale } from '../../i18n/locale';
+import {
+  LOCALE_META,
+  localeFromLanguage,
+  localeFromPath,
+  pathForLocale,
+  SUPPORTED_LOCALES,
+  type Locale,
+} from '../../i18n/locale';
 import { translateRequired, translateTemplate } from '../../i18n/text';
 
 interface Props {
@@ -8,20 +15,21 @@ interface Props {
 }
 
 const { currentPath, language } = Astro.props;
-const locale: Locale = language?.startsWith('es') ? 'es' : localeFromPath(currentPath);
-const englishHref = pathForLocale(currentPath, 'en');
-const spanishHref = pathForLocale(currentPath, 'es');
+const locale: Locale = language ? localeFromLanguage(language) : localeFromPath(currentPath);
 const shouldShow = !currentPath.startsWith('/dev/');
-const isHome = currentPath === '/' || currentPath === '/es/' || currentPath === '/es';
-const messageEn = translateRequired('en', 'Your saved language preference is {language}.');
-const messageEs = translateRequired('es', 'Your saved language preference is {language}.');
-const continueEn = translateRequired('en', 'Continue to {language}');
-const continueEs = translateRequired('es', 'Continue to {language}');
-const currentLanguageName = translateRequired(locale, locale === 'es' ? 'Spanish' : 'English');
+const isHome = pathForLocale(currentPath, 'en') === '/';
+const options = SUPPORTED_LOCALES.map((code) => ({
+  code,
+  href: pathForLocale(currentPath, code),
+  ...LOCALE_META[code],
+}));
 const switcherLabel = translateTemplate(locale, 'Site language: {language}', {
-  language: currentLanguageName,
+  language: LOCALE_META[locale].nativeName,
 });
-const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
+const suggestionHrefs = JSON.stringify(Object.fromEntries(options.map((o) => [o.code, o.href])));
+const suggestionNames = JSON.stringify(
+  Object.fromEntries(options.map((o) => [o.code, o.nativeName])),
+);
 ---
 
 <div class="language-control" hidden={!shouldShow}>
@@ -40,7 +48,7 @@ const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
         <circle cx="12" cy="12" r="9" />
         <path d="M3 12h18M12 3a14 14 0 0 1 0 18m0-18a14 14 0 0 0 0 18" />
       </svg>
-      <span class="language-switcher__current">{currentLanguageCode}</span>
+      <span class="language-switcher__current">{LOCALE_META[locale].badge}</span>
       <svg
         class="language-switcher__chevron"
         viewBox="0 0 12 12"
@@ -55,44 +63,32 @@ const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
       </svg>
     </summary>
     <nav class="language-switcher__options" aria-label={translateRequired(locale, 'Site language')}>
-      <a
-        href={englishHref}
-        lang="en"
-        hreflang="en"
-        data-language-choice="en"
-        aria-current={locale === 'en' ? 'page' : undefined}
-      >
-        <span class="language-switcher__name">{translateRequired(locale, 'English')}</span>
-        <span class="language-switcher__code">EN</span>
-        <small data-saved-language hidden>
-          {translateRequired(locale, 'Saved preference')}
-        </small>
-      </a>
-      <a
-        href={spanishHref}
-        lang="es"
-        hreflang="es"
-        data-language-choice="es"
-        aria-current={locale === 'es' ? 'page' : undefined}
-      >
-        <span class="language-switcher__name">{translateRequired(locale, 'Spanish')}</span>
-        <span class="language-switcher__code">ES</span>
-        <small data-saved-language hidden>
-          {translateRequired(locale, 'Saved preference')}
-        </small>
-      </a>
+      {options.map((option) => (
+        <a
+          href={option.href}
+          lang={option.hreflang}
+          hreflang={option.hreflang}
+          data-language-choice={option.code}
+          aria-current={locale === option.code ? 'page' : undefined}
+        >
+          <span class="language-switcher__name">{option.nativeName}</span>
+          <span class="language-switcher__code">{option.badge}</span>
+          <small data-saved-language hidden>
+            {translateRequired(locale, 'Saved preference')}
+          </small>
+        </a>
+      ))}
     </nav>
   </details>
   {isHome && (
     <aside
       class="language-suggestion"
       data-language-suggestion
-      data-message-en={messageEn}
-      data-message-es={messageEs}
-      data-continue-en={continueEn}
-      data-continue-es={continueEs}
-      data-href-en={englishHref}
-      data-href-es={spanishHref}
+      data-current-language={locale}
+      data-message={translateRequired(locale, 'Your saved language preference is {language}.')}
+      data-continue={translateRequired(locale, 'Continue to {language}')}
+      data-language-names={suggestionNames}
+      data-language-hrefs={suggestionHrefs}
       hidden
     >
       <span data-suggestion-message></span>
@@ -109,6 +105,8 @@ const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
 </div>
 
 <script>
+  import { isLocale } from '../../i18n/locale';
+
   const preferenceKey = 'fitwise-language-preference';
   const dismissedKey = 'fitwise-language-suggestion-dismissed';
   const controls = [...document.querySelectorAll<HTMLAnchorElement>('[data-language-choice]')];
@@ -118,7 +116,7 @@ const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
   const savedPreference = () => {
     try {
       const value = localStorage.getItem(preferenceKey);
-      return value === 'en' || value === 'es' ? value : null;
+      return isLocale(value) ? value : null;
     } catch {
       return null;
     }
@@ -133,7 +131,7 @@ const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
       if (isSaved)
         link.setAttribute(
           'aria-label',
-          `${link.textContent?.trim()} (${marker?.textContent?.trim()})`,
+          `${link.querySelector('.language-switcher__name')?.textContent?.trim()} (${marker?.textContent?.trim()})`,
         );
       else link.removeAttribute('aria-label');
     });
@@ -164,25 +162,16 @@ const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
 
   if (suggestion) {
     const saved = savedPreference();
-    const current = document.documentElement.lang.startsWith('es') ? 'es' : 'en';
+    const current = suggestion.dataset.currentLanguage;
     if (saved && saved !== current) {
-      const savedLanguage = saved === 'es' ? 'Spanish' : 'English';
-      const translatedLanguage = saved === 'es' ? 'Español' : 'English';
-      const messageTemplate =
-        saved === 'es' ? suggestion.dataset.messageEs : suggestion.dataset.messageEn;
-      const continueTemplate =
-        saved === 'es' ? suggestion.dataset.continueEs : suggestion.dataset.continueEn;
-      const message =
-        saved === 'es'
-          ? messageTemplate?.replace('{language}', translatedLanguage)
-          : messageTemplate?.replace('{language}', savedLanguage);
-      const continueLabel =
-        saved === 'es'
-          ? continueTemplate?.replace('{language}', translatedLanguage)
-          : continueTemplate?.replace('{language}', savedLanguage);
+      const names = JSON.parse(suggestion.dataset.languageNames ?? '{}') as Record<string, string>;
+      const hrefs = JSON.parse(suggestion.dataset.languageHrefs ?? '{}') as Record<string, string>;
+      const savedLanguageName = names[saved] ?? '';
+      const message = suggestion.dataset.message?.replace('{language}', savedLanguageName);
+      const continueLabel = suggestion.dataset.continue?.replace('{language}', savedLanguageName);
       const messageNode = suggestion.querySelector<HTMLElement>('[data-suggestion-message]');
       const link = suggestion.querySelector<HTMLAnchorElement>('[data-suggestion-link]');
-      const href = saved === 'es' ? suggestion.dataset.hrefEs : suggestion.dataset.hrefEn;
+      const href = hrefs[saved];
       if (messageNode && link && message && continueLabel && href) {
         messageNode.textContent = message;
         link.textContent = continueLabel;
@@ -219,10 +208,14 @@ const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
 
 <style>
   .language-control {
-    position: relative;
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: var(--space-2);
     flex: 0 0 auto;
+    min-width: 0;
   }
 
   .language-control[hidden] {
@@ -231,6 +224,9 @@ const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
 
   .language-menu {
     position: relative;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
   }
 
   .language-switcher__trigger {
@@ -323,15 +319,15 @@ const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
   }
 
   .language-suggestion {
-    position: absolute;
-    z-index: 50;
-    top: calc(100% + var(--space-2));
-    right: 0;
+    position: static;
+    grid-column: 1;
+    grid-row: 2;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: var(--space-2);
-    width: min(22rem, calc(100vw - 2rem));
+    width: 100%;
+    max-width: 22rem;
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -372,10 +368,6 @@ const currentLanguageCode = locale === 'es' ? 'ES' : 'EN';
     .language-switcher__options {
       right: 0;
       min-width: 11rem;
-    }
-
-    .language-suggestion {
-      width: min(18rem, calc(100vw - 2rem));
     }
   }
 </style>

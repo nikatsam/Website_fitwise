@@ -1,7 +1,9 @@
 import type { BedOrientation } from '../geometry';
 import { computeScale, labelFontSizePx, mmToPx } from './scale';
 import { formatMeasurement } from '../units';
-import { translateWorkspaceBedroomText } from '../../i18n/es-workspace-bedroom-copy';
+import type { Locale } from '../../i18n/locale';
+import { translate, translateTemplate } from '../../i18n/text';
+import { translateWorkspaceBedroomText } from '../../i18n/workspace-bedroom-text';
 
 export interface BedroomDiagramInput {
   diagramId: string;
@@ -19,7 +21,7 @@ export interface BedroomDiagramInput {
   /** One width per bedside table, in bed-width-axis order. */
   nightstandWidthsMm: number[];
   nightstandDepthMm: number;
-  locale?: 'en' | 'es';
+  locale?: Locale;
 }
 
 function escapeXml(value: string): string {
@@ -151,7 +153,7 @@ export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
     const y = mmToPx(yMm, scale);
     nightstandGroups.push(`
       <g class="diagram-object">
-        <title>${escapeXml(locale === 'es' ? `Huella medida de la mesilla ${index + 1}` : `Bedside table ${index + 1} measured footprint`)}</title>
+        <title>${escapeXml(translateTemplate(locale, 'Bedside table {number} measured footprint', { number: index + 1 }))}</title>
         <rect x="${x}" y="${y}" width="${width}" height="${height}" class="diagram-object__rect" vector-effect="non-scaling-stroke" />
       </g>`);
   };
@@ -212,7 +214,7 @@ export function renderBedroomDiagramMarkup(input: BedroomDiagramInput): string {
   return `
     <g class="diagram-space">
       <rect x="${roomX}" y="${roomY}" width="${roomW}" height="${roomH}" class="diagram-space__rect" vector-effect="non-scaling-stroke" />
-      <text x="${roomX + 6}" y="${roomY + roomFontSize + 4}" class="diagram-space__label" font-size="${roomFontSize}">${escapeXml(`${translateWorkspaceBedroomText(locale, 'Room')} (${orientation === 'portrait' ? (locale === 'es' ? 'vertical' : 'portrait') : locale === 'es' ? 'horizontal' : 'landscape'})`)}</text>
+      <text x="${roomX + 6}" y="${roomY + roomFontSize + 4}" class="diagram-space__label" font-size="${roomFontSize}">${escapeXml(`${translateWorkspaceBedroomText(locale, 'Room')} (${orientation === 'portrait' ? translate(locale, 'portrait') : translate(locale, 'landscape')})`)}</text>
     </g>
     ${sideClearanceZones}
     ${footClearanceZone}

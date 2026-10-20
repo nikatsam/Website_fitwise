@@ -1,0 +1,111 @@
+---
+import FitAnswerTemplate from './templates/FitAnswerTemplate.astro';
+import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import { buildWorkspaceConfigurationCheck, resolveMonitorWidth } from '../../lib/geometry';
+import { renderWorkspaceDiagramMarkup } from '../../lib/diagram';
+import { formatMeasurement } from '../../lib/units';
+import type { BreadcrumbItem } from '../../lib/content';
+import type { Dataset } from '../../lib/validation/dataset';
+import { localeFromPath } from '../../i18n/locale';
+import { translate, translateRequired, translateTemplate } from '../../i18n/text';
+
+interface Props {
+  breadcrumb: BreadcrumbItem[];
+  h1: string;
+  dataset: Dataset;
+}
+
+const { breadcrumb, h1, dataset } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const desk = dataset.entities.find((entity) => entity.id === 'ent-desk-1400');
+const monitor = dataset.entities.find((entity) => entity.id === 'ent-display-27in-16x9');
+const gapRule = dataset.clearanceRules.find((rule) => rule.id === 'clr-monitor-gap');
+const sideMarginRule = dataset.clearanceRules.find((rule) => rule.id === 'clr-desk-side-margin');
+if (desk?.category !== 'desk' || monitor?.category !== 'display' || !gapRule || !sideMarginRule) {
+  throw new Error('Localized dual-monitor example is missing its shared model inputs.');
+}
+const deskWidthMm = desk.widthMm.valueMm;
+const monitorWidthMm = resolveMonitorWidth(monitor).valueMm;
+const gapMm = gapRule.recommendedMm?.valueMm;
+const sideMarginMm = sideMarginRule.recommendedMm?.valueMm;
+if (gapMm === undefined || sideMarginMm === undefined) {
+  throw new Error('Localized dual-monitor example needs gap and side-margin measurements.');
+}
+const { check } = buildWorkspaceConfigurationCheck({
+  widthsMm: [monitorWidthMm, monitorWidthMm],
+  gapMm,
+  sideMarginRecommendedMm: sideMarginMm,
+  deskWidthMm,
+});
+const assumptions = [
+  translateRequired(
+    locale,
+    'Each 27-inch monitor’s approximate width is derived from the diagonal and the 16:9 ratio and rounded to the nearest millimetre; the real device is usually wider because of the bezel.',
+  ),
+  translateTemplate(locale, 'Monitor depth with stand: {depth} assumed.', {
+    depth: formatMeasurement(200),
+  }),
+  translateTemplate(locale, 'Gap between monitors: {gap}. {notes}', {
+    gap: formatMeasurement(gapMm),
+    notes: gapRule.notes ?? '',
+  }).trim(),
+  translateTemplate(locale, 'Recommended side margin: {margin} on each side. {notes}', {
+    margin: formatMeasurement(sideMarginMm),
+    notes: sideMarginRule.notes ?? '',
+  }).trim(),
+  translateRequired(
+    locale,
+    'A screen-only estimate is not the full device footprint, including the bezel and stand.',
+  ),
+];
+const result = evaluateFit([check], assumptions);
+const rows = toDimensionDisplayRows([check], result).map((row) => ({
+  ...row,
+  label: translate(locale, row.label),
+}));
+const diagramId = `${locale}-desk-two-27in-diagram`;
+const diagramMarkup = renderWorkspaceDiagramMarkup({
+  diagramId,
+  viewportWidthPx: 640,
+  viewportHeightPx: 360,
+  paddingPx: 60,
+  deskWidthMm,
+  deskDepthMm: 700,
+  monitorWidthMm,
+  monitorDepthMm: 200,
+  monitorCount: 2,
+  gapMm,
+  sideMarginMm,
+  locale,
+});
+const diagramSummary = translateTemplate(
+  locale,
+  'Two 27-inch monitors on a {desk} desk, with a {gap} gap and a recommended side margin of {margin}.',
+  {
+    desk: formatMeasurement(deskWidthMm),
+    gap: formatMeasurement(gapMm),
+    margin: formatMeasurement(sideMarginMm),
+  },
+);
+---
+
+<FitAnswerTemplate
+  breadcrumb={breadcrumb}
+  h1={h1}
+  intro={translateRequired(
+    locale,
+    'Two 27-inch monitors side by side need about this desk width, including a comfortable gap and side clearance.',
+  )}
+  state={result.state}
+  rows={rows}
+  diagramId={diagramId}
+  diagramWidthPx={640}
+  diagramHeightPx={360}
+  diagramSummary={diagramSummary}
+  diagramMarkup={diagramMarkup}
+  tableCaption={translateRequired(
+    locale,
+    'Desk width breakdown: required, recommended, available and margin',
+  )}
+  assumptions={result.assumptions}
+/>

@@ -1,0 +1,358 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  ALL_FIT_CHECKS_LINK,
+  FEATURED_FIT_CHECKS,
+  FIT_CHECK_GROUPS,
+  GUIDE_LINKS,
+} from '../../data/navigation';
+import {
+  LOCALE_META,
+  pathForLocale,
+  TRANSLATED_LOCALES,
+  type TranslatedLocale,
+} from '../../i18n/locale';
+import { translateRequired } from '../../i18n/text';
+
+export function getStaticPaths() {
+  return TRANSLATED_LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const locale = Astro.params.lang as TranslatedLocale;
+const language = LOCALE_META[locale].hreflang;
+const homePath = pathForLocale('/', locale);
+const homeUrl = `https://fitwise.stream${homePath}`;
+const localizeLink = (link: { href: string; label: string }) => ({
+  ...link,
+  href: pathForLocale(link.href, locale),
+  label: translateRequired(locale, link.label),
+});
+const featured = FEATURED_FIT_CHECKS.map((item) => ({
+  ...item,
+  href: pathForLocale(item.href, locale),
+  kicker: translateRequired(locale, item.kicker),
+  title: translateRequired(locale, item.title),
+}));
+const groups = FIT_CHECK_GROUPS.map((group) => ({
+  ...group,
+  label: translateRequired(locale, group.label),
+  links: group.links.map(localizeLink),
+}));
+const guides = GUIDE_LINKS.map(localizeLink);
+const title = `Fitwise.stream — ${translateRequired(locale, 'Know what fits before you buy')}`;
+const description = translateRequired(
+  locale,
+  'Check whether furniture, appliances, equipment and room layouts fit using your measured dimensions. Enter metric or imperial units and review space, doorway and corridor constraints.',
+);
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalPath={homePath}
+  language={language}
+  structuredData={[
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      '@id': 'https://fitwise.stream/#website',
+      url: homeUrl,
+      name: 'Fitwise.stream',
+      inLanguage: language,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      '@id': `${homeUrl}#webpage`,
+      url: homeUrl,
+      name: title,
+      description,
+      inLanguage: language,
+      isPartOf: { '@id': 'https://fitwise.stream/#website' },
+    },
+  ]}
+>
+  <section class="hero">
+    <div class="hero__glow" aria-hidden="true"></div>
+    <div class="wrapper hero__inner">
+      <h1>{translateRequired(locale, 'Will it fit?')}</h1>
+      <p class="hero__lede">
+        {translateRequired(
+          locale,
+          'What are you trying to fit? Start with the relationship: item, space, surface or opening.',
+        )}
+      </p>
+
+      <div class="hero__cards" aria-label={translateRequired(locale, 'Featured fit checks')}>
+        {featured.map((item) => (
+          <a class="hero__card" href={item.href}>
+            <span class="hero__card-kicker">{item.kicker}</span>
+            <span class="hero__card-title">{item.title}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="wrapper section fit-directory" aria-labelledby="fit-directory-heading">
+    <h2 id="fit-directory-heading">{translateRequired(locale, 'Fit checks by task')}</h2>
+    <p>
+      {translateRequired(
+        locale,
+        'Choose a category to see its calculators, specialist checks and supporting guides.',
+      )}
+    </p>
+    <div class="fit-directory__groups">
+      {groups.map((group) => (
+        <nav class="fit-directory__group" aria-label={group.label}>
+          <h3>{group.label}</h3>
+          <ul>
+            {group.links.map((item) => (
+              <li>
+                <a href={item.href}>{item.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))}
+    </div>
+    <a class="fit-directory__all" href={pathForLocale(ALL_FIT_CHECKS_LINK.href, locale)}>
+      {translateRequired(locale, 'Browse all fit checks and specialist modes')}
+    </a>
+  </section>
+
+  <section class="wrapper section">
+    <h2>{translateRequired(locale, 'Workspace planning')}</h2>
+    <p>
+      {translateRequired(
+        locale,
+        'Check a workspace layout with your own dimensions, or compare sourced monitor and desk examples.',
+      )}
+    </p>
+    <a href={pathForLocale('/workspace/', locale)}>
+      {translateRequired(locale, 'Browse workspace pages')} →
+    </a>
+    <nav class="reference-links" aria-label={translateRequired(locale, 'Workspace sizing guides')}>
+      <h3>{translateRequired(locale, 'Workspace sizing guides')}</h3>
+      <ul>
+        {guides.slice(0, 3).map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))}
+        <li>
+          <a href={pathForLocale('/workspace/desk-depth-for-monitor/', locale)}>
+            {translateRequired(locale, 'Monitor stand depth and viewing distance')}
+          </a>
+        </li>
+        <li>
+          <a href={pathForLocale('/workspace/desk-chair-clearance/', locale)}>
+            {translateRequired(locale, 'Office chair footprint and movement space')}
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </section>
+
+  <section class="wrapper section">
+    <h2>{translateRequired(locale, 'Bedroom planning')}</h2>
+    <p>
+      {translateRequired(
+        locale,
+        'Start with your own bed and room measurements. Market-specific mattress references are available when useful, but the planner is not limited to them.',
+      )}
+    </p>
+    <a href={pathForLocale('/bedroom/', locale)}>
+      {translateRequired(locale, 'Browse bedroom pages')} →
+    </a>
+    <nav class="reference-links" aria-label={translateRequired(locale, 'Bed size and room guides')}>
+      <h3>{translateRequired(locale, 'Bed size and room guides')}</h3>
+      <ul>
+        {guides.slice(3).map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))}
+        <li>
+          <a href={pathForLocale('/bedroom/minimum-room-size-for-queen-bed/', locale)}>
+            {translateRequired(locale, 'Room space for a US Queen mattress')}
+          </a>
+        </li>
+        <li>
+          <a href={pathForLocale('/bedroom/minimum-room-size-for-king-bed/', locale)}>
+            {translateRequired(locale, 'Room space for a King mattress, US and UK')}
+          </a>
+        </li>
+        <li>
+          <a href={pathForLocale('/bedroom/space-between-bed-and-wardrobe/', locale)}>
+            {translateRequired(locale, 'Bed and wardrobe door-swing example')}
+          </a>
+        </li>
+        <li>
+          <a href={pathForLocale('/bedroom/bed-and-dresser-clearance/', locale)}>
+            {translateRequired(locale, 'Bed and open dresser-drawer example')}
+          </a>
+        </li>
+        <li>
+          <a href={pathForLocale('/bedroom/king-bed-two-nightstands-room-size/', locale)}>
+            {translateRequired(locale, 'US King with two bedside tables')}
+          </a>
+        </li>
+        <li>
+          <a href={pathForLocale('/bedroom/queen-bed-two-nightstands-room-size/', locale)}>
+            {translateRequired(locale, 'US Queen with two bedside tables')}
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </section>
+
+  <section class="wrapper section">
+    <h2>{translateRequired(locale, 'How Fitwise calculates fit')}</h2>
+    <p>
+      {translateRequired(
+        locale,
+        'Sourced product dimensions are used where available; you can also enter your own measurements in metric or imperial units. Calculations keep physical fit, optional clearance targets and geometric assumptions separate. They are screening estimates, not guarantees or code checks.',
+      )}
+    </p>
+    <a href={pathForLocale('/methodology/', locale)}>
+      {translateRequired(locale, 'Read the methodology')} →
+    </a>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: var(--space-8) var(--space-7);
+    isolation: isolate;
+  }
+  .hero__glow {
+    position: absolute;
+    inset: -20% -10% auto -10%;
+    height: 32rem;
+    background:
+      radial-gradient(
+        45rem 20rem at 20% 20%,
+        color-mix(in srgb, var(--color-accent-1) 35%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        40rem 22rem at 80% 10%,
+        color-mix(in srgb, var(--color-accent-2) 30%, transparent),
+        transparent 70%
+      );
+    z-index: -1;
+    animation: drift 18s var(--ease-standard) infinite alternate;
+  }
+  @keyframes drift {
+    from {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+      transform: translate3d(2%, 3%, 0) scale(1.05);
+    }
+  }
+  .hero__inner h1 {
+    display: inline-block;
+    color: transparent;
+    font-size: var(--fs-3xl);
+    background: var(--gradient-brand);
+    background-clip: text;
+    -webkit-background-clip: text;
+  }
+  .hero__lede {
+    max-width: 38ch;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-md);
+  }
+  .hero__cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-top: var(--space-6);
+  }
+  .hero__card {
+    display: flex;
+    flex: 1 1 14rem;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-sm);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    transition:
+      transform var(--duration-base) var(--ease-standard),
+      box-shadow var(--duration-base) var(--ease-standard);
+  }
+  .hero__card:hover,
+  .hero__card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-glow);
+  }
+  .hero__card-kicker {
+    color: var(--color-accent-1);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .hero__card-title {
+    font-size: var(--fs-lg);
+    font-weight: 700;
+  }
+  .section {
+    padding-block: var(--space-6);
+    border-top: 1px solid var(--color-border);
+  }
+  .section h2 {
+    margin-bottom: var(--space-2);
+  }
+  .fit-directory__groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-4);
+    margin-block: var(--space-4);
+  }
+  .fit-directory__group {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+  .fit-directory__group h3 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-md);
+  }
+  .fit-directory__group ul,
+  .reference-links ul {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fit-directory__all {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    font-weight: 700;
+  }
+  .reference-links {
+    margin-top: var(--space-4);
+  }
+  .reference-links ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__glow {
+      animation: none;
+    }
+  }
+</style>

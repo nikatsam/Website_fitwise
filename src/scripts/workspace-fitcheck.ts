@@ -16,16 +16,12 @@ import {
 } from '../lib/geometry';
 import { renderWorkspaceDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
-import type { Locale } from '../i18n/locale';
-import { translateWorkspaceBedroomText as t } from '../i18n/es-workspace-bedroom-copy';
+import { localeFromLanguage, type Locale } from '../i18n/locale';
+import { translateWorkspaceBedroomText as t } from '../i18n/workspace-bedroom-text';
 import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 const locale: Locale =
-  typeof document === 'undefined'
-    ? 'en'
-    : document.documentElement.lang.startsWith('es')
-      ? 'es'
-      : 'en';
+  typeof document === 'undefined' ? 'en' : localeFromLanguage(document.documentElement.lang);
 
 interface FormValues {
   deskWidthMm: number;

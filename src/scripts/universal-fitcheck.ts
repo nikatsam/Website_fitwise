@@ -12,16 +12,12 @@ import {
 import { buildObjectFitPlan, type ObjectOrientation } from '../lib/geometry';
 import { renderUniversalDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
-import type { Locale } from '../i18n/locale';
+import { localeFromLanguage, type Locale } from '../i18n/locale';
 import { translate, translateTemplate } from '../i18n/text';
 import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 const locale: Locale =
-  typeof document === 'undefined'
-    ? 'en'
-    : document.documentElement.lang.startsWith('es')
-      ? 'es'
-      : 'en';
+  typeof document === 'undefined' ? 'en' : localeFromLanguage(document.documentElement.lang);
 
 const DIAGRAM_ID = 'universal-fitcheck-diagram';
 
@@ -270,9 +266,15 @@ function recompute(): void {
   const orientationText = document.querySelector<HTMLElement>('[data-fit-orientation]');
   if (orientationText) {
     const quantityText =
-      locale === 'es'
-        ? `${plan.quantityCapacity} ${plan.quantityCapacity === 1 ? 'objeto' : 'objetos'}`
-        : `${plan.quantityCapacity} item(s)`;
+      locale === 'en'
+        ? `${plan.quantityCapacity} item(s)`
+        : translateTemplate(
+            locale,
+            plan.quantityCapacity === 1 ? '{count} item' : '{count} items',
+            {
+              count: plan.quantityCapacity,
+            },
+          );
     orientationText.textContent = translateTemplate(
       locale,
       '{itemName}: best floor orientation is {orientation}. Estimated maximum: {quantityText} in a single layer ({grid} grid).{requested}',

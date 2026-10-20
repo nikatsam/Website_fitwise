@@ -23,3 +23,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# i18n translation source chunks (regenerate with I18N_EXPORT=1)
+scripts/i18n/source/

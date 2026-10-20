@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { URL } from 'node:url';
 import { dataset } from '../../data/index.ts';
-import { publishedSpanishRoutes } from '../../i18n/locale.ts';
+import { pathForLocale, publishedLocalizedRoutes, TRANSLATED_LOCALES } from '../../i18n/locale.ts';
 import { SITE_ORIGIN } from './metadata.ts';
 import { buildRobotsTxt, buildSitemapXml, publishedSitemapEntries } from './sitemap.ts';
 
@@ -14,9 +14,9 @@ export function seoStaticOutputs() {
         const publicationsById = new Map(
           dataset.seoPublications.map((publication) => [publication.pageIntentId, publication]),
         );
-        const spanishEntries = [
-          { url: new URL('/es/', SITE_ORIGIN).href },
-          ...publishedSpanishRoutes(dataset)
+        const localizedEntries = TRANSLATED_LOCALES.flatMap((locale) => [
+          { url: new URL(pathForLocale('/', locale), SITE_ORIGIN).href },
+          ...publishedLocalizedRoutes(dataset, locale)
             .filter((route) => route.indexable)
             .map((route) => {
               const source = publicationsById.get(route.pageIntentId);
@@ -25,10 +25,10 @@ export function seoStaticOutputs() {
                 lastmod: source?.significantlyModifiedOn ?? source?.publishedOn,
               };
             }),
-        ];
+        ]);
         const entries = [
           ...publishedSitemapEntries(dataset.pageIntents, dataset.seoPublications),
-          ...spanishEntries,
+          ...localizedEntries,
         ];
         await Promise.all([
           writeFile(new URL('sitemap.xml', dir), buildSitemapXml(entries), 'utf8'),

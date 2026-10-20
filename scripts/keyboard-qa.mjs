@@ -2623,7 +2623,6 @@ try {
         };
         const menu = document.querySelector('[data-language-menu]');
         const current = menu?.querySelector('summary');
-        const themeLabel = document.querySelector('.theme-control__label')?.textContent.trim() ?? '';
         const themeButton = document.querySelector('[data-theme-toggle]');
         return {
           viewport: innerWidth,
@@ -2635,7 +2634,6 @@ try {
           mobileToggle: rect('[data-mobile-nav-toggle]'),
           mobileToggleHidden: document.querySelector('[data-mobile-nav-toggle]')?.hidden,
           mobileToggleLabel: document.querySelector('[data-mobile-nav-toggle]')?.textContent.trim() ?? '',
-          themeLabel,
           themeButtonText: themeButton?.querySelector('[data-theme-label]')?.textContent.trim() ?? '',
           themeButtonAria: themeButton?.getAttribute('aria-label') ?? '',
           languageCode: current?.querySelector('.language-switcher__current')?.textContent.trim() ?? '',
@@ -2644,8 +2642,7 @@ try {
       })()`);
       assert(
         metrics.documentWidth <= metrics.viewport + 1 &&
-          metrics.themeLabel === 'Theme' &&
-          /^(Light|Dark)$/.test(metrics.themeButtonText) &&
+          metrics.themeButtonText === 'Theme' &&
           metrics.themeButtonAria.startsWith('Theme: ') &&
           metrics.languageCode === 'EN' &&
           metrics.languageAria === 'Site language: English' &&
@@ -2655,7 +2652,7 @@ try {
             ? metrics.brand.right <= metrics.mobileToggle.left &&
               metrics.mobileToggle.right <= metrics.viewport - 16
             : metrics.brand.right <= metrics.tools.left) &&
-          (width > 640
+          (width > 1152
             ? metrics.mobileToggleHidden && metrics.navDisplay !== 'none'
             : !metrics.mobileToggleHidden &&
               Boolean(metrics.mobileToggle) &&
@@ -2687,6 +2684,7 @@ try {
     const themeBefore = await evaluate(`(() => ({
       theme: document.documentElement.dataset.theme,
       label: document.querySelector('[data-theme-toggle] [data-theme-label]')?.textContent.trim() ?? '',
+      aria: document.querySelector('[data-theme-toggle]')?.getAttribute('aria-label') ?? '',
     }))()`);
     const themeFocused = await evaluate(`(() => {
       const button = document.querySelector('[data-theme-toggle]');
@@ -2697,11 +2695,13 @@ try {
     const themeAfter = await evaluate(`(() => ({
       theme: document.documentElement.dataset.theme,
       label: document.querySelector('[data-theme-toggle] [data-theme-label]')?.textContent.trim() ?? '',
+      aria: document.querySelector('[data-theme-toggle]')?.getAttribute('aria-label') ?? '',
       pressed: document.querySelector('[data-theme-toggle]')?.getAttribute('aria-pressed'),
     }))()`);
     assert(
       themeAfter.theme !== themeBefore.theme &&
-        themeAfter.label === (themeAfter.theme === 'dark' ? 'Dark' : 'Light') &&
+        themeAfter.label === 'Theme' &&
+        themeAfter.aria === `Theme: ${themeAfter.theme === 'dark' ? 'Dark' : 'Light'}` &&
         themeAfter.pressed === String(themeAfter.theme === 'dark') &&
         themeFocused,
       `Theme control did not update its labeled state: ${JSON.stringify({ themeBefore, themeAfter, themeFocused })}.`,
@@ -2716,7 +2716,7 @@ try {
     await navigateAndWait('/es/');
     const spanishControls = await evaluate(`(() => ({
       lang: document.documentElement.lang,
-      themeLabel: document.querySelector('.theme-control__label')?.textContent.trim() ?? '',
+      themeLabel: document.querySelector('.theme-toggle [data-theme-label]')?.textContent.trim() ?? '',
       languageCode: document.querySelector('[data-language-menu] .language-switcher__current')?.textContent.trim() ?? '',
       languageAria: document.querySelector('[data-language-menu] summary')?.getAttribute('aria-label') ?? '',
       menuLabel: document.querySelector('[data-mobile-nav-toggle]')?.textContent.trim() ?? '',
@@ -2730,17 +2730,42 @@ try {
       `Spanish header controls are not localized: ${JSON.stringify(spanishControls)}.`,
     );
     await evaluate(`(() => {
+      localStorage.setItem('fitwise-language-preference', 'en');
+      sessionStorage.removeItem('fitwise-language-suggestion-dismissed');
+    })()`);
+    await navigateAndWait('/es/');
+    const spanishSuggestion = await evaluate(`({
+      visible: !document.querySelector('[data-language-suggestion]')?.hidden,
+      message: document.querySelector('[data-suggestion-message]')?.textContent ?? '',
+      link: document.querySelector('[data-suggestion-link]')?.textContent ?? '',
+      viewport: innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+    })`);
+    assert(
+      spanishSuggestion.visible &&
+        spanishSuggestion.message.includes('inglés') &&
+        !spanishSuggestion.message.includes('Your saved language') &&
+        spanishSuggestion.link.includes('Continuar en inglés') &&
+        spanishSuggestion.documentWidth <= spanishSuggestion.viewport + 1,
+      `Spanish saved-language suggestion is not translated or fit to the header: ${JSON.stringify(spanishSuggestion)}.`,
+    );
+    await evaluate(`(() => {
       localStorage.setItem('fitwise-language-preference', 'es');
       sessionStorage.removeItem('fitwise-language-suggestion-dismissed');
     })()`);
     await navigateAndWait('/');
     const suggestionFits = await evaluate(`({
       visible: !document.querySelector('[data-language-suggestion]')?.hidden,
+      message: document.querySelector('[data-suggestion-message]')?.textContent ?? '',
+      link: document.querySelector('[data-suggestion-link]')?.textContent ?? '',
       viewport: innerWidth,
       documentWidth: document.documentElement.scrollWidth,
     })`);
     assert(
-      suggestionFits.visible && suggestionFits.documentWidth <= suggestionFits.viewport + 1,
+      suggestionFits.visible &&
+        suggestionFits.message.includes('Spanish') &&
+        suggestionFits.link.includes('Continue to Spanish') &&
+        suggestionFits.documentWidth <= suggestionFits.viewport + 1,
       `Saved-language suggestion overflowed the mobile header: ${JSON.stringify(suggestionFits)}.`,
     );
     await cdp('Emulation.setDeviceMetricsOverride', {
@@ -3071,6 +3096,7 @@ try {
 
   if (screenshotDirectory) {
     await captureRouteScreenshot('/', 'header-layout-desktop-903', 903, 700, false);
+    await captureRouteScreenshot('/es/', 'header-layout-spanish-903', 903, 700, false);
     await captureRouteScreenshot('/', 'header-layout-mobile-390', 390, 844, true);
     await captureRouteScreenshot('/', 'header-layout-mobile-320', 320, 740, true);
     await captureRouteScreenshot(

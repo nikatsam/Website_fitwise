@@ -11,16 +11,12 @@ import {
 import { buildRugFitPlan, type RugCoverageMode, type RugOrientation } from '../lib/geometry';
 import { renderRugDiagramMarkup } from '../lib/diagram';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
-import type { Locale } from '../i18n/locale';
+import { localeFromLanguage, type Locale } from '../i18n/locale';
 import { translate, translateTemplate } from '../i18n/text';
 import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 const locale: Locale =
-  typeof document === 'undefined'
-    ? 'en'
-    : document.documentElement.lang.startsWith('es')
-      ? 'es'
-      : 'en';
+  typeof document === 'undefined' ? 'en' : localeFromLanguage(document.documentElement.lang);
 
 const DIAGRAM_ID = 'rug-fitcheck-diagram';
 

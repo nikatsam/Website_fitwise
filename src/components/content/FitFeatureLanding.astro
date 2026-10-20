@@ -12,7 +12,7 @@ import { CORE_CALCULATOR_START_GUIDANCE } from '../../lib/fit/start-guidance';
 import type { BreadcrumbItem, ContentNavigationLink } from '../../lib/content';
 import type { FeaturePageRecord } from '../../data/feature-pages';
 import type { PageIntent, SeoPublication, SourceRecord } from '../../types';
-import { ES_FEATURE_COPY } from '../../i18n/es-features';
+import { contentCatalog } from '../../i18n/content';
 import { englishPathname, localeFromPath, pathForLocale } from '../../i18n/locale';
 import { translateRequired } from '../../i18n/text';
 
@@ -27,9 +27,9 @@ interface Props {
 
 const { pageIntent, publication, feature, breadcrumb, links, sources } = Astro.props;
 const locale = localeFromPath(Astro.url.pathname);
-const localizedCopy = locale === 'es' ? ES_FEATURE_COPY[pageIntent.id] : undefined;
-if (locale === 'es' && !localizedCopy) {
-  throw new Error(`Missing Spanish feature content for '${pageIntent.id}'.`);
+const localizedCopy = locale === 'en' ? undefined : contentCatalog(locale).features[pageIntent.id];
+if (locale !== 'en' && !localizedCopy) {
+  throw new Error(`Missing ${locale} feature content for '${pageIntent.id}'.`);
 }
 const intro = localizedCopy?.intro ?? feature.intro;
 const calculation = localizedCopy?.calculation ?? feature.calculation;

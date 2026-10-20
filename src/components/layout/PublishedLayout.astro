@@ -36,7 +36,7 @@ const structuredData = publicationStructuredData(publication, breadcrumb);
   structuredData={structuredData}
 >
   {showBreadcrumb && (
-    <nav class="published-breadcrumb wrapper" aria-label="Breadcrumb">
+    <nav class="published-breadcrumb wrapper" data-breadcrumb aria-label="Breadcrumb">
       <ol>
         {breadcrumb.map((item, index) => (
           <li>

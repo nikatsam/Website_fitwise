@@ -33,16 +33,12 @@ import {
 } from '../lib/fit/candidate-size-editor';
 import { getFitServiceStartGuidance } from '../lib/fit/start-guidance';
 import { formatMarginMeasurement, formatMeasurement, parseLength } from '../lib/units';
-import type { Locale } from '../i18n/locale';
-import { fitServicesCopy, fitServicesTemplate } from '../i18n/es-fit-services-copy';
+import { localeFromLanguage, type Locale } from '../i18n/locale';
+import { fitServicesCopy, fitServicesTemplate } from '../i18n/fit-services-text';
 import { announceFitStateChange } from '../lib/fit/summary-announcement';
 
 const locale: Locale =
-  typeof document === 'undefined'
-    ? 'en'
-    : document.documentElement.lang.startsWith('es')
-      ? 'es'
-      : 'en';
+  typeof document === 'undefined' ? 'en' : localeFromLanguage(document.documentElement.lang);
 const copy = (text: string) => fitServicesCopy(text, locale);
 const template = (text: string, values: Record<string, string | number>) =>
   fitServicesTemplate(text, locale, values);

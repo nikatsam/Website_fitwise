@@ -1,6 +1,8 @@
 import { computeScale, mmToPx, labelFontSizePx } from './scale';
 import { formatMeasurement } from '../units';
-import { translateWorkspaceBedroomText } from '../../i18n/es-workspace-bedroom-copy';
+import type { Locale } from '../../i18n/locale';
+import { translate } from '../../i18n/text';
+import { translateWorkspaceBedroomText } from '../../i18n/workspace-bedroom-text';
 
 export interface WorkspaceDiagramInput {
   diagramId: string;
@@ -15,7 +17,7 @@ export interface WorkspaceDiagramInput {
   monitorCount: number;
   gapMm: number;
   sideMarginMm: number;
-  locale?: 'en' | 'es';
+  locale?: Locale;
 }
 
 function escapeXml(value: string): string {
@@ -95,7 +97,7 @@ export function renderWorkspaceDiagramMarkup(input: WorkspaceDiagramInput): stri
     monitorRects.push(`
       <g class="diagram-object">
         <rect x="${x}" y="${y}" width="${w}" height="${h}" class="diagram-object__rect" vector-effect="non-scaling-stroke" />
-        <text x="${x + w / 2}" y="${y + h / 2}" class="diagram-object__label" font-size="${objectFontSize}" text-anchor="middle" dominant-baseline="middle">${escapeXml(`${locale === 'es' ? 'Monitor' : 'Monitor'} ${i + 1}`)}</text>
+        <text x="${x + w / 2}" y="${y + h / 2}" class="diagram-object__label" font-size="${objectFontSize}" text-anchor="middle" dominant-baseline="middle">${escapeXml(`${translate(locale, 'Monitor')} ${i + 1}`)}</text>
       </g>`);
   }
 
