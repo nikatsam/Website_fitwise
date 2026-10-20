@@ -74,3 +74,23 @@ export {
   type FitServiceValues,
 } from './fit-services';
 export { getFitServiceSteps, type FitServiceStep } from './fit-service-steps';
+export {
+  buildCeilingFanPlan,
+  fanSpanBandForArea,
+  roomAreaSqFt,
+  FAN_SPAN_BANDS,
+  STANDARD_DOWNROD_LENGTHS_IN,
+  CEILING_FAN_DEFAULTS,
+  type CeilingFanInput,
+  type CeilingFanPlan,
+  type FanSpanBand,
+} from './ceiling-fan';
+export {
+  buildChristmasTreePlan,
+  maxTreeHeightForCeiling,
+  suggestedStandardTreeHeightFt,
+  STANDARD_TREE_HEIGHTS_FT,
+  CHRISTMAS_TREE_DEFAULTS,
+  type ChristmasTreeInput,
+  type ChristmasTreePlan,
+} from './christmas-tree';

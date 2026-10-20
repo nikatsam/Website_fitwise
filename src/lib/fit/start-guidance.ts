@@ -61,6 +61,22 @@ export const CORE_CALCULATOR_START_GUIDANCE = {
       'Confirm dimensions on the rug and furniture labels; the diagram is a dimensional comparison, not a floor plan or styling recommendation.',
     ),
   ],
+  ceilingFan: [
+    required(
+      'Measure the room’s width and length, and the floor-to-ceiling height at the fan location.',
+    ),
+    optional(
+      'Find the fan’s blade span and ceiling-to-blade drop on the spec sheet or in the manual.',
+    ),
+    verification(
+      'Confirm the ceiling box is rated for a fan and follow the manual and local electrical rules.',
+    ),
+  ],
+  christmasTree: [
+    required('Measure floor to ceiling where the tree will stand.'),
+    optional('Check whether the listed tree height includes the stand, and measure your topper.'),
+    optional('For floor space, measure the corner or spot and note the tree’s base diameter.'),
+  ],
 } as const satisfies Record<string, readonly BeforeYouStartItem[]>;
 
 export function getFitServiceStartGuidance(

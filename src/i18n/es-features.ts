@@ -1,3 +1,5 @@
+import { ES_FAN_TREE_FEATURE_COPY } from './es-fan-tree-pages';
+
 export type SpanishFeatureCopy = {
   intro: string;
   calculation: string;
@@ -416,4 +418,5 @@ export const ES_FEATURE_COPY: Record<string, SpanishFeatureCopy> = {
       'No se evalúan el impacto de la superficie, el anclaje, la supervisión, los peligros superiores ni los requisitos legales.',
     ],
   },
+  ...ES_FAN_TREE_FEATURE_COPY,
 };

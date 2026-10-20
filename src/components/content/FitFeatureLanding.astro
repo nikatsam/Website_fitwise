@@ -2,6 +2,8 @@
 import PageFamilyLayout from './PageFamilyLayout.astro';
 import FitServicesStudio from '../fitcheck/FitServicesStudio.astro';
 import RugFitCheck from '../fitcheck/RugFitCheck.astro';
+import CeilingFanFitCheck from '../fitcheck/CeilingFanFitCheck.astro';
+import ChristmasTreeFitCheck from '../fitcheck/ChristmasTreeFitCheck.astro';
 import WorkspaceFitCheck from '../fitcheck/WorkspaceFitCheck.astro';
 import BedroomFitCheck from '../fitcheck/BedroomFitCheck.astro';
 import DiningFitCheck from '../fitcheck/DiningFitCheck.astro';
@@ -43,23 +45,24 @@ const DirectTool = {
   'pi-feature-will-it-fit': UniversalFitCheck,
 }[pageIntent.id];
 const hasCalculator = Boolean(
-  feature.toolRenderer === 'rug-fit' ||
-  (feature.mode && feature.modeCategory) ||
-  DirectTool ||
-  isAdvancedStudio,
+  feature.toolRenderer || (feature.mode && feature.modeCategory) || DirectTool || isAdvancedStudio,
 );
 const startGuidance =
   feature.toolRenderer === 'rug-fit'
     ? CORE_CALCULATOR_START_GUIDANCE.rug
-    : pageIntent.id === 'pi-feature-workspace-hub'
-      ? CORE_CALCULATOR_START_GUIDANCE.workspace
-      : pageIntent.id === 'pi-feature-bedroom'
-        ? CORE_CALCULATOR_START_GUIDANCE.bedroom
-        : pageIntent.id === 'pi-feature-dining'
-          ? CORE_CALCULATOR_START_GUIDANCE.dining
-          : pageIntent.id === 'pi-feature-will-it-fit'
-            ? CORE_CALCULATOR_START_GUIDANCE.universal
-            : undefined;
+    : feature.toolRenderer === 'ceiling-fan'
+      ? CORE_CALCULATOR_START_GUIDANCE.ceilingFan
+      : feature.toolRenderer === 'christmas-tree'
+        ? CORE_CALCULATOR_START_GUIDANCE.christmasTree
+        : pageIntent.id === 'pi-feature-workspace-hub'
+          ? CORE_CALCULATOR_START_GUIDANCE.workspace
+          : pageIntent.id === 'pi-feature-bedroom'
+            ? CORE_CALCULATOR_START_GUIDANCE.bedroom
+            : pageIntent.id === 'pi-feature-dining'
+              ? CORE_CALCULATOR_START_GUIDANCE.dining
+              : pageIntent.id === 'pi-feature-will-it-fit'
+                ? CORE_CALCULATOR_START_GUIDANCE.universal
+                : undefined;
 const relatedLinks = links.map((link) => ({
   ...link,
   description:
@@ -95,6 +98,10 @@ const relatedLinks = links.map((link) => ({
       <div data-shell-section="calculator">
         {feature.toolRenderer === 'rug-fit' ? (
           <RugFitCheck />
+        ) : feature.toolRenderer === 'ceiling-fan' ? (
+          <CeilingFanFitCheck defaults={feature.toolDefaults} />
+        ) : feature.toolRenderer === 'christmas-tree' ? (
+          <ChristmasTreeFitCheck ceilingHeightMm={feature.toolDefaults?.ceilingHeightMm} />
         ) : DirectTool ? (
           <DirectTool />
         ) : isAdvancedStudio ? (

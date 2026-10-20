@@ -1,0 +1,196 @@
+---
+import AssumptionList from '../fit/AssumptionList.astro';
+import CalculatorStep from '../fit/CalculatorStep.astro';
+import DimensionTable from '../fit/DimensionTable.astro';
+import ExampleDataNotice from '../fit/ExampleDataNotice.astro';
+import FitSummary from '../fit/FitSummary.astro';
+import LengthInput from '../fit/LengthInput.astro';
+import UnitToggle from '../fit/UnitToggle.astro';
+import ScaleDiagram from '../diagram/ScaleDiagram.astro';
+import '../../styles/simple-fitcheck.css';
+import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import { fanAnswerHtml, fanAssumptions } from '../../lib/fit/fan-tree-copy';
+import { buildCeilingFanPlan, CEILING_FAN_DEFAULTS } from '../../lib/geometry';
+import { renderFanDiagramMarkup } from '../../lib/diagram';
+import { feetToMm, formatMeasurement, inchesToMm } from '../../lib/units';
+import { localeFromPath } from '../../i18n/locale';
+import { translateRequired, translateTemplate } from '../../i18n/text';
+
+export interface CeilingFanDefaults {
+  roomWidthMm: number;
+  roomLengthMm: number;
+  ceilingHeightMm: number;
+  bladeSpanMm: number;
+}
+
+interface Props {
+  defaults?: Partial<CeilingFanDefaults>;
+}
+
+const DIAGRAM_ID = 'fan-fitcheck-diagram';
+const locale = localeFromPath(Astro.url.pathname);
+const copy = (source: string) => translateRequired(locale, source);
+const inputDisplay = locale === 'es' ? 'cm' : 'imperial';
+const values = {
+  roomWidthMm: Math.round(feetToMm(12)),
+  roomLengthMm: Math.round(feetToMm(12)),
+  ceilingHeightMm: Math.round(feetToMm(9)),
+  bladeSpanMm: Math.round(inchesToMm(42)),
+  ...Astro.props.defaults,
+  fanDropMm: CEILING_FAN_DEFAULTS.fanDropMm,
+  downrodMm: 0,
+  minBladeHeightMm: CEILING_FAN_DEFAULTS.minBladeHeightMm,
+  preferredBladeHeightMm: CEILING_FAN_DEFAULTS.preferredBladeHeightMm,
+  wallClearanceMm: CEILING_FAN_DEFAULTS.wallClearanceMm,
+};
+const plan = buildCeilingFanPlan(values);
+const assumptions = fanAssumptions(locale);
+const result = evaluateFit(plan.checks, assumptions);
+const rows = toDimensionDisplayRows(plan.checks, result).map((row) => ({
+  ...row,
+  label: copy(row.label),
+}));
+const answerHtml = fanAnswerHtml(plan, values, locale);
+const diagram = renderFanDiagramMarkup({
+  locale,
+  ceilingHeightMm: values.ceilingHeightMm,
+  roomShorterSideMm: Math.min(values.roomWidthMm, values.roomLengthMm),
+  bladeSpanMm: values.bladeSpanMm,
+  fanDropMm: values.fanDropMm,
+  downrodMm: values.downrodMm,
+  minBladeHeightMm: values.minBladeHeightMm,
+});
+const diagramSummary = translateTemplate(
+  locale,
+  'Side view of a {ceiling} ceiling with a {span} fan; blades sit {blade} above the floor.',
+  {
+    ceiling: formatMeasurement(values.ceilingHeightMm, 'both'),
+    span: formatMeasurement(values.bladeSpanMm, 'both'),
+    blade: formatMeasurement(Math.max(0, plan.bladeHeightMm), 'both'),
+  },
+);
+---
+
+<div class="simple-fitcheck calculator-split" data-fan-fitcheck data-fit-result-scope>
+  <form class="simple-fitcheck__panel" data-fan-fitcheck-form data-core-progressive-form novalidate>
+    <ExampleDataNotice
+      note={copy(
+        'Replace the sample room, ceiling and fan measurements with your own. Sample values are not a product recommendation.',
+      )}
+    />
+    <CalculatorStep
+      step={1}
+      title={copy('Measure the room and ceiling')}
+      description={copy('Measure wall to wall and floor to ceiling where the fan will hang.')}
+    >
+      <div class="field-grid">
+        <LengthInput
+          display={inputDisplay}
+          id="fan-room-width"
+          label={copy('Room width')}
+          valueMm={values.roomWidthMm}
+        />
+        <LengthInput
+          display={inputDisplay}
+          id="fan-room-length"
+          label={copy('Room length')}
+          valueMm={values.roomLengthMm}
+        />
+        <LengthInput
+          display={inputDisplay}
+          id="fan-ceiling-height"
+          label={copy('Floor-to-ceiling height')}
+          valueMm={values.ceilingHeightMm}
+        />
+      </div>
+    </CalculatorStep>
+    <CalculatorStep
+      step={2}
+      title={copy('Enter the fan')}
+      description={copy(
+        'Use the blade span and ceiling-to-blade drop from the fan’s spec sheet or manual.',
+      )}
+    >
+      <div class="field-grid">
+        <LengthInput
+          display={inputDisplay}
+          id="fan-blade-span"
+          label={copy('Blade span (diameter)')}
+          valueMm={values.bladeSpanMm}
+        />
+        <LengthInput
+          display={inputDisplay}
+          id="fan-drop"
+          label={copy('Ceiling-to-blade drop without extra downrod')}
+          valueMm={values.fanDropMm}
+          note={copy('Often 8–13 in for standard fans; hugger fans are lower.')}
+        />
+        <LengthInput
+          display={inputDisplay}
+          id="fan-downrod"
+          label={copy('Extra downrod length (optional)')}
+          valueMm={values.downrodMm}
+        />
+      </div>
+      <details class="simple-fitcheck__advanced">
+        <summary>{copy('Advanced options · Optional')}</summary>
+        <div class="field-grid">
+          <LengthInput
+            display={inputDisplay}
+            id="fan-min-blade"
+            label={copy('Minimum blade height above floor')}
+            valueMm={values.minBladeHeightMm}
+            note={copy('ENERGY STAR guidance: at least 7 ft.')}
+          />
+          <LengthInput
+            display={inputDisplay}
+            id="fan-preferred-blade"
+            label={copy('Preferred blade height above floor')}
+            valueMm={values.preferredBladeHeightMm}
+            note={copy('ENERGY STAR guidance: 8–9 ft for best airflow.')}
+          />
+          <LengthInput
+            display={inputDisplay}
+            id="fan-wall-clearance"
+            label={copy('Blade tip to wall clearance')}
+            valueMm={values.wallClearanceMm}
+            note={copy('ENERGY STAR guidance: at least 18 in.')}
+          />
+        </div>
+      </details>
+    </CalculatorStep>
+    <UnitToggle />
+  </form>
+
+  <section
+    class="simple-fitcheck__panel calculator-split__result"
+    aria-label={copy('Ceiling fan result')}
+  >
+    <FitSummary
+      id="fan-fitcheck-summary"
+      resultId="fan-fitcheck-table"
+      state={result.state}
+      rows={rows}
+      resultOrigin="example"
+    />
+    <div class="fit-answer" data-fan-answer aria-live="polite" set:html={answerHtml} />
+    <div class="simple-fitcheck__visual" data-diagram-id={DIAGRAM_ID}>
+      <ScaleDiagram id={DIAGRAM_ID} widthPx={480} heightPx={360} summary={diagramSummary}>
+        <Fragment set:html={diagram} />
+      </ScaleDiagram>
+      <p class="field__note">
+        {copy('Side view, to scale. Dashed line: your minimum blade height.')}
+      </p>
+    </div>
+    <DimensionTable
+      id="fan-fitcheck-table"
+      rows={rows}
+      caption="Ceiling fan blade height and wall clearance dimensions"
+    />
+    <AssumptionList id="fan-fitcheck-assumptions" assumptions={assumptions} />
+  </section>
+</div>
+
+<script>
+  import '../../scripts/ceiling-fan-fitcheck';
+</script>

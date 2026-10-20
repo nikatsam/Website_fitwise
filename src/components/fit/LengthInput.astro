@@ -1,0 +1,80 @@
+---
+import { formatMeasurement, mmToInches } from '../../lib/units';
+
+interface Props {
+  id: string;
+  label: string;
+  valueMm: number;
+  /** Already-localized helper text shown under the input. */
+  note?: string;
+  /** Pre-filled display: mm (default), cm, or feet/inches for imperial audiences. */
+  display?: 'mm' | 'cm' | 'imperial';
+}
+
+const { id, label, valueMm, note, display = 'mm' } = Astro.props;
+
+function formatValue(mm: number): string {
+  if (display === 'cm') return formatMeasurement(mm, 'cm');
+  if (display !== 'imperial') return formatMeasurement(mm);
+  // Fan spans, tree diameters and toppers are sold and discussed in inches.
+  if (mm < 1524) return `${Math.round(mmToInches(mm))} in`;
+  return formatMeasurement(mm, 'imperial').replace(/ 0 in$/, '');
+}
+const describedBy = [`${id}-error`, note ? `${id}-note` : undefined].filter(Boolean).join(' ');
+---
+
+<div class="field">
+  <label for={id}>{label}</label>
+  <input
+    id={id}
+    name={id}
+    type="text"
+    inputmode="text"
+    value={formatValue(valueMm)}
+    aria-describedby={describedBy}
+  />
+  <span class="field__error" id={`${id}-error`} role="alert"></span>
+  {note && (
+    <p class="field__note" id={`${id}-note`}>
+      {note}
+    </p>
+  )}
+</div>
+
+<style>
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+
+  .field label {
+    color: var(--color-text-secondary);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+  }
+
+  .field input {
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .field__error {
+    min-height: 1.2em;
+    color: var(--color-state-no-fit-fg);
+    font-size: var(--fs-xs);
+  }
+
+  .field__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+  }
+</style>

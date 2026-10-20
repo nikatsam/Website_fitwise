@@ -1,4 +1,8 @@
 export const ES_SOURCE_NOTES: Record<string, string> = {
+  'src-energy-star-ceiling-fan-basics':
+    'Tabla de superficie de la habitación y diámetro de aspas (hasta 75 ft²: 29–36 in; 76–144: 36–42 in; 144–225: 44 in; 225–400: 50–54 in), atribuida a la American Lighting Association. Instala el ventilador al menos a 7 ft (2.13 m) del suelo y a 18 in (46 cm) de las paredes; entre 8 y 9 ft es lo ideal para el flujo de aire si el techo lo permite.',
+  'src-balsam-hill-tree-height':
+    'Recomendación del minorista: deja al menos 6 in (15 cm) entre el techo y la parte superior del árbol, incluida la estrella o figura; los árboles se miden desde la base del soporte hasta la punta. Ejemplo: un techo de 9 ft con una estrella de 12 in admite un árbol de 7.5 ft.',
   'src-ikea-lagkapten-desk':
     'Las encimeras LAGKAPTEN se venden habitualmente en 120x60 cm, 140x60 cm y 160x80 cm; aquí se usan como tamaños de escritorio representativos y comunes, no como afirmación sobre todos los escritorios del mercado.',
   'src-samsung-m7-32in':

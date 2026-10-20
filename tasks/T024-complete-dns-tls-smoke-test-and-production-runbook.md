@@ -20,7 +20,7 @@ Complete this task without expanding scope into later tasks.
 
 - [x] All technical Gate F checks pass; webmaster properties are explicitly recorded as operationally pending owner access.
 - [x] Worklog reaches 100% implementation.
-- [x] Production smoke findings are recorded in `SEO_RELEASE_AUDIT.md`.
+- [x] Production smoke findings are recorded in `Audits/archive/SEO_RELEASE_AUDIT.md`.
 - [x] Search-engine account/property/sitemap status recorded as completed or operationally pending, never assumed.
 
 ## Required close-out

@@ -4,3 +4,9 @@ export { renderBedroomDiagramMarkup, type BedroomDiagramInput } from './render-b
 export { renderDiningDiagramMarkup, type DiningDiagramInput } from './render-dining';
 export { renderUniversalDiagramMarkup, type UniversalDiagramInput } from './render-universal';
 export { renderRugDiagramMarkup, type RugDiagramInput } from './render-rug';
+export {
+  renderFanDiagramMarkup,
+  renderTreeDiagramMarkup,
+  type FanDiagramInput,
+  type TreeDiagramInput,
+} from './render-fan-tree';

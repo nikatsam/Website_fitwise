@@ -1,0 +1,218 @@
+---
+import AssumptionList from '../fit/AssumptionList.astro';
+import CalculatorStep from '../fit/CalculatorStep.astro';
+import DimensionTable from '../fit/DimensionTable.astro';
+import ExampleDataNotice from '../fit/ExampleDataNotice.astro';
+import FitSummary from '../fit/FitSummary.astro';
+import LengthInput from '../fit/LengthInput.astro';
+import UnitToggle from '../fit/UnitToggle.astro';
+import ScaleDiagram from '../diagram/ScaleDiagram.astro';
+import '../../styles/simple-fitcheck.css';
+import { evaluateFit, toDimensionDisplayRows } from '../../lib/fit';
+import { treeAnswerHtml, treeAssumptions } from '../../lib/fit/fan-tree-copy';
+import {
+  buildChristmasTreePlan,
+  CHRISTMAS_TREE_DEFAULTS,
+  maxTreeHeightForCeiling,
+  suggestedStandardTreeHeightFt,
+} from '../../lib/geometry';
+import { renderTreeDiagramMarkup } from '../../lib/diagram';
+import { feetToMm, formatMeasurement, inchesToMm } from '../../lib/units';
+import { localeFromPath } from '../../i18n/locale';
+import { translateRequired, translateTemplate } from '../../i18n/text';
+
+interface Props {
+  /** Pre-filled ceiling height for long-tail variant pages. */
+  ceilingHeightMm?: number;
+}
+
+const DIAGRAM_ID = 'tree-fitcheck-diagram';
+const locale = localeFromPath(Astro.url.pathname);
+const copy = (source: string) => translateRequired(locale, source);
+const inputDisplay = locale === 'es' ? 'cm' : 'imperial';
+const ceilingHeightMm = Astro.props.ceilingHeightMm ?? Math.round(feetToMm(9));
+// Start from the tallest common size that fits the ceiling so every variant shows a real answer.
+const startFt = suggestedStandardTreeHeightFt(maxTreeHeightForCeiling(ceilingHeightMm)) ?? 6;
+const treeHeightMm = Math.round(feetToMm(startFt));
+const values = {
+  ceilingHeightMm,
+  treeHeightMm,
+  standLiftMm: CHRISTMAS_TREE_DEFAULTS.standLiftMm,
+  topperHeightMm: CHRISTMAS_TREE_DEFAULTS.topperHeightMm,
+  ceilingGapMm: CHRISTMAS_TREE_DEFAULTS.ceilingGapMm,
+  checkFloor: true,
+  // Full artificial trees are commonly ~0.55–0.6× their height at the base.
+  treeDiameterMm: Math.round(treeHeightMm * 0.58),
+  spaceWidthMm: Math.round(inchesToMm(72)),
+  spaceDepthMm: Math.round(inchesToMm(72)),
+  floorClearanceMm: CHRISTMAS_TREE_DEFAULTS.floorClearanceMm,
+};
+const plan = buildChristmasTreePlan(values);
+const assumptions = treeAssumptions(locale, values.checkFloor);
+const result = evaluateFit(plan.checks, assumptions);
+const rows = toDimensionDisplayRows(plan.checks, result).map((row) => ({
+  ...row,
+  label: copy(row.label),
+}));
+const answerHtml = treeAnswerHtml(plan, locale);
+const diagram = renderTreeDiagramMarkup({ locale, ...values });
+const diagramSummary = translateTemplate(
+  locale,
+  'Side view of a {tree} tree, stand and topper under a {ceiling} ceiling.',
+  {
+    tree: formatMeasurement(values.treeHeightMm, 'both'),
+    ceiling: formatMeasurement(values.ceilingHeightMm, 'both'),
+  },
+);
+---
+
+<div class="simple-fitcheck calculator-split" data-tree-fitcheck data-fit-result-scope>
+  <form
+    class="simple-fitcheck__panel"
+    data-tree-fitcheck-form
+    data-core-progressive-form
+    novalidate
+  >
+    <ExampleDataNotice
+      note={copy(
+        'Replace the sample ceiling and tree measurements with your own. Sample values are not a product recommendation.',
+      )}
+    />
+    <CalculatorStep
+      step={1}
+      title={copy('Measure the ceiling and tree')}
+      description={copy(
+        'Measure floor to ceiling where the tree will stand, and use the tree’s listed height.',
+      )}
+    >
+      <div class="field-grid">
+        <LengthInput
+          display={inputDisplay}
+          id="tree-ceiling-height"
+          label={copy('Floor-to-ceiling height')}
+          valueMm={values.ceilingHeightMm}
+        />
+        <LengthInput
+          display={inputDisplay}
+          id="tree-height"
+          label={copy('Tree height as listed')}
+          valueMm={values.treeHeightMm}
+        />
+        <LengthInput
+          display={inputDisplay}
+          id="tree-topper"
+          label={copy('Topper height (star or angel)')}
+          valueMm={values.topperHeightMm}
+        />
+      </div>
+      <details class="simple-fitcheck__advanced">
+        <summary>{copy('Advanced options · Optional')}</summary>
+        <div class="field-grid">
+          <LengthInput
+            display={inputDisplay}
+            id="tree-stand-lift"
+            label={copy('Extra stand lift (optional)')}
+            valueMm={values.standLiftMm}
+            note={copy(
+              'Leave at 0 when the listed height includes the stand. Real trees in a stand often gain 4–8 in.',
+            )}
+          />
+          <LengthInput
+            display={inputDisplay}
+            id="tree-ceiling-gap"
+            label={copy('Gap to keep below the ceiling')}
+            valueMm={values.ceilingGapMm}
+            note={copy('Balsam Hill suggests at least 6 in.')}
+          />
+        </div>
+      </details>
+    </CalculatorStep>
+    <CalculatorStep
+      step={2}
+      title={copy('Check the floor space (optional)')}
+      description={copy('Compare the tree’s base diameter with the corner or spot you have.')}
+    >
+      <label class="simple-fitcheck__check-option">
+        <input id="tree-check-floor" name="checkFloor" type="checkbox" checked />
+        {copy('Also check the tree’s width against the floor space')}
+      </label>
+      <div class="field-grid" data-tree-floor-fields>
+        <LengthInput
+          display={inputDisplay}
+          id="tree-diameter"
+          label={copy('Tree base diameter')}
+          valueMm={values.treeDiameterMm}
+        />
+        <LengthInput
+          display={inputDisplay}
+          id="tree-space-width"
+          label={copy('Floor space width')}
+          valueMm={values.spaceWidthMm}
+        />
+        <LengthInput
+          display={inputDisplay}
+          id="tree-space-depth"
+          label={copy('Floor space depth')}
+          valueMm={values.spaceDepthMm}
+        />
+        <LengthInput
+          display={inputDisplay}
+          id="tree-floor-clearance"
+          label={copy('Clearance around the branches (optional)')}
+          valueMm={values.floorClearanceMm}
+        />
+      </div>
+    </CalculatorStep>
+    <UnitToggle />
+  </form>
+
+  <section
+    class="simple-fitcheck__panel calculator-split__result"
+    aria-label={copy('Christmas tree result')}
+  >
+    <FitSummary
+      id="tree-fitcheck-summary"
+      resultId="tree-fitcheck-table"
+      state={result.state}
+      rows={rows}
+      resultOrigin="example"
+    />
+    <div class="fit-answer" data-tree-answer aria-live="polite" set:html={answerHtml} />
+    <div class="simple-fitcheck__visual" data-diagram-id={DIAGRAM_ID}>
+      <ScaleDiagram id={DIAGRAM_ID} widthPx={480} heightPx={360} summary={diagramSummary}>
+        <Fragment set:html={diagram} />
+      </ScaleDiagram>
+      <p class="field__note">
+        {copy('Side view, to scale. Dashed line: your target gap below the ceiling.')}
+      </p>
+    </div>
+    <DimensionTable
+      id="tree-fitcheck-table"
+      rows={rows}
+      caption="Christmas tree height and floor-space dimensions"
+    />
+    <AssumptionList id="tree-fitcheck-assumptions" assumptions={assumptions} />
+  </section>
+</div>
+
+<script>
+  import '../../scripts/christmas-tree-fitcheck';
+</script>
+
+<style>
+  .simple-fitcheck__check-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    font-weight: 600;
+  }
+
+  .simple-fitcheck__check-option input {
+    accent-color: var(--color-accent-1);
+  }
+
+  [data-tree-floor-fields][hidden] {
+    display: none;
+  }
+</style>

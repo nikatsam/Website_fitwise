@@ -7,7 +7,7 @@ import {
 
 describe('Before you start guidance', () => {
   it('provides tailored guidance for each core calculator', () => {
-    expect(Object.values(CORE_CALCULATOR_START_GUIDANCE)).toHaveLength(5);
+    expect(Object.values(CORE_CALCULATOR_START_GUIDANCE)).toHaveLength(7);
     for (const items of Object.values(CORE_CALCULATOR_START_GUIDANCE)) {
       expect(items).toHaveLength(3);
       expect(items.every((item) => item.text.trim().length > 20)).toBe(true);

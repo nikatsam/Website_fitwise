@@ -15,8 +15,8 @@ Complete this task without expanding scope into later tasks.
 
 ## Acceptance criteria
 
-- [x] All explicit Gate E checklist items demonstrably pass (evidence in `SEO_RELEASE_AUDIT.md`).
-- [x] `PROJECT_STATE.json` permits AWS phase after owner sign-off on `SEO_RELEASE_AUDIT.md`.
+- [x] All explicit Gate E checklist items demonstrably pass (evidence in `Audits/archive/SEO_RELEASE_AUDIT.md`).
+- [x] `PROJECT_STATE.json` permits AWS phase after owner sign-off on `Audits/archive/SEO_RELEASE_AUDIT.md`.
 
 ## Required close-out
 

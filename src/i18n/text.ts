@@ -4,6 +4,7 @@ import {
   esDiningUniversalRugTemplates,
 } from './es-dining-universal-rug-copy';
 import { ES_NAV_LINKS, ES_SHELL_STATIC } from './es-shell-static';
+import { esFanTreeCopy, esFanTreeTemplates } from './es-fan-tree-copy';
 import type { Locale } from './locale';
 
 const esExactCopy: Readonly<Record<string, string>> = {
@@ -11,11 +12,13 @@ const esExactCopy: Readonly<Record<string, string>> = {
   ...ES_NAV_LINKS,
   ...esCalculatorCopy,
   ...esDiningUniversalRugCopy,
+  ...esFanTreeCopy,
 };
 
 const esTemplates: Readonly<Record<string, string>> = {
   ...calculatorCopyTemplates,
   ...esDiningUniversalRugTemplates,
+  ...esFanTreeTemplates,
 };
 
 function matchTemplate(template: string, actual: string): Record<string, string> | undefined {

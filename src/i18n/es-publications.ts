@@ -1,3 +1,5 @@
+import { ES_FAN_TREE_PUBLICATIONS } from './es-fan-tree-pages';
+
 export type EsPublication = {
   title: string;
   description: string;
@@ -525,4 +527,5 @@ export const ES_PUBLICATIONS: Record<string, EsPublication> = {
     h1: 'Blog de Fitwise: historias de ajuste y guías de medición',
     primaryQuery: 'blog de FitWise sobre ajuste y guías de medición',
   },
+  ...ES_FAN_TREE_PUBLICATIONS,
 };

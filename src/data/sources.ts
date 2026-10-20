@@ -98,6 +98,27 @@ export const sources: SourceRecord[] = [
       'For Size B with fully adjustable arms, the manufacturer lists overall width 28.3-30.4 in, overall depth 27.5-28.3 in, height 36.8-41.1 in and seat depth 17 in. The example uses maximum dimensions converted to millimeters and rounded to the nearest millimeter.',
   },
   {
+    id: 'src-energy-star-ceiling-fan-basics',
+    url: 'https://www.energystar.gov/products/ceiling_fans/ceiling_fan_basics',
+    title: 'Ceiling Fan Basics',
+    publisher: 'ENERGY STAR (U.S. EPA)',
+    accessedOn: '2026-10-20',
+    geography: 'US',
+    confidence: 'high',
+    notes:
+      'Room-area to blade-span chart (up to 75 sq ft: 29–36 in; 76–144: 36–42 in; 144–225: 44 in; 225–400: 50–54 in), credited to the American Lighting Association. Mount fans at least 7 ft above the floor and 18 in from walls; 8–9 ft is best for airflow when the ceiling allows.',
+  },
+  {
+    id: 'src-balsam-hill-tree-height',
+    url: 'https://www.balsamhill.com/how-to-choose-the-right-christmas-tree-height',
+    title: 'How to Choose the Right Christmas Tree Height',
+    publisher: 'Balsam Hill',
+    accessedOn: '2026-10-20',
+    confidence: 'medium',
+    notes:
+      'Retailer guidance: leave at least 6 in between the ceiling and the top of the tree including the topper; trees are measured from the bottom of the stand to the tip. Example: a 9 ft ceiling with a 12 in star topper suits a 7.5 ft tree.',
+  },
+  {
     id: 'src-fitwise-internal-convention',
     title: 'Fitwise internal reference-size and clearance convention',
     publisher: 'Fitwise.stream',

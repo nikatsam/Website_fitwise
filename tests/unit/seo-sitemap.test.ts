@@ -52,11 +52,21 @@ describe('SEO static outputs', () => {
     );
     const urls = entries.map((entry) => entry.url);
 
-    expect(urls).toHaveLength(47);
+    expect(urls).toHaveLength(57);
     for (const route of [
       '/',
       '/will-it-fit/',
       '/rug-fit/',
+      '/ceiling-fan-size/',
+      '/ceiling-fan-size/10x10-room/',
+      '/ceiling-fan-size/10x12-room/',
+      '/ceiling-fan-size/12x12-room/',
+      '/ceiling-fan-size/15x15-room/',
+      '/christmas-tree-size/',
+      '/christmas-tree-size/8-foot-ceiling/',
+      '/christmas-tree-size/9-foot-ceiling/',
+      '/christmas-tree-size/10-foot-ceiling/',
+      '/christmas-tree-size/12-foot-ceiling/',
       '/dining/',
       '/garden/',
       '/fit-checks/',

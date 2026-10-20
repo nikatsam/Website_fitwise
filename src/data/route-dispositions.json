@@ -526,6 +526,76 @@
     "renderer": "static"
   },
   {
+    "pageIntentId": "pi-feature-ceiling-fan-size",
+    "route": "/ceiling-fan-size/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-ceiling-fan-10x10",
+    "route": "/ceiling-fan-size/10x10-room/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-ceiling-fan-10x12",
+    "route": "/ceiling-fan-size/10x12-room/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-ceiling-fan-12x12",
+    "route": "/ceiling-fan-size/12x12-room/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-ceiling-fan-15x15",
+    "route": "/ceiling-fan-size/15x15-room/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-christmas-tree-size",
+    "route": "/christmas-tree-size/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-christmas-tree-8ft-ceiling",
+    "route": "/christmas-tree-size/8-foot-ceiling/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-christmas-tree-9ft-ceiling",
+    "route": "/christmas-tree-size/9-foot-ceiling/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-christmas-tree-10ft-ceiling",
+    "route": "/christmas-tree-size/10-foot-ceiling/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
+    "pageIntentId": "pi-feature-christmas-tree-12ft-ceiling",
+    "route": "/christmas-tree-size/12-foot-ceiling/",
+    "intentStatus": "published",
+    "disposition": "generated",
+    "renderer": "static"
+  },
+  {
     "pageIntentId": "pi-blog-index",
     "route": "/blog/",
     "intentStatus": "published",

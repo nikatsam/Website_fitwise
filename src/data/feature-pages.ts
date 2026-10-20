@@ -1,14 +1,18 @@
 import type { PageIntent, SeoPublication } from '../types';
 import type { FitServiceCategory, FitServiceMode } from '../lib/geometry';
 import { sources } from './sources';
+import { buildFanTreePages, CEILING_FAN_HUB_ID, CHRISTMAS_TREE_HUB_ID } from './fan-tree-pages';
 
 export type FeaturePageKind = 'direct' | 'hub' | 'tool';
+export type FeatureToolRenderer = 'rug-fit' | 'ceiling-fan' | 'christmas-tree';
 
 export interface FeaturePageRecord {
   pageIntent: PageIntent;
   publication: SeoPublication;
   kind: FeaturePageKind;
-  toolRenderer?: 'rug-fit';
+  toolRenderer?: FeatureToolRenderer;
+  /** Pre-filled tool measurements for long-tail variant pages. */
+  toolDefaults?: Record<string, number>;
   mode?: FitServiceMode;
   modeCategory?: FitServiceCategory;
   relatedReasons?: Record<string, string>;
@@ -17,7 +21,7 @@ export interface FeaturePageRecord {
   limitations: string[];
 }
 
-interface FeaturePageInput {
+export interface FeaturePageInput {
   id: string;
   route: string;
   family: PageIntent['family'];
@@ -33,7 +37,8 @@ interface FeaturePageInput {
   limitations: string[];
   mode?: FitServiceMode;
   modeCategory?: FitServiceCategory;
-  toolRenderer?: 'rug-fit';
+  toolRenderer?: FeatureToolRenderer;
+  toolDefaults?: Record<string, number>;
   breadcrumbIds?: string[];
   relatedPageIds?: string[];
   relatedReasons?: Record<string, string>;
@@ -43,6 +48,8 @@ interface FeaturePageInput {
   justification?: string;
   intentEvidence?: string;
 }
+
+export type FeaturePageInputShape = FeaturePageInput;
 
 const RELEASE_DATE = '2026-10-10';
 
@@ -83,6 +90,7 @@ function definePage(input: FeaturePageInput): FeaturePageRecord {
     publication,
     kind: input.kind,
     ...(input.toolRenderer ? { toolRenderer: input.toolRenderer } : {}),
+    ...(input.toolDefaults ? { toolDefaults: input.toolDefaults } : {}),
     ...(input.mode ? { mode: input.mode } : {}),
     ...(input.modeCategory ? { modeCategory: input.modeCategory } : {}),
     ...(input.relatedReasons ? { relatedReasons: input.relatedReasons } : {}),
@@ -164,6 +172,8 @@ export const featurePages: FeaturePageRecord[] = [
       gameRoomId,
       vehicleId,
       rugFitId,
+      CEILING_FAN_HUB_ID,
+      CHRISTMAS_TREE_HUB_ID,
       fitServicesId,
     ],
     sourceIds: ['src-fitwise-internal-convention'],
@@ -1055,6 +1065,7 @@ export const featurePages: FeaturePageRecord[] = [
     breadcrumbIds: [gardenId],
     relatedPageIds: ['pi-feature-garden-structure'],
   }),
+  ...buildFanTreePages(definePage),
 ];
 
 export const featurePageIntents: PageIntent[] = featurePages.map(({ pageIntent }) => pageIntent);
