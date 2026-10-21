@@ -110,7 +110,8 @@ export function getNavigationCurrent(
   if (activeRoutes.includes(currentPath)) return 'location';
   if (currentPath === href) return 'page';
   if (href !== '/' && href.endsWith('/') && currentPath.startsWith(href)) return 'location';
-  if (currentPath !== '/' && currentPath.endsWith('/') && href.startsWith(currentPath)) {
+  const isHome = currentPath === '/' || /^\/[a-z]{2}\/$/.test(currentPath);
+  if (!isHome && currentPath.endsWith('/') && href.startsWith(currentPath)) {
     return 'location';
   }
   return undefined;

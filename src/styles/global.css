@@ -395,7 +395,7 @@ textarea:focus-visible,
   position: absolute;
   left: var(--space-3);
   top: var(--space-3);
-  transform: translateY(calc(-100% - var(--space-3)));
+  transform: translateY(calc(-100% - var(--space-6)));
   background: var(--color-surface-raised);
   color: var(--color-text-primary);
   padding: var(--space-2) var(--space-3);
