@@ -180,6 +180,7 @@ jobs:
           aws s3 cp dist/sitemap.xml "s3://$SITE_BUCKET/sitemap.xml" --cache-control 'public, max-age=0, s-maxage=300, must-revalidate' --content-type 'application/xml'
           aws s3 cp dist/favicon.ico "s3://$SITE_BUCKET/favicon.ico" --cache-control 'public, max-age=3600' --content-type 'image/vnd.microsoft.icon'
           aws s3 cp dist/40256e983b29eef42f0a6d265551140c.txt "s3://$SITE_BUCKET/40256e983b29eef42f0a6d265551140c.txt" --cache-control 'public, max-age=300' --content-type 'text/plain; charset=utf-8'
+          aws s3 cp dist/ads.txt "s3://$SITE_BUCKET/ads.txt" --cache-control 'public, max-age=300' --content-type 'text/plain; charset=utf-8'
 
       - name: Invalidate distribution with one wildcard path
         shell: bash
