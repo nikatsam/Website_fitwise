@@ -75,6 +75,20 @@ npm run verify       # typecheck + lint + format:check + test + build
 - `prompts/` — copy/paste prompts for starting and handing off agent sessions.
 - `templates/` — reusable log, QA, content-brief, SEO-release and search-review templates.
 
+## Localization
+
+The site is published in English (default, `/`), Spanish (`/es/`), Japanese (`/ja/`), German (`/de/`), French (`/fr/`), Simplified Chinese (`/zh/`) and Brazilian Portuguese (`/pt/`). Regional bed-size pages keep their US/UK variants.
+
+- Translation text lives in `src/i18n/translations/<locale>/NN.json` (45 chunks). Each key is a stable 12-hex ID for an English or Spanish source string.
+- To inspect a chunk: `node scripts/i18n/show-chunk.mjs NN`. To verify a translated chunk: `node scripts/i18n/check-chunk.mjs NN`.
+- To regenerate the catalogs after edits: `I18N_WRITE=1 npx vitest run tests/unit/i18n-catalogs.test.ts`, then `npm run verify`. Placeholders such as `{x}` and `{{x}}` must be kept exactly.
+- Architecture and rules: see `DECISIONS.md` ADR-012.
+
+## Advertising and crawl files
+
+- `public/ads.txt` authorizes the AdSense seller line; the production deploy uploads it explicitly. Keep it in sync with the AdSense account.
+- The AdSense loader and its CSP allowances are described in `DECISIONS.md` ADR-014.
+
 ## Technology baseline
 
 The implementation should stay intentionally boring:

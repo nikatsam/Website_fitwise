@@ -74,3 +74,24 @@ Accepted decisions are authoritative unless superseded by a later ADR.
 **Decision:** Use a direct CloudFormation JSON template rather than CDK for the v1 S3/CloudFront/OAC stack. The draft creates a private REST-origin S3 bucket, distribution-scoped OAC policy, ACM certificate parameter, CloudFront Function directory-index rewrite, bounded cache policies, and security headers.  
 **Rationale:** The hosting topology is small and declarative; direct CloudFormation avoids another runtime/build dependency and makes the exact least-privilege bucket policy inspectable.  
 **Consequences:** `infra/fitwise-static-site.template.json` is an un-deployed draft. Offline structural and SAM validation do not create resources or replace an authorized review. Do not deploy until T021's signed SEO release audit is recorded and `PROJECT_STATE.json` permits AWS work.
+
+## ADR-012 — Locale routing and translation catalogs
+
+**Status:** Accepted | **Date:** 2026-10-22
+**Decision:** Serve each non-English language under a two-letter path prefix (`/es/`, `/ja/`, `/de/`, `/fr/`, `/zh/`, `/pt/`) from the shared `[lang]` page routes. Translations are stored as per-chunk JSON leaves keyed by a 12-hex SHA-1 of the English/Spanish source path, rebuilt into generated UI and content catalogs. UI catalogs load per locale through `import.meta.glob`, so each language downloads only its own strings; content catalogs are generated at build time.
+**Rationale:** Keeps every page static (ADR-001, ADR-006) and avoids a runtime translation service or framework. Stable IDs let source text change without silently mis-translating, because the catalog test fails on missing, unknown or placeholder-mismatched leaves.
+**Consequences:** Adding or editing wording means editing the chunk JSON, running `I18N_WRITE=1 npx vitest run tests/unit/i18n-catalogs.test.ts`, then `npm run verify`. Placeholders such as `{x}` and `{{x}}` must survive translation. Sitemap, hreflang and validators cover all locales; the regional bed pages keep `en-US`/`en-GB` and `es-US`/`es-GB` alternates only. Translated cited source titles intentionally stay in their original language.
+
+## ADR-013 — Pin GitHub Actions to commit SHAs
+
+**Status:** Accepted | **Date:** 2026-10-22
+**Decision:** Every `uses:` in `.github/workflows/` references an exact commit SHA with the release tag in a trailing comment. Releases must be at least two weeks old when adopted. Major-version upgrades are made only when the action's inputs still match the workflow.
+**Rationale:** AGENTS.md requires immutable pins for security-sensitive actions, and the production workflow assumes AWS and Google credentials. GitHub deprecated Node 20 for actions in the runner; the upgrades keep CI on supported runtimes.
+**Consequences:** Upgrading an action means resolving a new tag to its commit SHA (`gh api repos/<owner>/<repo>/git/ref/tags/<tag>`, dereferencing annotated tags) and updating the line. The deploy workflow's AWS and Google sign-in steps are exercised only on production deploys, so confirm them after any change there.
+
+## ADR-014 — Google AdSense loaded site-wide with narrow CSP allowances
+
+**Status:** Accepted | **Date:** 2026-10-22
+**Decision:** Load `adsbygoogle.js` for publisher `ca-pub-5374485543598957` in the `<head>` of every page built from `BaseLayout`, with `public/ads.txt` authorizing the same publisher. The CloudFront response-headers policy allows Google's ad, syndication and DoubleClick hosts in `script-src`, `img-src`, `connect-src` and `frame-src`, and nothing else.
+**Rationale:** AdSense requires the loader on every page and an `ads.txt` at the root to verify the seller. The CSP must allow those hosts, or the browser blocks the ads and the loader fails silently.
+**Consequences:** The `ads.txt` line must match the AdSense account exactly. Because the deploy uploads only named files, any new root-level static file needs its own upload line in `deploy-production.yml`. Serving ads in the UK/EU requires a privacy notice and a consent mechanism (Consent Mode or a CMP), which are not yet implemented; any privacy page added later must be reviewed before the snippet is removed from it.
