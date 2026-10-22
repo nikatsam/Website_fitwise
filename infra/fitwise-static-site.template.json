@@ -154,7 +154,7 @@
           "Comment": "Baseline headers for the static Fitwise origin.",
           "SecurityHeadersConfig": {
             "ContentSecurityPolicy": {
-              "ContentSecurityPolicy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com https://images.pexels.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+              "ContentSecurityPolicy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://adservice.google.com https://tpc.googlesyndication.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com https://images.pexels.com https://*.googlesyndication.com https://*.doubleclick.net; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com https://pagead2.googlesyndication.com https://*.doubleclick.net https://adservice.google.com; frame-src https://*.doubleclick.net https://*.googlesyndication.com https://tpc.googlesyndication.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
               "Override": true
             },
             "ContentTypeOptions": { "Override": true },
